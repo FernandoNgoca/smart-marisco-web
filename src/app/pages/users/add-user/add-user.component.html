@@ -1,0 +1,233 @@
+<div class="profile-container">
+  <!-- Card principal -->
+  <mat-card class="profile-card">
+    <!-- IMPORTANTE: Form group container -->
+    <form [formGroup]="form" (ngSubmit)="onSubmit()">
+      <!-- Avatar Section -->
+      <div class="avatar-section">
+        <div class="avatar-wrapper">
+          <img
+            class="avatar"
+            [src]="imagePreview || defaultAvatar"
+            alt="Foto do usuário"
+          />
+        </div>
+        <div class="avatar-buttons">
+          <input
+            type="file"
+            #fileInput
+            (change)="onFileSelected($event)"
+            accept="image/*"
+            style="display: none"
+          />
+          <button mat-stroked-button (click)="fileInput.click()" type="button">
+            <i class="fa-solid fa-upload"></i>
+            Selecionar
+          </button>
+          <button
+            *ngIf="imagePreview"
+            mat-stroked-button
+            (click)="removeImage()"
+            type="button"
+          >
+            <i class="fa-solid fa-trash"></i>
+            Remover
+          </button>
+        </div>
+      </div>
+
+      <!-- User Info -->
+      <div class="user-info">
+        <div class="info-item">
+          <i class="fa-solid fa-user"></i>
+          <strong>Usuário:</strong>
+          <mat-form-field appearance="outline" class="inline-form">
+            <input
+              matInput
+              formControlName="userName"
+              placeholder="Nome de usuário"
+              autocomplete="username"
+            />
+            <mat-error
+              *ngIf="
+                form.get('userName')?.hasError('required') &&
+                form.get('userName')?.touched
+              "
+            >
+              Nome de usuário é obrigatório
+            </mat-error>
+            <mat-error *ngIf="form.get('userName')?.hasError('minlength')">
+              Mínimo de 3 caracteres
+            </mat-error>
+            <mat-error *ngIf="form.get('userName')?.hasError('maxlength')">
+              Máximo de 50 caracteres
+            </mat-error>
+          </mat-form-field>
+        </div>
+
+        <div class="info-item">
+          <i class="fa-solid fa-user-tag"></i>
+          <strong>Nome Completo:</strong>
+          <mat-form-field appearance="outline" class="inline-form">
+            <input
+              matInput
+              formControlName="fullName"
+              placeholder="Nome completo"
+              autocomplete="name"
+            />
+            <mat-error
+              *ngIf="
+                form.get('fullName')?.hasError('required') &&
+                form.get('fullName')?.touched
+              "
+            >
+              Nome completo é obrigatório
+            </mat-error>
+            <mat-error *ngIf="form.get('fullName')?.hasError('minlength')">
+              Mínimo de 3 caracteres
+            </mat-error>
+            <mat-error *ngIf="form.get('fullName')?.hasError('maxlength')">
+              Máximo de 100 caracteres
+            </mat-error>
+          </mat-form-field>
+        </div>
+      </div>
+
+      <mat-divider></mat-divider>
+
+      <!-- Senha Section -->
+      <div class="password-section">
+        <div class="section-header">
+          <i class="fa-solid fa-key"></i>
+          <h3>Definir Senha</h3>
+        </div>
+
+        <div class="password-form">
+          <!-- Senha -->
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>Senha</mat-label>
+            <input
+              matInput
+              [type]="hidePassword ? 'password' : 'text'"
+              formControlName="password"
+              autocomplete="new-password"
+            />
+            <button
+              mat-icon-button
+              matSuffix
+              type="button"
+              (click)="hidePassword = !hidePassword"
+            >
+              <mat-icon>{{
+                hidePassword ? "visibility_off" : "visibility"
+              }}</mat-icon>
+            </button>
+            <mat-error *ngIf="form.get('password')?.hasError('required')">
+              Senha é obrigatória
+            </mat-error>
+            <mat-error *ngIf="form.get('password')?.hasError('minlength')">
+              Mínimo de 6 caracteres
+            </mat-error>
+            <mat-error *ngIf="form.get('password')?.hasError('pattern')">
+              A senha deve conter pelo menos uma letra maiúscula, uma minúscula
+              e um número
+            </mat-error>
+          </mat-form-field>
+
+          <!-- Confirmar Senha -->
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>Confirmar Senha</mat-label>
+            <input
+              matInput
+              [type]="hideConfirmPassword ? 'password' : 'text'"
+              formControlName="confirmPassword"
+              autocomplete="new-password"
+            />
+            <button
+              mat-icon-button
+              matSuffix
+              type="button"
+              (click)="hideConfirmPassword = !hideConfirmPassword"
+            >
+              <mat-icon>{{
+                hideConfirmPassword ? "visibility_off" : "visibility"
+              }}</mat-icon>
+            </button>
+            <mat-error
+              *ngIf="form.get('confirmPassword')?.hasError('required')"
+            >
+              Confirmação de senha é obrigatória
+            </mat-error>
+            <mat-error
+              *ngIf="
+                form.hasError('passwordsMismatch') &&
+                form.get('confirmPassword')?.touched
+              "
+            >
+              As senhas não coincidem
+            </mat-error>
+          </mat-form-field>
+        </div>
+      </div>
+
+      <mat-divider></mat-divider>
+
+      <!-- Permissões Section -->
+      <div class="permissions-section">
+        <div class="section-header">
+          <i class="fa-solid fa-tag"></i>
+          <h3>Permissões</h3>
+        </div>
+
+        <div class="roles-container">
+          <!-- Usando mat-chip-list do Angular 14 -->
+          <mat-chip-list class="roles-chip-list">
+            <mat-chip
+              *ngFor="let role of availableRoles"
+              [selected]="isRoleSelected(role)"
+              (click)="toggleRole(role)"
+              [selectable]="true"
+            >
+              {{ role.replace("ROLE_", "") | titlecase }}
+            </mat-chip>
+          </mat-chip-list>
+          <mat-error
+            *ngIf="
+              form.get('roles')?.hasError('required') &&
+              form.get('roles')?.touched
+            "
+          >
+            Selecione pelo menos uma permissão
+          </mat-error>
+        </div>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="action-buttons">
+        <button
+          mat-button
+          class="btn-cancel"
+          (click)="onCancel()"
+          type="button"
+        >
+          <i class="fa-solid fa-eraser"></i>
+          Limpar
+        </button>
+
+        <button
+          mat-raised-button
+          class="btn-save"
+          [disabled]="form.invalid || isLoading"
+          type="submit"
+        >
+          <i
+            class="fa-solid"
+            [class.fa-spinner]="isLoading"
+            [class.fa-save]="!isLoading"
+          ></i>
+          {{ isLoading ? "Criando..." : "Criar Usuário" }}
+        </button>
+      </div>
+    </form>
+  </mat-card>
+</div>

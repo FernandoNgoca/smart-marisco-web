@@ -1,0 +1,83 @@
+<div class="toolbar">
+  <mat-form-field appearance="outline" class="filter-field">
+    <mat-label>Pesquisar</mat-label>
+    <input
+      matInput
+      (keyup)="applyFilter($event)"
+      placeholder="Ex: Nome, Categoria..."
+    />
+    <button mat-icon-button matSuffix aria-label="Pesquisar">
+      <i class="fa-solid fa-magnifying-glass"></i>
+    </button>
+  </mat-form-field>
+
+  <button mat-raised-button class="btn-add" >
+    <i class="fa-solid fa-plus"></i>
+    Adicionar
+  </button>
+</div>
+
+<div class="mat-elevation-z4">
+  <mat-table [dataSource]="dataSource" matSort>
+
+    <ng-container matColumnDef="userName">
+      <mat-header-cell *matHeaderCellDef mat-sort-header
+        >Usuário</mat-header-cell
+      >
+      <mat-cell *matCellDef="let user">{{ user.userName }}</mat-cell>
+    </ng-container>
+
+    <ng-container matColumnDef="fullName">
+      <mat-header-cell *matHeaderCellDef mat-sort-header>Nome completo</mat-header-cell>
+      <mat-cell *matCellDef="let user">{{ user.fullName }}</mat-cell>
+    </ng-container>
+
+    <ng-container matColumnDef="action">
+      <mat-header-cell *matHeaderCellDef>Ação</mat-header-cell>
+      <mat-cell *matCellDef="let user">
+        <button
+          mat-icon-button
+          color="primary"
+          aria-label="Editar Produto"
+        >
+          <i class="fa-solid fa-user-pen"></i>
+        </button>
+        <button
+          mat-icon-button
+          color=""
+          matTooltip="Visualizar Produto"
+          aria-label="Visualizar Produto"
+        >
+          <i class="fa-solid fa-eye"></i>
+        </button>
+        <button
+          mat-icon-button
+          color="warn"
+          matTooltip="Desativar Produto"
+          aria-label="Desativar Produto"
+        >
+          <i class="fa-solid fa-trash-can"></i>
+        </button>
+      </mat-cell>
+    </ng-container>
+
+    <mat-header-row *matHeaderRowDef="displayedColumns"></mat-header-row>
+    <mat-row *matRowDef="let row; columns: displayedColumns"></mat-row>
+
+    <tr class="mat-row" *matNoDataRow>
+      <td class="mat-cell" colspan="5">
+        Não há dados para o filtro "{{ filterValue }}"
+      </td>
+    </tr>
+  </mat-table>
+
+  <mat-paginator
+    [length]="totalElements"
+    [pageSize]="pageSize"
+    [pageIndex]="pageIndex"
+    [pageSizeOptions]="[5, 10, 20]"
+    showFirstLastButtons
+  >
+  </mat-paginator>
+</div>
+
