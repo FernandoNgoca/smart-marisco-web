@@ -23,6 +23,7 @@ const routes: Routes = [
       {
         path: 'allUser',
         component: AllUsersComponent,
+        data: { roles: ['ROLE_ADMIN'] }
       },
       {
         path: 'addUser',
