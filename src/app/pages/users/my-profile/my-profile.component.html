@@ -1,1 +1,161 @@
-<p>my-profile works!</p>
+<div class="profile-container">
+  <!-- Card principal -->
+  <mat-card class="profile-card">
+    <!-- Avatar Section -->
+    <div class="avatar-section">
+      <div class="avatar-wrapper">
+        <img class="avatar" [src]="getImage()" alt="Foto do usuário" />
+      </div>
+      <div class="avatar-buttons">
+        <input
+          type="file"
+          #fileInput
+          (change)="onFileSelected($event)"
+          accept="image/*"
+          style="display: none"
+        />
+        <button mat-stroked-button (click)="fileInput.click()">
+          <i class="fa-solid fa-upload"></i>
+          Selecionar
+        </button>
+        <button
+          mat-raised-button
+          class="btn-save"
+          (click)="updateImage()"
+          [disabled]="!imagePreview"
+        >
+          <i class="fa-solid fa-save"></i>
+          Salvar Imagem
+        </button>
+      </div>
+    </div>
+
+    <!-- User Info -->
+    <div class="user-info">
+      <div class="info-item">
+        <i class="fa-solid fa-user"></i>
+        <strong>Usuário:</strong> {{ auth.getUser()?.userName }}
+      </div>
+      <div class="info-item">
+        <i class="fa-solid fa-user-tag"></i>
+        <strong>Nome Completo:</strong> {{ auth.getUser()?.fullName }}
+      </div>
+    </div>
+
+    <mat-divider></mat-divider>
+    <br />
+
+    <!-- Alterar Senha Section -->
+    <div class="password-section">
+      <div class="section-header">
+        <i class="fa-solid fa-key"></i>
+        <h3>Alterar Senha</h3>
+      </div>
+
+      <form class="password-form" [formGroup]="form" autocomplete="on">
+        <input
+          type="text"
+          name="username"
+          [value]="auth.getUser()?.userName"
+          autocomplete="username"
+          hidden
+        />
+        <!-- Senha Atual -->
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Senha Atual</mat-label>
+          <input
+            matInput
+            [type]="hideOld ? 'password' : 'text'"
+            formControlName="oldPassword"
+            autocomplete="current-password"
+          />
+          <button
+            mat-icon-button
+            matSuffix
+            type="button"
+            (click)="hideOld = !hideOld"
+          >
+            <mat-icon>{{ hideOld ? "visibility_off" : "visibility" }}</mat-icon>
+          </button>
+          <mat-error *ngIf="form.get('oldPassword')?.hasError('required')">
+            Senha atual é obrigatória
+          </mat-error>
+          <mat-error *ngIf="form.hasError('samePassword')">
+            A nova senha não pode ser igual à senha atual
+          </mat-error>
+        </mat-form-field>
+
+        <!-- Nova Senha -->
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Nova Senha</mat-label>
+          <input
+            matInput
+            [type]="hideNew ? 'password' : 'text'"
+            formControlName="newPassword"
+            autocomplete="new-password"
+          />
+          <button
+            mat-icon-button
+            matSuffix
+            type="button"
+            (click)="hideNew = !hideNew"
+          >
+            <mat-icon>{{ hideNew ? "visibility_off" : "visibility" }}</mat-icon>
+          </button>
+          <mat-error *ngIf="form.get('newPassword')?.hasError('required')">
+            Nova senha é obrigatória
+          </mat-error>
+          <mat-error *ngIf="form.get('newPassword')?.hasError('minlength')">
+            Mínimo 6 caracteres
+          </mat-error>
+        </mat-form-field>
+
+        <!-- Confirmar Senha -->
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Confirmar Nova Senha</mat-label>
+          <input
+            matInput
+            [type]="hideConfirm ? 'password' : 'text'"
+            formControlName="confirmPassword"
+            autocomplete="new-password"
+          />
+          <button
+            mat-icon-button
+            matSuffix
+            type="button"
+            (click)="hideConfirm = !hideConfirm"
+          >
+            <mat-icon>{{
+              hideConfirm ? "visibility_off" : "visibility"
+            }}</mat-icon>
+          </button>
+          <mat-error *ngIf="form.get('confirmPassword')?.hasError('required')">
+            Confirmação é obrigatória
+          </mat-error>
+          <mat-error
+            *ngIf="
+              form.hasError('passwordsMismatch') &&
+              form.get('confirmPassword')?.touched
+            "
+          >
+            As senhas não coincidem
+          </mat-error>
+        </mat-form-field>
+
+        <button
+          mat-raised-button
+          class="btn-save btn-block"
+          [disabled]="form.invalid || isLoading"
+          (click)="changePassword()"
+        >
+          <i
+            class="fa-solid"
+            [class.fa-spinner]="isLoading"
+            [class.fa-save]="!isLoading"
+          ></i>
+          {{ isLoading ? "Salvando..." : "Salvar" }}
+        </button>
+      </form>
+    </div>
+  </mat-card>
+</div>

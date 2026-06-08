@@ -1,15 +1,168 @@
 import { Component, OnInit } from '@angular/core';
+import { FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { AuthService } from '@app/services/auth.service';
+import { SnackbarService } from '@app/services/snackbar.service';
+import { ChangePasswordDTO, User } from '@app/shared/models/user';
+import imageCompression from 'browser-image-compression';
 
 @Component({
   selector: 'app-my-profile',
   templateUrl: './my-profile.component.html',
-  styleUrls: [ './my-profile.component.scss' ]
+  styleUrls: ['./my-profile.component.scss']
 })
 export class MyProfileComponent implements OnInit {
 
-  constructor() { }
+  form!: FormGroup;
+  isLoading = false;
+
+  // Exibir usuário
+  userName: string = '';
+  userImage: string = '';
+  defaultAvatar = 'assets/perfil.png';
+  hideOld = true;
+  hideNew = true;
+  hideConfirm = true;
+  user: User | null = null;
+  selectedFile: File | null = null;
+  imagePreview: string | ArrayBuffer | null = null;
+  imageBase64: string | null = null;
+
+  constructor(
+    private fb: FormBuilder,
+    public auth: AuthService,
+    private snackbar: SnackbarService
+  ) {
+    this.form = this.fb.group({
+      oldPassword: ['', [Validators.required]],
+      newPassword: ['', [Validators.required, Validators.minLength(6)]],
+      confirmPassword: ['', [Validators.required]]
+    }, { validators: this.passwordMatchValidator });
+  }
 
   ngOnInit(): void {
+    const user = this.auth.getUser();
+    if (user) {
+      this.userName = user.fullName;
+      this.userImage = user.image || 'assets/images/default-avatar.png';
+    }
+  }
+
+  // Valida se a nova senha e confirmação coincidem
+  private passwordMatchValidator(group: FormGroup) {
+    const newPassword = group.get('newPassword')?.value;
+    const confirmPassword = group.get('confirmPassword')?.value;
+    return newPassword === confirmPassword ? null : { passwordsMismatch: true };
+  }
+
+  // Envia a alteração de senha
+  changePassword() {
+    if (this.form.hasError('samePassword')) {
+      this.snackbar.error('A nova senha não pode ser igual à atual');
+      return;
+    }
+    if (this.form.invalid) {
+      this.form.markAllAsTouched();
+      return;
+    }
+
+    const user = this.auth.getUser();
+    if (!user?.userName) {
+      this.snackbar.error('Utilizador não encontrado');
+      return;
+    }
+
+    const dto: ChangePasswordDTO = {
+      username: user.userName,
+      oldPassword: this.form.value.oldPassword,
+      newPassword: this.form.value.newPassword
+    };
+
+    this.isLoading = true;
+
+    this.auth.changePassword(dto).subscribe({
+      next: (res: any) => {
+        this.isLoading = false;
+        this.snackbar.success(res?.message || 'Senha alterada com sucesso!');
+        this.form.reset();
+      },
+      error: (err) => {
+        this.isLoading = false;
+
+        const message =
+          err?.error?.message ||
+          err?.error ||
+          'Erro ao alterar a senha';
+
+        this.snackbar.error(message);
+      }
+    });
+  }
+
+  async onFileSelected(event: any) {
+    const file: File = event.target.files[0];
+    if (!file) return;
+
+    try {
+      // Opções de compressão
+      const options = {
+        maxSizeMB: 0.3,
+        maxWidthOrHeight: 800,
+        useWebWorker: true
+      };
+
+      // comprime a imagem
+      const compressedFile = await imageCompression(file, options);
+
+      this.selectedFile = compressedFile;
+
+      const reader = new FileReader();
+
+      reader.onload = () => {
+        this.imagePreview = reader.result;           // preview
+        this.imageBase64 = reader.result as string;  // base64 leve
+      };
+
+      reader.readAsDataURL(compressedFile);
+
+    } catch (error) {
+      console.error('Erro ao comprimir imagem:', error);
+    }
+  }
+
+  getImage(): string | ArrayBuffer {
+
+    const userImage = this.auth.getUser()?.image;
+    if (this.imagePreview != null) {
+      return this.imagePreview
+    }
+    // Se userImage existir e não for vazio, retorna, senão retorna imagem padrão
+    return userImage && userImage.trim() !== '' ? userImage : this.defaultAvatar;
+  }
+  updateImage() {
+    if (this.imagePreview != null) {
+
+      const dto: User = {
+        userName: this.auth.getUser()?.userName || '',
+        fullName: this.auth.getUser()?.fullName || '',
+        image: this.imageBase64 || '',
+        roles: this.auth.getUser()?.roles || []
+      };
+      this.auth.updateImage(dto).subscribe({
+        next: (result) => {
+          this.auth.getUser()!.image = result.image; // Atualiza a imagem do usuário no AuthService
+          this.snackbar.success('Sucesso')
+
+          this.imagePreview = null;
+
+        },
+        error: (error) => {
+          this.snackbar.error('Erro ao salvar imagem');
+        }
+      });
+
+    } else {
+      this.snackbar.error("Nao foi carregada nenhuma imagem");
+    }
   }
 
 }

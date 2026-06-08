@@ -2,8 +2,8 @@ import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
 import { UsersComponent } from './users.component';
 import { MyProfileComponent } from './my-profile/my-profile.component';
-import { MyConquestsComponent } from './my-conquests/my-conquests.component';
-import { MyDisciplinesComponent } from './my-disciplines/my-disciplines.component';
+import { AllUsersComponent } from './my-conquests/all-users';
+import { AddUserComponent } from './add-user/add-user.component';
 
 const routes: Routes = [
   {
@@ -21,12 +21,13 @@ const routes: Routes = [
         component: MyProfileComponent,
       },
       {
-        path: 'myConquests',
-        component: MyConquestsComponent,
+        path: 'allUser',
+        component: AllUsersComponent,
       },
       {
-        path: 'myDisciplines',
-        component: MyDisciplinesComponent,
+        path: 'addUser',
+        component: AddUserComponent,
+        data: { roles: ['ROLE_ADMIN'] }
       }
     ]
   }

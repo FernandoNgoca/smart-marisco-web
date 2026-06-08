@@ -5,17 +5,25 @@
     </button>
   </app-toolbar-title>
   <nav mat-tab-nav-bar ngClass="tabs">
-    <a mat-tab-link routerLink="/users/myProfile" routerLinkActive="active-link">
+    <a
+      mat-tab-link
+      routerLink="/users/myProfile"
+      routerLinkActive="active-link"
+    >
       <mat-icon>person</mat-icon>
       Profile
     </a>
-    <a mat-tab-link routerLink="/users/myDisciplines" routerLinkActive="active-link">
-      <mat-icon>play_lesson</mat-icon>
-      Disciplines
+    <a mat-tab-link routerLink="/users/addUser" routerLinkActive="active-link">
+      <mat-icon>person_add</mat-icon>
+      Adicionar Usuário
     </a>
-    <a mat-tab-link routerLink="/users/myConquests" routerLinkActive="active-link">
-      <mat-icon>workspace_premium</mat-icon>
-      Conquests
+    <a
+      mat-tab-link
+      routerLink="/users/allUser"
+      routerLinkActive="active-link"
+    >
+      <mat-icon>people</mat-icon>
+      Usuários
     </a>
   </nav>
   <div class="container">

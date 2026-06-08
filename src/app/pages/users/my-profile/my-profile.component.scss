@@ -1,0 +1,189 @@
+.profile-container {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 24px;
+
+  @media (max-width: 768px) {
+    padding: 16px;
+  }
+}
+
+.profile-card {
+  border-radius: 16px;
+  padding: 32px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+
+  @media (max-width: 768px) {
+    padding: 20px;
+  }
+}
+
+// Avatar Section
+.avatar-section {
+  text-align: center;
+  margin-bottom: 32px;
+
+  .avatar-wrapper {
+    margin-bottom: 16px;
+
+    .avatar {
+      width: 150px;
+      height: 150px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 3px solid #D32F2F;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    }
+  }
+
+  .avatar-buttons {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    flex-wrap: wrap;
+
+    button {
+      min-width: 120px;
+    }
+  }
+}
+
+// User Info
+.user-info {
+  display: flex;
+  justify-content: center;
+  gap: 32px;
+  padding: 20px;
+  background: #f8f9fa;
+  border-radius: 12px;
+  margin-bottom: 32px;
+  flex-wrap: wrap;
+
+  .info-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    color: #333;
+
+    i {
+      color: #D32F2F;
+      font-size: 16px;
+    }
+
+    strong {
+      color: #666;
+    }
+  }
+
+  @media (max-width: 600px) {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+}
+
+// Password Section
+.password-section {
+  margin-top: 24px;
+
+  .section-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 24px;
+    padding-bottom: 12px;
+    border-bottom: 2px solid #f0f0f0;
+
+    i {
+      font-size: 22px;
+      color: #D32F2F;
+    }
+
+    h3 {
+      margin: 0;
+      font-size: 18px;
+      font-weight: 600;
+      color: #333;
+    }
+  }
+
+  .password-form {
+    .full-width {
+      width: 100%;
+      margin-bottom: 20px;
+    }
+  }
+}
+
+// Buttons
+.btn-save {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: #D32F2F;
+  color: #FFFFFF;
+  padding: 0 24px;
+  height: 42px;
+  font-size: 14px;
+  font-weight: 500;
+  text-transform: none;
+  letter-spacing: 0;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+
+  &:hover:not(:disabled) {
+    background-color: #B71C1C;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(211, 47, 47, 0.3);
+  }
+
+  &:active:not(:disabled) {
+    transform: translateY(0);
+  }
+
+  &:disabled {
+    background: #FECACA;
+    color: #991B1B;
+    cursor: not-allowed;
+    opacity: 0.6;
+  }
+
+  i {
+    font-size: 14px;
+  }
+}
+
+.btn-block {
+  width: 100%;
+}
+
+// Material overrides
+::ng-deep {
+  .mat-form-field-appearance-outline .mat-form-field-outline {
+    color: #ddd;
+  }
+
+  .mat-form-field-appearance-outline.mat-focused .mat-form-field-outline-thick {
+    color: #D32F2F;
+  }
+
+  .mat-form-field.mat-focused .mat-form-field-label {
+    color: #D32F2F;
+  }
+
+  .mat-form-field-appearance-outline.mat-form-field-invalid.mat-focused .mat-form-field-outline-thick {
+    color: #f44336;
+  }
+}
+
+// Loading animation
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.fa-spinner {
+  animation: spin 1s linear infinite;
+}
