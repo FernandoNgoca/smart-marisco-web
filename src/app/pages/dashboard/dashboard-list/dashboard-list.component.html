@@ -1,0 +1,142 @@
+<div class="counters-grid">
+  <div
+    class="counter-card blue"
+    matTooltip="Quantidade total de vendas realizadas hoje no sistema"
+    matTooltipPosition="above"
+    matTooltipClass="tooltip-custom"
+  >
+    <div class="card-header red">
+      <span class="card-title">
+        Total de Vendas Hoje
+        <i
+          class="fa-solid fa-circle-info info-icon"
+          matTooltip="Número total de vendas registadas hoje"
+          matTooltipPosition="above"
+          matTooltipClass="tooltip-custom"
+        ></i>
+      </span>
+      <i class="fa-solid fa-calendar-day"></i>
+    </div>
+
+    <div class="card-value">{{ this.totalVendasHoje }}</div>
+  </div>
+
+  <div
+    class="counter-card red"
+    matTooltip="Quantidade total de vendas realizadas no mês corrente"
+    matTooltipPosition="above"
+    matTooltipClass="tooltip-custom"
+  >
+    <div class="card-header">
+      <span class="card-title">
+        Total de Vendas do Mês
+        <i
+          class="fa-solid fa-circle-info info-icon"
+          matTooltip="Número total de vendas registadas no mês corrente"
+          matTooltipPosition="above"
+          matTooltipClass="tooltip-custom"
+        ></i>
+      </span>
+      <i class="fa-solid fa-calendar-days"></i>
+    </div>
+
+    <div class="card-value">{{ this.totalVendasMes }}</div>
+  </div>
+
+  <div
+    class="counter-card green"
+    matTooltip="Quantidade total de clientes cadastrados no sistema"
+    matTooltipPosition="above"
+    matTooltipClass="tooltip-custom"
+  >
+    <div class="card-header">
+      <span class="card-title">
+        Total de Clientes Cadastrados
+        <i
+          class="fa-solid fa-circle-info info-icon"
+          matTooltip="Número total de clientes registados no sistema"
+          matTooltipPosition="above"
+          matTooltipClass="tooltip-custom"
+        ></i>
+      </span>
+      <i class="fa-solid fa-users"></i>
+    </div>
+
+    <div class="card-value">{{ this.totalClientes }}</div>
+  </div>
+
+  <div
+    class="counter-card teal"
+    matTooltip="Quantidade total de produtos disponíveis em estoque"
+    matTooltipPosition="above"
+    matTooltipClass="tooltip-custom"
+  >
+    <div class="card-header">
+      <span class="card-title">
+        Total de Produtos em Estoque
+        <i
+          class="fa-solid fa-circle-info info-icon"
+          matTooltip="Número total de produtos atualmente disponíveis em estoque"
+          matTooltipPosition="above"
+          matTooltipClass="tooltip-custom"
+        ></i>
+      </span>
+      <i class="fa-solid fa-boxes-stacked"></i>
+    </div>
+
+    <div class="card-value">{{ this.totalProdutos }}</div>
+  </div>
+  <div
+    class="counter-card teal"
+    matTooltip="Quantidade total de produtos disponíveis em estoque"
+    matTooltipPosition="above"
+    matTooltipClass="tooltip-custom"
+  >
+    <div class="card-header">
+      <span class="card-title">
+        Total de Pedidos em Aberto
+        <i
+          class="fa-solid fa-circle-info info-icon"
+          matTooltip="Número total de pedidos atualmente em aberto"
+          matTooltipPosition="above"
+          matTooltipClass="tooltip-custom"
+        ></i>
+      </span>
+      <i class="fa-solid fa-inbox"></i>
+    </div>
+
+    <div class="card-value">10</div>
+  </div>
+</div>
+<div class="dashboard-row">
+  <div class="chart-container">
+    <h3 class="chart-title">Vendas da Semana</h3>
+    <ngx-charts-bar-vertical
+      [results]="salesByDay"
+      [xAxis]="true"
+      [yAxis]="true"
+      [showDataLabel]="true"
+      [view]="[320, 250]"
+    >
+      >
+    </ngx-charts-bar-vertical>
+  </div>
+
+  <div class="top-products-card">
+    <div class="header">
+      <h3 class="chart-title">Top Produtos</h3>
+    </div>
+
+    <div class="product-item" *ngFor="let p of topProducts">
+      <img [src]="getImage(p.image)" class="avatar" alt="Imagem do Produto" />
+
+      <div class="name">{{ p.name }}</div>
+
+      <div class="qty">{{ p.quantity }} vendidos</div>
+
+      <div class="total">{{ p.totalValue | currency: "MZN " }}</div>
+
+      <button class="btn-action">Ver</button>
+    </div>
+  </div>
+</div>
