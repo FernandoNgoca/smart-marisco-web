@@ -1,0 +1,110 @@
+<div class="toolbar">
+  <mat-form-field appearance="outline" class="filter-field">
+    <mat-label>Pesquisar</mat-label>
+    <input
+      matInput
+      (keyup)="applyFilter($event)"
+      placeholder="Ex: Nome, Apelido..."
+    />
+    <button mat-icon-button matSuffix>
+      <i class="fa-solid fa-magnifying-glass"></i>
+    </button>
+  </mat-form-field>
+
+  <button mat-raised-button class="btn-add" (click)="abrirDialog()">
+    <i class="fa-solid fa-user-plus"></i>
+    Adicionar
+  </button>
+</div>
+
+<div class="mat-elevation-z4">
+  <mat-table [dataSource]="dataSource" matSort>
+    <!-- firstName -->
+    <ng-container matColumnDef="firstName">
+      <mat-header-cell *matHeaderCellDef mat-sort-header>Nome</mat-header-cell>
+      <mat-cell *matCellDef="let client">{{ client.firstName }}</mat-cell>
+    </ng-container>
+
+    <!-- lastName -->
+    <ng-container matColumnDef="lastName">
+      <mat-header-cell *matHeaderCellDef mat-sort-header>
+        Apelido
+      </mat-header-cell>
+
+      <mat-cell *matCellDef="let client">
+        {{ client.lastName ? client.lastName : "Não aplicável" }}
+      </mat-cell>
+    </ng-container>
+
+    <!-- email -->
+    <ng-container matColumnDef="email">
+      <mat-header-cell *matHeaderCellDef mat-sort-header>Email</mat-header-cell>
+      <mat-cell *matCellDef="let client">{{ client.email }}</mat-cell>
+    </ng-container>
+
+    <!-- phoneNumber -->
+    <ng-container matColumnDef="phoneNumber">
+      <mat-header-cell *matHeaderCellDef mat-sort-header
+        >Telefone</mat-header-cell
+      >
+      <mat-cell *matCellDef="let client">{{
+        formatPhoneNumber(client.phoneNumber)
+      }}</mat-cell>
+    </ng-container>
+
+    <ng-container matColumnDef="address">
+      <mat-header-cell *matHeaderCellDef mat-sort-header
+        >Endereço</mat-header-cell
+      >
+      <mat-cell *matCellDef="let client">{{ client.address }}</mat-cell>
+    </ng-container>
+
+    <!-- type -->
+    <ng-container matColumnDef="type">
+      <mat-header-cell *matHeaderCellDef mat-sort-header>Tipo</mat-header-cell>
+      <mat-cell *matCellDef="let client">{{
+        getClientTypeLabel(client.type)
+      }}</mat-cell>
+    </ng-container>
+
+    <ng-container matColumnDef="action">
+      <mat-header-cell *matHeaderCellDef mat-sort-header>Ação</mat-header-cell>
+      <mat-cell *matCellDef="let client">
+        <!-- Ícone de editar -->
+        <button mat-icon-button color="primary" (click)="editarCliente(client)">
+          <i class="fa-solid fa-user-pen"></i>
+        </button>
+
+        <!-- Ícone de deletar -->
+        <button
+          mat-icon-button
+          color="warn"
+          (click)="desativarCliente(client)"
+          matTooltip="Desativar cliente"
+        >
+          <i class="fa-solid fa-trash-can"></i>
+        </button>
+      </mat-cell>
+    </ng-container>
+
+    <!-- Header / Rows -->
+    <mat-header-row *matHeaderRowDef="displayedColumns"></mat-header-row>
+    <mat-row *matRowDef="let client; columns: displayedColumns"></mat-row>
+
+    <!-- Sem dados -->
+    <tr class="mat-row" *matNoDataRow>
+      <td class="mat-cell" colspan="5">
+        Não há dados para o filtro "{{ filterValue }}"
+      </td>
+    </tr>
+  </mat-table>
+
+  <mat-paginator
+    [length]="totalElements"
+    [pageSize]="pageSize"
+    [pageIndex]="pageIndex"
+    [pageSizeOptions]="[5, 10, 20]"
+    showFirstLastButtons
+  >
+  </mat-paginator>
+</div>

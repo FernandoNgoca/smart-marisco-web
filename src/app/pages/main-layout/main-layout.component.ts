@@ -27,7 +27,7 @@ export class MainLayoutComponent implements OnInit {
   public userName: string = 'Usuário';
   userRole: string = 'Permissao';
   defaultAvatar = '';
-  image: string ='';
+  image: string = '';
 
   constructor(private authService: AuthService) {
     this.breakpointObserver = inject(BreakpointObserver);
@@ -37,16 +37,25 @@ export class MainLayoutComponent implements OnInit {
   ngOnInit(): void {
 
     const user = this.authService.getUser();
+
     this.userName = user?.fullName || 'Usuário';
     this.image = user?.image || 'assets/perfil.png';
 
-    if (user?.roles[0] == 'ROLE_ADMIN') {
-      this.userRole = 'Administrador'
-    } else if (user?.roles[0] == 'ROLE_USER') {
-      this.userRole = 'Usuário'
+    const userRoles = user?.roles || [];
+
+    this.items_menu = menuItems.filter(item =>
+      !item.roles ||
+      item.roles.some(role => userRoles.includes(role))
+    );
+
+    if (userRoles.includes('ROLE_ADMIN')) {
+      this.userRole = 'Administrador';
+    } else if (userRoles.includes('ROLE_MANAGER')) {
+      this.userRole = 'Gerente';
     } else {
-      this.userRole = 'Gerente'
+      this.userRole = 'Usuário';
     }
+
     const content = document.getElementsByClassName(SCROLL_CONTAINER)[0];
 
     if (content) {

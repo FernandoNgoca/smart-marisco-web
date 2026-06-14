@@ -133,7 +133,7 @@ export class AddUserComponent implements OnInit {
     this.userService.createUser(userData).subscribe({
       next: (result) => {
         this.isLoading = false;
-        this.snackbar.success(`Usuário ${result.userName} criado com sucesso!`);
+        this.snackbar.success(`Usuário ${this.form.value.userName} criado com sucesso!`);
         this.resetForm();
         this.router.navigate(['/users/allUser']);
       },
