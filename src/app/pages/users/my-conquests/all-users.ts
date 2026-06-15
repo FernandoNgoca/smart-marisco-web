@@ -1,6 +1,8 @@
 import { AfterViewInit, Component, OnInit, ViewChild } from '@angular/core';
 import { MatPaginator } from '@angular/material/paginator';
 import { MatSort } from '@angular/material/sort';
+import { Router } from '@angular/router';
+import { AuthService } from '@app/services/auth.service';
 import { SnackbarService } from '@app/services/snackbar.service';
 import { UserService } from '@app/services/user.service';
 import { User } from '@app/shared/models/user';
@@ -25,10 +27,16 @@ export class AllUsersComponent implements OnInit, AfterViewInit {
 
   constructor(
     private snackbar: SnackbarService,
-    private userService: UserService
+    private userService: UserService,
+    private auth: AuthService,
+    private router: Router
   ) { }
 
   ngOnInit(): void {
+    if (!this.hasAdminPermission()) {
+      this.snackbar.error('Você não tem permissão para criar usuários');
+      this.router.navigate(['/dashboard']);
+    }
     this.loadUsers();
   }
 
@@ -78,6 +86,12 @@ export class AllUsersComponent implements OnInit, AfterViewInit {
     this.pageIndex = 0;
 
     this.loadUsers();
+  }
+
+  // Verificar permissão de admin
+  private hasAdminPermission(): boolean {
+    const user = this.auth.getUser();
+    return user?.roles?.includes('ROLE_ADMIN') || false;
   }
 
 }

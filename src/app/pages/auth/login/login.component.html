@@ -1,23 +1,23 @@
 <div class="login-container">
   <div class="login-card">
     <div class="header">
-      <img src="assets/login.png" alt="Logo" class="logo" />
-      <h2>Ngalito's Print</h2>
+      <img src="assets/log.png" alt="Logo" class="logo" />
+      <h2>Mariscos do Índico</h2>
       <p>Faça login para continuar</p>
     </div>
 
     <form [formGroup]="form" (ngSubmit)="login()">
       <div class="input-group">
-        <label>Seu username</label>
+        <label>Seu usuário</label>
         <input
           type="text"
           formControlName="username"
-          placeholder="Digite seu username"
+          placeholder="Digite seu usuário"
           autocomplete="username"
           [class.invalid]="form.get('username')?.invalid && form.get('username')?.touched"
         />
         <small *ngIf="form.get('username')?.invalid && form.get('username')?.touched">
-          Username é obrigatório
+          Usuário é obrigatório
         </small>
       </div>
 

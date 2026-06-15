@@ -1,0 +1,142 @@
+.toolbar {
+  display: flex;
+  align-items: stretch;
+  /* faz os filhos terem a mesma altura */
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.toolbar mat-form-field {
+  width: 300px;
+  /* ajusta como quiseres */
+}
+
+.btn-add {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 56px;
+  padding: 0 24px;
+  background: linear-gradient(135deg, #0F3A68 0%, #1E5F9B 100%);
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 500;
+  text-transform: none;
+  letter-spacing: 0;
+  border-radius: 4px;
+  border: none;
+  box-shadow: 0 2px 4px rgba(15, 58, 104, 0.25);
+  transition: all 0.2s ease;
+
+  &:hover {
+    background: linear-gradient(135deg, #0B2E52 0%, #174B7D 100%);
+    box-shadow: 0 4px 8px rgba(15, 58, 104, 0.35);
+    transform: translateY(-1px);
+  }
+
+  &:active {
+    background: linear-gradient(135deg, #08213B 0%, #12395F 100%);
+    box-shadow: 0 1px 2px rgba(15, 58, 104, 0.25);
+    transform: translateY(0);
+  }
+
+  &:disabled {
+    background: #D6E4F0;
+    color: #6B7280;
+    box-shadow: none;
+    cursor: not-allowed;
+    opacity: 0.7;
+  }
+
+  i {
+    font-size: 18px;
+    line-height: 1;
+  }
+}
+
+.mat-column-email,
+.mat-column-phoneNumber {
+  word-break: break-word;
+}
+
+.mat-table {
+  width: 100%;
+  overflow: auto;
+}
+
+.mat-header-cell,
+.mat-cell {
+  padding: 8px 16px;
+}
+
+// styles.scss ou client-list.component.scss
+
+.success-snackbar {
+  background: #059669 !important;
+  color: white !important;
+
+  button {
+    color: white !important;
+  }
+}
+
+.error-snackbar {
+  background: #dc2626 !important;
+  color: white !important;
+
+  button {
+    color: white !important;
+  }
+}
+
+// Alinhamento geral da tabela
+mat-table {
+  width: 100%;
+}
+
+// Alinhar cabeçalhos e células
+mat-header-cell, mat-cell {
+  padding: 0 16px;
+  box-sizing: border-box;
+}
+
+// Alinhamento específico por coluna
+.mat-column-name {
+  text-align: left;
+}
+
+.mat-column-description {
+  text-align: left;
+}
+
+.mat-column-unitPrice {
+  text-align: left;
+  font-weight: bold;
+}
+
+.mat-column-category {
+  text-align: left;
+}
+
+.mat-column-action {
+  text-align: center;
+  width: 100px;
+}
+
+// Garantir que header e cell tenham o mesmo alinhamento
+mat-header-row, mat-row {
+  min-height: 48px;
+}
+
+
+
+.text-zero {
+  color: #dc2626 !important; /* Vermelho */
+  font-weight: 600;
+}
+
+.text-positive {
+  color: #16a34a !important; /* Verde */
+  font-weight: 600;
+}

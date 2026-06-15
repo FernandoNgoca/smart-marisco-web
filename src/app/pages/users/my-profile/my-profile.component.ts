@@ -150,7 +150,7 @@ export class MyProfileComponent implements OnInit {
       this.auth.updateImage(dto).subscribe({
         next: (result) => {
           this.auth.getUser()!.image = result.image; // Atualiza a imagem do usuário no AuthService
-          this.snackbar.success('Sucesso')
+          this.snackbar.success('Foto de perfil atualizada com sucesso!')
 
           this.imagePreview = null;
 

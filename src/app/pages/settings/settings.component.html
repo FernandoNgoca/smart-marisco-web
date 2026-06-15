@@ -1,0 +1,24 @@
+<div class="content mat-elevation-z4">
+  <app-toolbar-title title="Configurações" icon="fa-solid fa-gear">
+    <button mat-icon-button>
+      <mat-icon>share</mat-icon>
+    </button>
+  </app-toolbar-title>
+  <nav mat-tab-nav-bar ngClass="tabs">
+    <a mat-tab-link routerLink="/settings/category" routerLinkActive="active-link">
+      <mat-icon>category</mat-icon>
+      Categora
+    </a>
+    <a mat-tab-link routerLink="/settings/species" routerLinkActive="active-link">
+      <mat-icon>bug_report</mat-icon>
+      Espécie
+    </a>
+    <a mat-tab-link routerLink="/settings/unit" routerLinkActive="active-link">
+      <mat-icon>scale</mat-icon>
+      Unidades de medida
+    </a>
+  </nav>
+  <div class="container">
+    <router-outlet></router-outlet>
+  </div>
+</div>

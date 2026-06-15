@@ -32,12 +32,52 @@ const routes: Routes = [
           import('./pages/support/support.module').then(m => m.SupportModule)
       },
       {
+        path: 'settings',
+        loadChildren: () => import('./pages/settings/settings.module')
+          .then(m => m.SettingsModule),
+        canActivate: [AuthGuard]
+      },
+      {
+        path: 'product',
+        loadChildren: () => import('./pages/product/product.module')
+          .then(m => m.ProductModule),
+        canActivate: [AuthGuard]
+      },
+      {
+        path: 'client',
+        loadChildren: () => import('./pages/client/client.module')
+          .then(m => m.ClientModule),
+        canActivate: [AuthGuard]
+      },
+      {
+        path: 'stock',
+        loadChildren: () => import('./pages/stock/stock.module')
+          .then(m => m.StockModule),
+        canActivate: [AuthGuard]
+      },
+      {
+        path: 'sales',
+        loadChildren: () => import('./pages/sales/sales.module')
+          .then(m => m.SalesModule),
+        canActivate: [AuthGuard]
+      },
+      {
         path: '',
         redirectTo: 'dashboard',
         pathMatch: 'full'
       }
     ]
   },
+
+  { path: 'pages/settings', loadChildren: () => import('./pages/settings/settings.module').then(m => m.SettingsModule) },
+
+  { path: 'pages/product', loadChildren: () => import('./pages/product/product.module').then(m => m.ProductModule) },
+
+  { path: 'pages/client', loadChildren: () => import('./pages/client/client.module').then(m => m.ClientModule) },
+
+  { path: 'pages/stock', loadChildren: () => import('./pages/stock/stock.module').then(m => m.StockModule) },
+
+  { path: 'pages/sales', loadChildren: () => import('./pages/sales/sales.module').then(m => m.SalesModule) },
 
   {
     path: '**',

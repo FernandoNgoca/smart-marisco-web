@@ -13,6 +13,24 @@ import { MatMenuModule } from '@angular/material/menu';
 import { MatSnackBarModule } from '@angular/material/snack-bar';
 import { RouterModule } from '@angular/router';
 import { CommonModule } from '@angular/common';
+import { AddCategoryComponent } from './dialog/settings/add-category/add-category.component';
+import { MatDialogModule } from '@angular/material/dialog';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatInputModule } from '@angular/material/input';
+import { MatButtonModule } from '@angular/material/button';
+import { ReactiveFormsModule } from '@angular/forms';
+import { AddSpeciesComponent } from './dialog/settings/add-species/add-species.component';
+import { MatSelectModule } from '@angular/material/select';
+import { AddClientComponent } from './dialog/client/add-client/add-client.component';
+import { ConfirmDialogComponent } from './dialog/confirm-dialog.component';
+import { AddProductComponent } from './dialog/product/add-product/add-product.component';
+import { AddUnitComponent } from './dialog/settings/add-unit/add-unit.component';
+import { StockStatusPipe } from './pipes/stock-status.pipe';
+import { AddStockComponent } from './dialog/stock/add-stock/add-stock.component';
+import { StockDialogComponent } from './dialog/stock/stock-dialog/stock-dialog.component';
+import { AddStockMovementComponent } from './dialog/stock/add-stock-movement/add-stock-movement.component';
+import { MatTableModule } from '@angular/material/table';
+import { MovementTypePipe } from './pipes/movement-type.pipe';
 
 @NgModule({
   imports: [
@@ -27,11 +45,29 @@ import { CommonModule } from '@angular/common';
     MatTooltipModule,
     MatMenuModule,
     MatSnackBarModule,
+    MatDialogModule,
+    MatFormFieldModule,
+    MatInputModule,
+    MatButtonModule,
+    ReactiveFormsModule,
+    MatSelectModule,
+    MatTableModule
+    
   ],
   declarations: [
     ToolbarTitleComponent,
     MainLayoutComponent,
-    ToolbarMenuComponent
+    ToolbarMenuComponent,
+    AddCategoryComponent,
+    AddSpeciesComponent,
+    AddClientComponent,
+    ConfirmDialogComponent,
+    AddProductComponent,
+    AddUnitComponent,
+    AddStockComponent,
+    StockDialogComponent,
+    AddStockMovementComponent,
+    MovementTypePipe
   ],
   exports: [
     CommonModule,
