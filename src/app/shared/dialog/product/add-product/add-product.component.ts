@@ -34,6 +34,7 @@ export class AddProductComponent implements OnInit {
   selectedFile: File | null = null;
   imageBase64: string | null = null;
   imagePreview: string | ArrayBuffer | null = null;
+  private isFormPatched = false;
 
   //Getter para saber se é edição
   get isEditMode(): boolean {
@@ -75,22 +76,36 @@ export class AddProductComponent implements OnInit {
   }
 
   ngOnInit(): void {
+    // Carrega categorias e unidades
     this.loadCategorys();
     this.loadUnits();
+
+    // Se for edição, carrega os dados após as listas serem carregadas
+    if (this.isEditMode && this.data?.product) {
+      // Aguarda as listas carregarem
+      setTimeout(() => {
+        const product = this.data.product;
+
+        // Verifica se product existe antes de usar
+        if (product) {
+          // Carrega as espécies da categoria do produto
+          const categoryId = product.species?.categoryId || product.species?.category?.id;
+          if (categoryId) {
+            this.loadSpecies(categoryId);
+          }
+
+          // Preenche o formulário
+          this.patchForm(product);
+        }
+      }, 500);
+    }
 
     this.form.get('categoryId')?.valueChanges.subscribe(categoryId => {
       if (categoryId) {
         this.loadSpecies(categoryId);
-
-        // Limpa a espécie quando a categoria muda
         this.form.get('speciesId')?.reset();
       }
     });
-
-    // Se for edição, preenche o formulário
-    if (this.isEditMode && this.data?.product) {
-      this.patchForm(this.data.product);
-    }
   }
 
   private loadCategorys() {
@@ -157,17 +172,31 @@ export class AddProductComponent implements OnInit {
   }
 
   private patchForm(product: Product): void {
+    // Obtém o categoryId através da espécie
+    const categoryId = product.species?.categoryId || product.species?.category?.id;
 
-    this.form.patchValue({
-      id: product.id,
-      name: product.name,
-      description: product.description,
-      price: product.price,
-      salePrice: product.salePrice,
-      speciesId: product.speciesId,
-      species: product.species,
-      image: product.image
-    });
+    // Garante que os IDs sejam definidos
+    const speciesId = product.speciesId || product.species?.id;
+    const unitId = product.unitId || product.unit?.id;
+
+    this.form.patchValue(
+  {
+    id: product.id,
+    name: product.name,
+    description: product.description,
+    price: product.price,
+    salePrice: product.salePrice,
+    categoryId,
+    speciesId,
+    unitId,
+    species: product.species,
+    unit: product.unit,
+    image: product.image
+  },
+  {
+    emitEvent: false
+  }
+);
 
     if (product.image) {
       this.imagePreview = product.image;

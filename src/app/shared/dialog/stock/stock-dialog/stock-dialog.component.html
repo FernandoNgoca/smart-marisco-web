@@ -144,7 +144,7 @@
 
       <button mat-raised-button class="btn-add" (click)="abrirDialog(stockSelecionado)">
         <i class="fa-solid fa-arrow-right-arrow-left"></i>
-        Registrar Movimentação
+        Adicionar Estoque
       </button>
     </div>
 
@@ -234,6 +234,14 @@
           </td>
         </tr>
       </mat-table>
+      <mat-paginator
+        [length]="totalElements"
+        [pageSize]="pageSize"
+        [pageIndex]="pageIndex"
+        [pageSizeOptions]="[5, 10, 20]"
+        showFirstLastButtons
+      >
+      </mat-paginator>
     </div>
   </mat-dialog-content>
 

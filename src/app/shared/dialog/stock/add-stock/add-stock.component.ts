@@ -44,7 +44,8 @@ export class AddStockComponent implements OnInit {
     this.form = this.fb.group({
       id: [],
       productId: ['', Validators.required],
-      quantity: [null, [Validators.required, Validators.min(1)]],
+      currentQuantity: [{ value: 0, disabled: true }],
+      quantityToAdd: [null, [Validators.required, Validators.min(1)]]
     });
   }
 
@@ -60,14 +61,13 @@ export class AddStockComponent implements OnInit {
 
   private patchForm(stock: Stock): void {
 
-    this.form.patchValue({
-      id: stock.id,
-      product: stock.product,
-      productId: stock.productId,
-      quantity: stock.quantity
-    });
-
-  }
+  this.form.patchValue({
+    id: stock.id,
+    productId: stock.productId,
+    currentQuantity: stock.quantity,
+    quantityToAdd: null
+  });
+}
 
   private loadProducts(): void {
     this.loadingProducts = true;
@@ -124,38 +124,47 @@ export class AddStockComponent implements OnInit {
   }
 
   salvar(): void {
-    if (this.form.valid && !this.isLoading) {
-      this.isLoading = true;
 
-      const formValue = this.form.getRawValue();
+  if (this.form.valid && !this.isLoading) {
 
-      // Monta payload: extrai categoryId do objeto Category selecionado
-      const payload = {
-        id: formValue.id,
-        productId: formValue.productId,
-        quantity: formValue.quantity,
-      };
+    this.isLoading = true;
 
-      const operation = this.isEditMode
-        ? this.stockService.update({ ...payload, id: formValue.id })
-        : this.stockService.create(payload);
+    const formValue = this.form.getRawValue();
 
-      operation.subscribe({
-        next: (stock: Stock) => {
-          this.isLoading = false;
-          this.dialogRef.close(stock);
-          this.snackbar.success(`Estoque ${this.isEditMode ? 'atualizado' : 'criado'} com sucesso!`);
-        },
-        error: (error) => {
-          this.isLoading = false;
-          this.handleError(error);
-          this.snackbar.error('Erro ao salvar estoque.');
-        }
-      });
-    } else {
-      this.form.markAllAsTouched();
-    }
+    const quantity = this.isEditMode
+      ? (formValue.currentQuantity || 0) + (formValue.quantityToAdd || 0)
+      : formValue.quantityToAdd;
+
+    const payload = {
+      id: formValue.id,
+      productId: formValue.productId,
+      quantity: quantity
+    };
+
+    const operation = this.isEditMode
+      ? this.stockService.update(payload)
+      : this.stockService.create(payload);
+
+    operation.subscribe({
+      next: (stock: Stock) => {
+        this.isLoading = false;
+        this.dialogRef.close(stock);
+
+        this.snackbar.success(
+          `Estoque ${this.isEditMode ? 'atualizado' : 'criado'} com sucesso!`
+        );
+      },
+      error: (error) => {
+        this.isLoading = false;
+        this.handleError(error);
+        this.snackbar.error('Erro ao salvar estoque.');
+      }
+    });
+
+  } else {
+    this.form.markAllAsTouched();
   }
+}
 
   cancelar() {
     this.dialogRef.close();

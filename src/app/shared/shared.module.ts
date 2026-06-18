@@ -31,6 +31,7 @@ import { StockDialogComponent } from './dialog/stock/stock-dialog/stock-dialog.c
 import { AddStockMovementComponent } from './dialog/stock/add-stock-movement/add-stock-movement.component';
 import { MatTableModule } from '@angular/material/table';
 import { MovementTypePipe } from './pipes/movement-type.pipe';
+import { MatPaginatorModule } from '@angular/material/paginator';
 
 @NgModule({
   imports: [
@@ -51,8 +52,9 @@ import { MovementTypePipe } from './pipes/movement-type.pipe';
     MatButtonModule,
     ReactiveFormsModule,
     MatSelectModule,
-    MatTableModule
-    
+    MatTableModule,
+    MatPaginatorModule
+
   ],
   declarations: [
     ToolbarTitleComponent,
