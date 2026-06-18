@@ -4,7 +4,8 @@
 
 export const environment = {
   production: false,
-  apiURL: 'http://localhost:8080/smart-marisco-api/'
+  // apiURL: 'http://localhost:8080/smart-marisco-api/'
+  apiURL: 'https://smart-marisco-api-12.onrender.com/'
 };
 
 /*
