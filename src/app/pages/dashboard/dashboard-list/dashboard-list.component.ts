@@ -19,6 +19,9 @@ export class DashboardListComponent implements OnInit {
   totalVendasMes: number = 0;
   totalClientes: number = 0;
   totalProdutos: number = 0;
+  totalOrders: number=0;
+
+  yAxisTicks: number[] = [0, 1];
 
   private weekTemplate = [
     { name: 'SEG', value: 0 },
@@ -65,9 +68,16 @@ export class DashboardListComponent implements OnInit {
         this.totalClientes = count;
       }
     );
+
     this.productService.countProducts().subscribe(
       (count) => {
         this.totalProdutos = count;
+      }
+    );
+
+    this.saleService.countByStatusAndSaleStatus().subscribe(
+      (count) => {
+        this.totalOrders = count;
       }
     );
 
@@ -83,9 +93,17 @@ export class DashboardListComponent implements OnInit {
         });
 
         this.salesByDay = merged;
+
+        const maxSales = Math.max(...merged.map(d => d.value), 1);
+        this.yAxisTicks = [];
+        for (let i = 0; i <= maxSales + 1; i++) {
+          this.yAxisTicks.push(i);
+        }
+
       },
       error: () => {
         this.salesByDay = [...this.weekTemplate];
+        this.yAxisTicks = [0, 1];
       }
     });
     this.saleItemService.getTopProducts().subscribe(data => {
@@ -98,5 +116,9 @@ export class DashboardListComponent implements OnInit {
     return image.startsWith('data:')
       ? image
       : 'data:image/jpeg;base64,' + image;
+  }
+
+  public formatYAxisTicks(val: number):string{
+    return Math.floor(val).toString();
   }
 }

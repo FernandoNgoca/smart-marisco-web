@@ -5,89 +5,41 @@
     [class.fa-user-pen]="isEditMode"
   >
   </i>
-
-  {{ isEditMode ? "Adicionar Estoque" : "Novo Estoque" }}
+  {{ isEditMode ? "Editar Estoque" : "Novo Estoque" }}
 </h2>
 
 <mat-dialog-content [formGroup]="form">
-  <!-- Produto -->
   <div class="row">
     <mat-form-field appearance="fill" class="full">
       <mat-label>Produto</mat-label>
 
-      <mat-select formControlName="productId" [disabled]="isEditMode">
+      <mat-select formControlName="productId" >
         <mat-option *ngFor="let prod of products" [value]="prod.id">
           {{ prod.name }}
-        </mat-option>
-      </mat-select>
+        </mat-option> </mat-select
+      >
 
       <mat-error *ngIf="form.get('productId')?.hasError('required')">
-        Produto é obrigatório
+        Artigo é obrigatório
       </mat-error>
     </mat-form-field>
-  </div>
 
-  <!-- NOVO ESTOQUE -->
-  <div class="row" *ngIf="!isEditMode">
-    <mat-form-field appearance="fill" class="full">
-      <mat-label>Quantidade Inicial</mat-label>
-
+    <mat-form-field appearance="fill">
+      <mat-label>Quantidade a entrar</mat-label>
       <input
         matInput
         type="number"
         formControlName="quantity"
-        placeholder="Ex: 100"
+        placeholder="Ex: 10"
       />
-
       <mat-error *ngIf="form.get('quantity')?.hasError('required')">
-        Quantidade é obrigatória
+        Entrada é obrigatória
       </mat-error>
-
       <mat-error *ngIf="form.get('quantity')?.hasError('min')">
         A quantidade deve ser maior que 0
       </mat-error>
     </mat-form-field>
   </div>
-
-  <!-- EDIÇÃO -->
-  <ng-container *ngIf="isEditMode">
-    <!-- Novo Estoque -->
-    <div class="row">
-      <mat-form-field appearance="fill" class="full">
-        <mat-label>Estoque Atual</mat-label>
-
-        <input
-          matInput
-          [value]="
-            (form.get('currentQuantity')?.value || 0) +
-            (form.get('quantityToAdd')?.value || 0)
-          "
-          readonly
-        />
-      </mat-form-field>
-    </div>
-    <div class="row">
-      <!-- Quantidade a Adicionar -->
-      <mat-form-field appearance="fill">
-        <mat-label>Quantidade a Adicionar</mat-label>
-
-        <input
-          matInput
-          type="number"
-          formControlName="quantityToAdd"
-          placeholder="Ex: 10"
-        />
-
-        <mat-error *ngIf="form.get('quantityToAdd')?.hasError('required')">
-          Quantidade é obrigatória
-        </mat-error>
-
-        <mat-error *ngIf="form.get('quantityToAdd')?.hasError('min')">
-          A quantidade deve ser maior que 0
-        </mat-error>
-      </mat-form-field>
-    </div>
-  </ng-container>
 </mat-dialog-content>
 
 <mat-dialog-actions align="end">
@@ -95,18 +47,20 @@
     <i class="fa-regular fa-circle-xmark"></i>
     Cancelar
   </button>
-
+  <!-- Botão Salvar com Loading -->
   <button
     mat-raised-button
     (click)="salvar()"
     [disabled]="form.invalid || isLoading"
     type="submit"
     class="btn-save"
+    (selectionChange)="onProductChange($event)"
   >
+
+    <!-- Ícone quando não está carregando -->
     <i *ngIf="!isLoading" class="fa-regular fa-floppy-disk"></i>
 
-    {{
-      isLoading ? "Salvando..." : isEditMode ? "Adicionar Estoque" : "Salvar"
-    }}
+    <!-- Texto dinâmico -->
+    {{ isLoading ? "Salvando..." : "Salvar" }}
   </button>
 </mat-dialog-actions>

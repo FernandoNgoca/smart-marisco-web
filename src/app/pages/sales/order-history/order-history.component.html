@@ -4,84 +4,74 @@
     <input
       matInput
       (keyup)="applyFilter($event)"
-      placeholder="Ex: Nome, Apelido..."
+      placeholder="Ex: Nome, Descrição..."
     />
     <button mat-icon-button matSuffix>
       <i class="fa-solid fa-magnifying-glass"></i>
     </button>
   </mat-form-field>
 
-  <button mat-raised-button class="btn-add" (click)="abrirDialog()">
-    <i class="fa-solid fa-user-plus"></i>
+  <button mat-raised-button class="btn-add" >
+    <i class="fa-solid fa-plus"></i>
     Adicionar
   </button>
 </div>
 
 <div class="mat-elevation-z4">
-  <mat-table [dataSource]="dataSource" matSort>
+  <mat-table mat-table [dataSource]="dataSource" matSort>
     <!-- firstName -->
     <ng-container matColumnDef="firstName">
       <mat-header-cell *matHeaderCellDef mat-sort-header>Nome</mat-header-cell>
-      <mat-cell *matCellDef="let client">{{ client.firstName }}</mat-cell>
+      <mat-cell *matCellDef="let sales">{{ sales.client.firstName }}</mat-cell>
     </ng-container>
 
     <!-- lastName -->
     <ng-container matColumnDef="lastName">
-      <mat-header-cell *matHeaderCellDef mat-sort-header>
-        Apelido
-      </mat-header-cell>
-
-      <mat-cell *matCellDef="let client">
-        {{ client.lastName ? client.lastName : "Não aplicável" }}
-      </mat-cell>
-    </ng-container>
-
-    <!-- email -->
-    <ng-container matColumnDef="email">
-      <mat-header-cell *matHeaderCellDef mat-sort-header>Email</mat-header-cell>
-      <mat-cell *matCellDef="let client">{{ client.email }}</mat-cell>
+      <mat-header-cell *matHeaderCellDef mat-sort-header>Apelido</mat-header-cell>
+      <mat-cell *matCellDef="let sales">{{ sales.client.lastName }}</mat-cell>
     </ng-container>
 
     <!-- phoneNumber -->
     <ng-container matColumnDef="phoneNumber">
-      <mat-header-cell *matHeaderCellDef mat-sort-header
-        >Telefone</mat-header-cell
-      >
-      <mat-cell *matCellDef="let client">{{
-        formatPhoneNumber(client.phoneNumber)
-      }}</mat-cell>
+      <mat-header-cell *matHeaderCellDef mat-sort-header>Telefone</mat-header-cell>
+      <mat-cell *matCellDef="let sales">{{ sales.client.phoneNumber }}</mat-cell>
     </ng-container>
 
-    <ng-container matColumnDef="address">
-      <mat-header-cell *matHeaderCellDef mat-sort-header
-        >Endereço</mat-header-cell
-      >
-      <mat-cell *matCellDef="let client">{{ client.address }}</mat-cell>
+    <!-- totalValue -->
+    <ng-container matColumnDef="totalValue">
+      <mat-header-cell *matHeaderCellDef mat-sort-header>Valor Total</mat-header-cell>
+      <mat-cell *matCellDef="let sales">{{ sales.totalValue | currency: "MZN " : "symbol" : "1.2-2"}}</mat-cell>
     </ng-container>
 
-    <!-- type -->
-    <ng-container matColumnDef="type">
-      <mat-header-cell *matHeaderCellDef mat-sort-header>Tipo</mat-header-cell>
-      <mat-cell *matCellDef="let client">{{
-        getClientTypeLabel(client.type)
-      }}</mat-cell>
+    <!-- totalValue -->
+    <ng-container matColumnDef="date">
+      <mat-header-cell *matHeaderCellDef mat-sort-header>Data de registo</mat-header-cell>
+      <mat-cell *matCellDef="let sales">{{ sales.createdDate | date: "dd/MM/yyyy HH:mm"}}</mat-cell>
     </ng-container>
 
     <ng-container matColumnDef="action">
       <mat-header-cell *matHeaderCellDef mat-sort-header>Ação</mat-header-cell>
-      <mat-cell *matCellDef="let client">
+      <mat-cell *matCellDef="let category">
         <!-- Ícone de editar -->
-        <button mat-icon-button color="primary" (click)="editarCliente(client)"  matTooltip="Editar dados do cliente">
-          <i class="fa-solid fa-user-pen"></i>
-        </button>
-
-        <!-- Ícone de deletar -->
         <button
           mat-icon-button
-          color="warn"
-          (click)="desativarCliente(client)"
-          matTooltip="Desativar cliente"
+          color="primary"
+          matTooltip="Editar categoria"
+
         >
+          <i class="fa-solid fa-user-pen"></i>
+        </button>
+        <button
+          mat-icon-button
+          color=""
+          matTooltip="Visualizar Pedido"
+
+          aria-label="Visualizar Pedido"
+        >
+          <i class="fa-solid fa-eye"></i>
+        </button>
+        <!-- Ícone de deletar -->
+        <button mat-icon-button color="warn" matTooltip="Desativar cliente">
           <i class="fa-solid fa-trash-can"></i>
         </button>
       </mat-cell>

@@ -28,16 +28,21 @@ export class SaleService {
   findAll(
     page: number,
     size: number,
-    direction: 'asc' | 'desc'
-  ): Observable<Sale[]> {
-    const params = new HttpParams()
+    sortField: string,
+    direction: 'asc' | 'desc',
+    filter: string = ''
+  ): Observable<any> {
+    let params = new HttpParams()
       .set('page', page)
       .set('size', size)
+      .set('sortField', sortField)
       .set('direction', direction);
 
-    return this.http.get<HateoasResponse>(this.baseURL, { params }).pipe(
-      map(response => response._embedded?.sales || [])
-    );
+    if (filter) {
+      params = params.set('search', filter);
+    }
+
+    return this.http.get<any>(this.baseURL, { params });
   }
 
   create(payload: SaleRequest): Observable<any> {
@@ -66,5 +71,37 @@ export class SaleService {
 
   getSalesWeek(): Observable<any[]> {
     return this.http.get<any[]>(`${this.baseURL}/find-sales-by-week`);
+  }
+
+  countSalesCurrentDay(): Observable<number> {
+    return this.http.get<number>(`${this.baseURL}/countSalesCurrentDay`);
+  }
+
+  countOrdersCurrentDay(): Observable<number> {
+    return this.http.get<number>(`${this.baseURL}/countOrdersCurrentDay`);
+  }
+
+  findAllOrders(
+    page: number,
+    size: number,
+    sortField: string,
+    direction: 'asc' | 'desc',
+    filter: string = ''
+  ): Observable<any> {
+    let params = new HttpParams()
+      .set('page', page)
+      .set('size', size)
+      .set('sortField', sortField)
+      .set('direction', direction);
+
+    if (filter) {
+      params = params.set('searchOrders', filter);
+    }
+
+    return this.http.get<any>(`${this.baseURL}/findAllOrders`, { params });
+  }
+
+  countByStatusAndSaleStatus(): Observable<number> {
+    return this.http.get<number>(`${this.baseURL}/countByStatusAndSaleStatus`);
   }
 }

@@ -1,0 +1,64 @@
+<!-- <div class="mat-elevation-z4">
+  <mat-table [dataSource]="dataSource" matSort>
+    <ng-container matColumnDef="image">
+      <mat-header-cell *matHeaderCellDef mat-sort-header>
+        Imagem
+      </mat-header-cell>
+
+      <mat-cell *matCellDef="let element">
+        <img
+          class="imagem"
+          [src]="getImage(element.product.image)"
+          alt="Produto"
+          width="50"
+          height="50"
+          (mouseenter)="showPreview($event, element.product.image)"
+          (mousemove)="movePreview($event)"
+          (mouseleave)="hidePreview()"
+          aria-label="Visualizar Imagem"
+        />
+      </mat-cell>
+    </ng-container>
+    <ng-container matColumnDef="productName">
+      <mat-header-cell *matHeaderCellDef mat-sort-header
+        >Nome</mat-header-cell
+      >
+      <mat-cell *matCellDef="let element">{{ element.product.code }}</mat-cell>
+    </ng-container>
+
+    <ng-container matColumnDef="name">
+      <mat-header-cell *matHeaderCellDef mat-sort-header>Nome</mat-header-cell>
+      <mat-cell *matCellDef="let product">{{ product.name }}</mat-cell>
+    </ng-container>
+
+    <ng-container matColumnDef="price">
+      <mat-header-cell *matHeaderCellDef mat-sort-header>Preço de compra</mat-header-cell>
+      <mat-cell *matCellDef="let product"
+        ><strong>{{ product.price | mtzCurrency }}</strong></mat-cell
+      >
+    </ng-container>
+
+    <ng-container matColumnDef="salePrice">
+      <mat-header-cell *matHeaderCellDef mat-sort-header>Preço de venda</mat-header-cell>
+      <mat-cell *matCellDef="let product"
+        ><strong>{{ product.salePrice | mtzCurrency }}</strong></mat-cell
+      >
+    </ng-container>
+
+    <ng-container matColumnDef="species">
+      <mat-header-cell *matHeaderCellDef mat-sort-header
+        >Espécie</mat-header-cell
+      >
+      <mat-cell *matCellDef="let product">{{ product.species.name }}</mat-cell>
+    </ng-container>
+
+    <mat-header-row *matHeaderRowDef="displayedColumns"></mat-header-row>
+    <mat-row *matRowDef="let row; columns: displayedColumns"></mat-row>
+
+    <tr class="mat-row" *matNoDataRow>
+      <td class="mat-cell" colspan="5">
+        Não há dados para o filtro "{{ filterValue }}"
+      </td>
+    </tr>
+  </mat-table>
+</div> -->

@@ -2,7 +2,6 @@ import { AfterViewInit, Component, OnInit, ViewChild } from '@angular/core';
 import { MatDialog } from '@angular/material/dialog';
 import { MatPaginator } from '@angular/material/paginator';
 import { MatSort } from '@angular/material/sort';
-import { CategoryService } from '@app/services/category.service';
 import { ProductService } from '@app/services/product.service';
 import { SnackbarService } from '@app/services/snackbar.service';
 import { ConfirmDialogComponent } from '@app/shared/dialog/confirm-dialog.component';
@@ -33,7 +32,6 @@ export class ProductListComponent implements OnInit, AfterViewInit {
     private productService: ProductService,
     private dialog: MatDialog,
     private snackbar: SnackbarService,
-    private categoryService: CategoryService
   ) { }
 
   ngOnInit(): void {
@@ -71,10 +69,9 @@ export class ProductListComponent implements OnInit, AfterViewInit {
           this.totalElements = resp.page?.totalElements ?? 0;
         },
         error: (err) => {
-          console.error('Erro ao carregar produtos:', err);
           this.dataSource = [];
           this.totalElements = 0;
-          this.snackbar.error('Erro ao carregar produtos.');
+          this.snackbar.error('Erro ao carregar os produtos.', err);
         }
       });
   }
@@ -107,7 +104,7 @@ export class ProductListComponent implements OnInit, AfterViewInit {
       width: '400px',
       data: {
         title: 'Desativar Produto',
-        message: `Tem certeza que deseja desativar o Produto "${product.name}"?`,
+        message: `Tem certeza de que deseja desativar o produto "${product.name}"?`,
         confirmText: 'Desativar',
         cancelText: 'Cancelar',
         color: 'warn',
@@ -124,7 +121,7 @@ export class ProductListComponent implements OnInit, AfterViewInit {
             this.snackbar.success('Produto desativado com sucesso!');
           },
           error: () => {
-            this.snackbar.error('Erro ao desativar Produto.');
+            this.snackbar.error('Erro ao desativar o produto.');
           }
         });
       }

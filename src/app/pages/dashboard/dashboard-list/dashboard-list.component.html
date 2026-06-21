@@ -94,7 +94,7 @@
   >
     <div class="card-header">
       <span class="card-title">
-        Total de Pedidos em Aberto
+        Total de Pedidos
         <i
           class="fa-solid fa-circle-info info-icon"
           matTooltip="Número total de pedidos atualmente em aberto"
@@ -105,7 +105,7 @@
       <i class="fa-solid fa-inbox"></i>
     </div>
 
-    <div class="card-value">10</div>
+    <div class="card-value">{{ totalOrders }}</div>
   </div>
 </div>
 
@@ -118,6 +118,8 @@
       [yAxis]="true"
       [showDataLabel]="true"
       [view]="[320, 250]"
+      [yAxisTicks]="yAxisTicks"
+      [yAxisTickFormatting]="formatYAxisTicks"
     >
       >
     </ngx-charts-bar-vertical>
