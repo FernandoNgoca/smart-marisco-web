@@ -65,8 +65,16 @@ export class SaleService {
     return this.http.get<number>(`${this.baseURL}/countByCreatedDate`);
   }
 
+  countYesterdaySales(): Observable<number> {
+    return this.http.get<number>(`${this.baseURL}/countYesterdaySales`);
+  }
+
   countSalesCurrentMonth(): Observable<number> {
     return this.http.get<number>(`${this.baseURL}/countSalesCurrentMonth`);
+  }
+
+  countSalesPreviousMonth(): Observable<number> {
+    return this.http.get<number>(`${this.baseURL}/countSalesPreviousMonth`);
   }
 
   getSalesWeek(): Observable<any[]> {

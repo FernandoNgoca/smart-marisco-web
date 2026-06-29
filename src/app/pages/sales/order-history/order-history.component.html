@@ -51,7 +51,7 @@
 
     <ng-container matColumnDef="action">
       <mat-header-cell *matHeaderCellDef mat-sort-header>Ação</mat-header-cell>
-      <mat-cell *matCellDef="let category">
+      <mat-cell *matCellDef="let sales">
         <!-- Ícone de editar -->
         <button
           mat-icon-button
@@ -65,7 +65,7 @@
           mat-icon-button
           color=""
           matTooltip="Visualizar Pedido"
-
+          (click)="visualizarProduto(sales)"
           aria-label="Visualizar Pedido"
         >
           <i class="fa-solid fa-eye"></i>

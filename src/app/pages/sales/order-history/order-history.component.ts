@@ -4,6 +4,7 @@ import { MatPaginator } from '@angular/material/paginator';
 import { MatSort } from '@angular/material/sort';
 import { SaleService } from '@app/services/sale.service';
 import { SnackbarService } from '@app/services/snackbar.service';
+import { ViewOrderComponent } from '@app/shared/dialog/sales/view-order/view-order.component';
 import { Sale } from '@app/shared/models/sale';
 
 @Component({
@@ -76,4 +77,12 @@ export class OrderHistoryComponent implements OnInit {
     this.loadOrders();
   }
 
+  visualizarProduto(sale: Sale): void {
+      this.dialog.open(ViewOrderComponent, {
+        width: '1000px',
+        data: {
+          sale
+        }
+      });
+    }
 }

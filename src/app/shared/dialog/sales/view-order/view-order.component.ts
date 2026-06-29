@@ -1,9 +1,14 @@
-import { Component, OnInit, ViewChild } from '@angular/core';
-import { MatDialog } from '@angular/material/dialog';
+import { Component, Inject, OnInit, ViewChild } from '@angular/core';
+import { MAT_DIALOG_DATA, MatDialog, MatDialogRef } from '@angular/material/dialog';
 import { MatPaginator } from '@angular/material/paginator';
 import { MatSort } from '@angular/material/sort';
+import { SaleItemService } from '@app/services/saleItem.service';
 import { SnackbarService } from '@app/services/snackbar.service';
 import { Sale, SaleItem } from '@app/shared/models/sale';
+
+export interface DialogData {
+  sale?: Sale;
+}
 
 export interface DialogData {
   sale?: Sale;
@@ -16,7 +21,7 @@ export interface DialogData {
 })
 export class ViewOrderComponent implements OnInit {
 
-  displayedColumns: string[] = ['image', 'productName', 'quantity', 'unit', 'productPrice'];
+  displayedColumns: string[] = ['image', 'productName', 'quantity', 'unit', 'productPrice', 'priceTotal'];
   dataSource: SaleItem[] = [];
   totalElements = 0;
   pageSize = 5;
@@ -24,16 +29,40 @@ export class ViewOrderComponent implements OnInit {
   previewImage: string | null = null;
   previewX = 0;
   previewY = 0;
+  sale: Sale = {} as Sale;
 
   @ViewChild(MatPaginator) paginator!: MatPaginator;
   @ViewChild(MatSort) sort!: MatSort;
 
+  tituloDialog: string = 'Contadores do estoque';
+
   constructor(
     private dialog: MatDialog,
     private snackbar: SnackbarService,
+    private saleItemService: SaleItemService,
+    public dialogRef: MatDialogRef<ViewOrderComponent>,
+    @Inject(MAT_DIALOG_DATA) public data: DialogData
   ) { }
 
   ngOnInit(): void {
+
+    const saleId = this.data?.sale?.id;
+    const sale = this.data?.sale
+
+    if (sale) {
+      this.sale = sale;
+    }
+    if (saleId) {
+      this.saleItemService.findAllBySaleId(saleId).subscribe({
+        next: (saleItem) => {
+          this.dataSource = saleItem
+        },
+        error: (err) => {
+          this.snackbar.error('Erro ao carregar Item do produto');
+
+        }
+      });
+    }
   }
 
   getImage(image: string | undefined): string {
@@ -72,6 +101,14 @@ export class ViewOrderComponent implements OnInit {
 
   hidePreview() {
     this.previewImage = null;
+  }
+
+  close(): void {
+    this.dialogRef.close();
+  }
+
+  price(price: number, quatity: number):number{
+    return price * quatity;
   }
 
 }

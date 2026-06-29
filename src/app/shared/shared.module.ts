@@ -33,6 +33,7 @@ import { MatTableModule } from '@angular/material/table';
 import { MovementTypePipe } from './pipes/movement-type.pipe';
 import { MatPaginatorModule } from '@angular/material/paginator';
 import { ViewOrderComponent } from './dialog/sales/view-order/view-order.component';
+import { MtzCurrencyPipe } from './components/mask/mtz-currency.pipe';
 
 @NgModule({
   imports: [
@@ -55,6 +56,7 @@ import { ViewOrderComponent } from './dialog/sales/view-order/view-order.compone
     MatSelectModule,
     MatTableModule,
     MatPaginatorModule,
+    MtzCurrencyPipe
   ],
   declarations: [
     ToolbarTitleComponent,

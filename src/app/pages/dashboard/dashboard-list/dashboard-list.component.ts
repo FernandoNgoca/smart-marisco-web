@@ -1,4 +1,5 @@
 import { Component, OnInit } from '@angular/core';
+import { AuthService } from '@app/services/auth.service';
 import { ClientService } from '@app/services/client.service';
 import { ProductService } from '@app/services/product.service';
 import { SaleService } from '@app/services/sale.service';
@@ -19,7 +20,11 @@ export class DashboardListComponent implements OnInit {
   totalVendasMes: number = 0;
   totalClientes: number = 0;
   totalProdutos: number = 0;
-  totalOrders: number=0;
+  totalOrders: number = 0;
+  variationSale: number = 0;
+  yesterday: number = 0;
+  salesPreviousMonth: number = 0;
+  variationSaleMonth: number = 0;
 
   yAxisTicks: number[] = [0, 1];
 
@@ -37,6 +42,7 @@ export class DashboardListComponent implements OnInit {
     private saleService: SaleService,
     private clientService: ClientService,
     private productService: ProductService,
+    private auth: AuthService,
     private saleItemService: SaleItemService
   ) { }
 
@@ -48,6 +54,14 @@ export class DashboardListComponent implements OnInit {
     this.saleService.countByCreatedDateBetweenAndSaleStatusAndStatus().subscribe(
       (count) => {
         this.totalVendasHoje = count;
+
+        this.saleService.countYesterdaySales().subscribe(
+          (count) => {
+            this.yesterday = count;
+          }
+        );
+        this.variationSale = this.calculateVariation(this.totalVendasHoje, this.yesterday);
+
         if (this.totalVendasHoje > 0) {
           this.totalVendasHoje = this.totalVendasHoje;
         }
@@ -60,6 +74,14 @@ export class DashboardListComponent implements OnInit {
         if (this.totalVendasMes > 0) {
           this.totalVendasMes = this.totalVendasMes;
         }
+
+        this.saleService.countSalesPreviousMonth().subscribe(
+          (count) => {
+            this.salesPreviousMonth = count;
+          }
+        );
+
+        this.variationSaleMonth = this.calculateVariation(this.totalVendasMes, this.salesPreviousMonth);
       }
     );
 
@@ -118,7 +140,23 @@ export class DashboardListComponent implements OnInit {
       : 'data:image/jpeg;base64,' + image;
   }
 
-  public formatYAxisTicks(val: number):string{
+  public formatYAxisTicks(val: number): string {
     return Math.floor(val).toString();
   }
+
+  // Verificar permissão de admin
+  public hasAdminPermission(): boolean {
+    const user = this.auth.getUser();
+    return user?.roles?.includes('ROLE_MANAGER') || false;
+  }
+
+  calculateVariation(today: number, yesterday: number): number {
+    if (yesterday === 0) {
+      return today > 0 ? 100 : 0;
+    }
+
+    return ((today - yesterday) / yesterday) * 100;
+  }
+
+
 }
