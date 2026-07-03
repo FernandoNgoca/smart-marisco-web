@@ -28,8 +28,7 @@
         {{ sale.client?.lastName }}</span
       >
       <span
-        ><strong>Montante do Pedido:</strong>
-        {{ sale.totalValue | mtzCurrency }}</span
+        ><strong>Montante:</strong> {{ sale.totalValue | mtzCurrency }}</span
       >
     </div>
 
@@ -76,9 +75,9 @@
           <mat-header-cell *matHeaderCellDef mat-sort-header
             >Unidade de medida</mat-header-cell
           >
-          <mat-cell *matCellDef="let salaItem"
-            >{{ salaItem.product.unit.symbol }}</mat-cell
-          >
+          <mat-cell *matCellDef="let salaItem">{{
+            salaItem.product.unit.symbol
+          }}</mat-cell>
         </ng-container>
 
         <ng-container matColumnDef="productPrice">
@@ -98,7 +97,7 @@
           >
           <mat-cell *matCellDef="let saleItem"
             ><strong>{{
-            price(saleItem.product.salePrice,saleItem.quantity)  | mtzCurrency
+              price(saleItem.product.salePrice, saleItem.quantity) | mtzCurrency
             }}</strong></mat-cell
           >
         </ng-container>

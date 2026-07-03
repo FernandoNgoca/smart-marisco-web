@@ -51,39 +51,38 @@ export class DashboardListComponent implements OnInit {
   }
 
   public loadTotalVendasHoje(): void {
-    this.saleService.countByCreatedDateBetweenAndSaleStatusAndStatus().subscribe(
-      (count) => {
-        this.totalVendasHoje = count;
+    this.saleService.countByCreatedDateBetweenAndSaleStatusAndStatus().subscribe(today => {
 
-        this.saleService.countYesterdaySales().subscribe(
-          (count) => {
-            this.yesterday = count;
-          }
-        );
-        this.variationSale = this.calculateVariation(this.totalVendasHoje, this.yesterday);
+  this.totalVendasHoje = today;
 
-        if (this.totalVendasHoje > 0) {
-          this.totalVendasHoje = this.totalVendasHoje;
-        }
-      }
+  this.saleService.countYesterdaySales().subscribe(yesterday => {
+
+    this.yesterday = yesterday;
+
+    this.variationSale = this.calculateVariation(
+      this.totalVendasHoje,
+      this.yesterday
+    );
+  });
+
+});
+
+  this.saleService.countSalesCurrentMonth().subscribe((count) => {
+  this.totalVendasMes = count;
+
+  this.saleService.countSalesPreviousMonth().subscribe((count) => {
+    this.salesPreviousMonth = count;
+
+    this.variationSaleMonth = this.calculateVariation(
+      this.totalVendasMes,
+      this.salesPreviousMonth
     );
 
-    this.saleService.countSalesCurrentMonth().subscribe(
-      (count) => {
-        this.totalVendasMes = count;
-        if (this.totalVendasMes > 0) {
-          this.totalVendasMes = this.totalVendasMes;
-        }
-
-        this.saleService.countSalesPreviousMonth().subscribe(
-          (count) => {
-            this.salesPreviousMonth = count;
-          }
-        );
-
-        this.variationSaleMonth = this.calculateVariation(this.totalVendasMes, this.salesPreviousMonth);
-      }
-    );
+    console.log("Mês atual:", this.totalVendasMes);
+    console.log("Mês anterior:", this.salesPreviousMonth);
+    console.log("Variação:", this.variationSaleMonth);
+  });
+});
 
     this.clientService.countClients().subscribe(
       (count) => {
@@ -150,13 +149,17 @@ export class DashboardListComponent implements OnInit {
     return user?.roles?.includes('ROLE_MANAGER') || false;
   }
 
-  calculateVariation(today: number, yesterday: number): number {
-    if (yesterday === 0) {
-      return today > 0 ? 100 : 0;
+  calculateVariation(current: number, previous: number): number {
+
+    if (previous === 0) {
+
+      if (current === 0) {
+        return 0;
+      }
+
+      return 100; // ou null, ou Infinity, conforme a regra de negócio
     }
 
-    return ((today - yesterday) / yesterday) * 100;
+    return Number((((current - previous) / previous) * 100).toFixed(1));
   }
-
-
 }

@@ -1,5 +1,5 @@
 import { Component, Inject, OnInit, ViewChild } from '@angular/core';
-import { MAT_DIALOG_DATA, MatDialog, MatDialogRef } from '@angular/material/dialog';
+import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 import { MatPaginator } from '@angular/material/paginator';
 import { MatSort } from '@angular/material/sort';
 import { SaleItemService } from '@app/services/saleItem.service';
@@ -34,10 +34,9 @@ export class ViewOrderComponent implements OnInit {
   @ViewChild(MatPaginator) paginator!: MatPaginator;
   @ViewChild(MatSort) sort!: MatSort;
 
-  tituloDialog: string = 'Contadores do estoque';
+  tituloDialog: string = 'Detalhes do Pedido';
 
   constructor(
-    private dialog: MatDialog,
     private snackbar: SnackbarService,
     private saleItemService: SaleItemService,
     public dialogRef: MatDialogRef<ViewOrderComponent>,
@@ -107,7 +106,7 @@ export class ViewOrderComponent implements OnInit {
     this.dialogRef.close();
   }
 
-  price(price: number, quatity: number):number{
+  price(price: number, quatity: number): number {
     return price * quatity;
   }
 

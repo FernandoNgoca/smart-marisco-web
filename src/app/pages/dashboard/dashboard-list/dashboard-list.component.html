@@ -29,7 +29,7 @@
         <div class="badge">
           <i
             class="fa-solid"
-            [class.fa-arrow-up]="variationSale >= 0"
+            [class.fa-arrow-up]="variationSale > 0"
             [class.fa-arrow-down]="variationSale < 0"
           ></i>
 
@@ -80,7 +80,7 @@
           <span>{{ variationSaleMonth }}%</span>
         </div>
 
-        <span class="text">vs ontem</span>
+        <span class="text">vs mês passado.</span>
       </div>
   </div>
 
@@ -153,7 +153,7 @@
   <div
     *ngIf="hasAdminPermission()"
     class="counter-card teal"
-    matTooltip="Quantidade total de produtos disponíveis em estoque"
+    matTooltip="Número total de encomendas."
     matTooltipPosition="above"
     matTooltipClass="tooltip-custom"
   >
@@ -162,7 +162,7 @@
         Total de Pedidos
         <i
           class="fa-solid fa-circle-info info-icon"
-          matTooltip="Número total de pedidos atualmente em aberto"
+          matTooltip="Número total de encomendas."
           matTooltipPosition="above"
           matTooltipClass="tooltip-custom"
         ></i>
