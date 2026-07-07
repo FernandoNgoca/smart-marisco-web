@@ -31,6 +31,9 @@ import { StockDialogComponent } from './dialog/stock/stock-dialog/stock-dialog.c
 import { AddStockMovementComponent } from './dialog/stock/add-stock-movement/add-stock-movement.component';
 import { MatTableModule } from '@angular/material/table';
 import { MovementTypePipe } from './pipes/movement-type.pipe';
+import { MatPaginatorModule } from '@angular/material/paginator';
+import { ViewOrderComponent } from './dialog/sales/view-order/view-order.component';
+import { MtzCurrencyPipe } from './components/mask/mtz-currency.pipe';
 
 @NgModule({
   imports: [
@@ -51,8 +54,9 @@ import { MovementTypePipe } from './pipes/movement-type.pipe';
     MatButtonModule,
     ReactiveFormsModule,
     MatSelectModule,
-    MatTableModule
-    
+    MatTableModule,
+    MatPaginatorModule,
+    MtzCurrencyPipe
   ],
   declarations: [
     ToolbarTitleComponent,
@@ -67,7 +71,8 @@ import { MovementTypePipe } from './pipes/movement-type.pipe';
     AddStockComponent,
     StockDialogComponent,
     AddStockMovementComponent,
-    MovementTypePipe
+    MovementTypePipe,
+    ViewOrderComponent,
   ],
   exports: [
     CommonModule,

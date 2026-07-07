@@ -5,6 +5,7 @@ import { Product, Unit } from "./product";
 export enum SaleStatus {
   COMPLETED = 'COMPLETED',
   CANCELED = 'CANCELED',
+  ORDERS = 'ORDERS'
 }
 
 export interface Sale extends Auditable {
@@ -18,7 +19,7 @@ export interface SaleItem extends Auditable {
   saleId?: number;
   sale?: Sale;
   productId: number;
-  product:Product;
+  product: Product;
   quantity: number;
   subTotal?: number;
 }

@@ -33,7 +33,7 @@ export class StockDialogComponent implements OnInit, AfterViewInit {
 
   // Paginação
   totalElements = 0;
-  pageSize = 12;
+  pageSize = 5;
   pageIndex = 0;
 
   // Ordenação
