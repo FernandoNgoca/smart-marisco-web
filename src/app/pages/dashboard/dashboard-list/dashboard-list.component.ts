@@ -77,10 +77,6 @@ export class DashboardListComponent implements OnInit {
       this.totalVendasMes,
       this.salesPreviousMonth
     );
-
-    console.log("Mês atual:", this.totalVendasMes);
-    console.log("Mês anterior:", this.salesPreviousMonth);
-    console.log("Variação:", this.variationSaleMonth);
   });
 });
 
