@@ -1,3 +1,10 @@
+<p *ngIf="isLoading" role="status">A carregar o resumo...</p>
+<div *ngIf="loadError" role="alert">
+  <p>Não foi possível carregar o resumo. Os valores estão indisponíveis.</p>
+  <button mat-raised-button (click)="loadTotalVendasHoje()">Tentar novamente</button>
+</div>
+<p *ngIf="!hasAdminPermission()">Use o menu para consultar clientes e registar vendas ou pedidos.</p>
+<ng-container *ngIf="!isLoading && !loadError">
 <div class="counters-grid">
   <div
     *ngIf="hasAdminPermission()"
@@ -128,26 +135,6 @@
     </div>
 
     <div class="card-value">{{ this.totalProdutos }}</div>
-
-      <div
-        class="trend"
-        [ngClass]="{
-          positive: variationSale >= 0,
-          negative: variationSale < 0
-        }"
-      >
-        <div class="badge">
-          <i
-            class="fa-solid"
-            [class.fa-arrow-up]="variationSale >= 0"
-            [class.fa-arrow-down]="variationSale < 0"
-          ></i>
-
-          <span>{{ variationSale }}%</span>
-        </div>
-
-        <span class="text">vs ontem</span>
-      </div>
   </div>
 
   <div
@@ -186,7 +173,6 @@
       [yAxisTicks]="yAxisTicks"
       [yAxisTickFormatting]="formatYAxisTicks"
     >
-      >
     </ngx-charts-bar-vertical>
   </div>
 
@@ -195,6 +181,7 @@
       <h3 class="chart-title">Top Produtos</h3>
     </div>
 
+    <p *ngIf="topProducts.length === 0">Ainda não existem produtos vendidos.</p>
     <div class="product-item" *ngFor="let p of topProducts">
       <img [src]="getImage(p.image)" class="avatar" alt="Imagem do Produto" />
 
@@ -204,7 +191,9 @@
 
       <div class="total">{{ p.totalValue | currency: "MZN " }}</div>
 
-      <button class="btn-action">Ver</button>
+
     </div>
   </div>
 </div>
+
+</ng-container>

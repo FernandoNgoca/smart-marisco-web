@@ -21,6 +21,8 @@ export class OrderHistoryComponent implements OnInit {
   pageSize = 5;
   pageIndex = 0;
   filterValue = '';
+  loadError = false;
+  isLoading = false;
 
   @ViewChild(MatPaginator) paginator!: MatPaginator;
   @ViewChild(MatSort) sort!: MatSort;
@@ -49,6 +51,8 @@ export class OrderHistoryComponent implements OnInit {
   }
 
   loadOrders(): void {
+    this.loadError = false;
+    this.isLoading = true;
     const direction = this.sort?.direction || 'asc';
     const sortField = this.sort?.active || 'id';
     this.saleService.findAllOrders(
@@ -59,10 +63,13 @@ export class OrderHistoryComponent implements OnInit {
       this.filterValue
     ).subscribe({
       next: (response) => {
+          this.isLoading = false;
         this.dataSource = response._embedded?.sales ?? [];
         this.totalElements = response.page?.totalElements ?? 0;
       },
       error: (err) => {
+          this.isLoading = false;
+          this.loadError = true;
         this.snackbar.error('Erro ao carregar as vendas.');
       }
     });

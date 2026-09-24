@@ -1,5 +1,7 @@
+import { QUANTITY_MESSAGE, quantityValidator } from '@app/shared/validators/quantity.validator';
+import { Subject, of, timer, switchMap, catchError, finalize, takeUntil, map, distinctUntilChanged, startWith } from 'rxjs';
 import { Client } from './../../../shared/models/client';
-import { Component, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup } from '@angular/forms';
 import { MatTableDataSource } from '@angular/material/table';
 import { ClientService } from '@app/services/client.service';
@@ -15,7 +17,7 @@ import { Sale, SaleItem, SaleRequest, SaleStatus } from '@app/shared/models/sale
   templateUrl: './sales-order.component.html',
   styleUrls: ['./sales-order.component.scss']
 })
-export class SalesOrderComponent implements OnInit {
+export class SalesOrderComponent implements OnInit, OnDestroy {
 
   displayedColumns: string[] = [
     'image',
@@ -38,6 +40,15 @@ export class SalesOrderComponent implements OnInit {
   sale: Sale = {} as Sale;
   saleRequest = {} as SaleRequest;
   form: FormGroup;
+  isSaving = false;
+  isAdding = false;
+  clientsLoading = false;
+  clientsError = false;
+  private destroy$ = new Subject<void>();
+  private operationKey: string | null = null;
+  private operationPayload = '';
+
+  ngOnDestroy(): void { this.destroy$.next(); this.destroy$.complete(); }
   totalOrdersForToday: number = 0;
 
   constructor(
@@ -50,7 +61,7 @@ export class SalesOrderComponent implements OnInit {
   ) {
     this.form = this.fb.group({
       productId: [null,],
-      quantity: [null,],
+      quantity: [null, quantityValidator],
       clientId: [null,]
     });
   }
@@ -64,10 +75,6 @@ export class SalesOrderComponent implements OnInit {
       this.filterProducts();
     });
 
-    // Cliente
-    this.form.get('clientId')?.valueChanges.subscribe(() => {
-      this.filterClients();
-    });
 
     this.form.get('clientId')?.valueChanges.subscribe((client: Client) => {
       if (client?.id) {
@@ -99,12 +106,24 @@ this.countOrders();
   }
 
   loadingClients() {
-    this.clientService.findAll(0, 100, '', 'asc').subscribe({
-      next: (data) => {
-        this.clients = data._embedded.client;
-        this.filteredClients = data._embedded.clients;
-      },
-      error: (err) => console.error('Erro ao carregar clientes:', err)
+    this.form.get('clientId')!.valueChanges.pipe(
+      startWith(''),
+      map(value => typeof value === 'string' ? value.trim() : null),
+      distinctUntilChanged(),
+      switchMap(search => {
+        if (search === null) return of(null);
+        this.clientsLoading = true;
+        this.clientsError = false;
+        return timer(300).pipe(
+          switchMap(() => this.clientService.findAll(0, 20, 'firstName', 'asc', search)),
+          catchError(() => { this.clientsError = true; return of(null); }),
+          finalize(() => { this.clientsLoading = false; })
+        );
+      }),
+      takeUntil(this.destroy$)
+    ).subscribe(data => {
+      this.clients = data?._embedded?.clients ?? [];
+      this.filteredClients = this.clients;
     });
   }
 
@@ -123,19 +142,6 @@ this.countOrders();
       );
     } else {
       this.filteredProducts = this.products;
-    }
-  }
-
-  // Filtro clientes
-  filterClients() {
-    const value = this.form.get('clientId')?.value;
-
-    if (typeof value === 'string') {
-      this.filteredClients = this.clients.filter(c =>
-        c.firstName.toLowerCase().includes(value.toLowerCase())
-      );
-    } else {
-      this.filteredClients = this.clients;
     }
   }
 
@@ -186,18 +192,19 @@ this.countOrders();
   }
 
   addItem() {
+    if (this.isSaving || this.isAdding) return;
     // Verificar se os campos obrigatórios estão preenchidos
     const product: Product = this.form.value.productId;
     const quantity: number = this.form.value.quantity;
     const client = this.selectedClient;
 
-    if (!product) {
+    if (!product?.id) {
       this.snackbar.error('Selecione um produto para adicionar ao pedido.');
       return;
     }
 
-    if (!quantity || quantity <= 0) {
-      this.snackbar.error('Informe uma quantidade válida.');
+    if (this.form.get('quantity')?.invalid) {
+      this.snackbar.error(QUANTITY_MESSAGE);
       return;
     }
 
@@ -214,7 +221,10 @@ this.countOrders();
       return;
     }
 
-    this.stockService.findByProductId(product.id!).subscribe({
+    this.isAdding = true;
+    this.stockService.findByProductId(product.id!).pipe(
+      finalize(() => { this.isAdding = false; })
+    ).subscribe({
       next: (stock) => {
         if (stock.quantity < quantity) {
           this.snackbar.error(
@@ -234,6 +244,7 @@ this.countOrders();
   }
 
   removeItem(item: SaleItem) {
+    if (this.isSaving || this.isAdding) return;
     this.saleItems = this.saleItems.filter(i => i !== item);
     this.dataSource.data = [...this.saleItems];
 
@@ -248,17 +259,21 @@ this.countOrders();
   }
 
   editItem(item: SaleItem) {
+    if (this.isSaving || this.isAdding) return;
     // Preencher formulário
     this.form.patchValue({
       productId: item.product,
       quantity: item.quantity
     });
 
-    // Remover temporariamente para não duplicar
-    this.removeItem(item);
+    // Retirar o artigo para edição sem limpar o cliente selecionado.
+    this.saleItems = this.saleItems.filter(i => i !== item);
+    this.dataSource.data = [...this.saleItems];
+    this.calculateTotal();
   }
 
   processSale() {
+    if (this.isSaving || this.isAdding) return;
     if (this.saleItems.length === 0) {
       this.snackbar.error(
         'Adicione pelo menos um produto antes de finalizar o pedido.'
@@ -275,8 +290,18 @@ this.countOrders();
       items: this.saleItems
     };
 
-    this.saleService.create(this.saleRequest).subscribe({
+    const fingerprint = JSON.stringify(this.saleRequest);
+    if (!this.operationKey || fingerprint !== this.operationPayload) {
+      this.operationKey = Array.from(crypto.getRandomValues(new Uint8Array(16)), byte => byte.toString(16).padStart(2, '0')).join('');
+      this.operationPayload = fingerprint;
+    }
+    this.isSaving = true;
+    this.saleService.create(this.saleRequest, this.operationKey).pipe(
+      finalize(() => { this.isSaving = false; })
+    ).subscribe({
       next: () => {
+        this.operationKey = null;
+        this.operationPayload = '';
         this.snackbar.success('Pedido registado com sucesso!');
         // Resetar tudo
         this.saleItems = [];

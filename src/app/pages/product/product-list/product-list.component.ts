@@ -21,6 +21,8 @@ export class ProductListComponent implements OnInit, AfterViewInit {
   pageSize = 5;
   pageIndex = 0;
   filterValue = '';
+  loadError = false;
+  isLoading = false;
   previewImage: string | null = null;
   previewX = 0;
   previewY = 0;
@@ -52,6 +54,8 @@ export class ProductListComponent implements OnInit, AfterViewInit {
   }
 
   loadProducts(): void {
+    this.loadError = false;
+    this.isLoading = true;
     const direction = this.sort?.direction || 'asc';
     const sortField = this.sort?.active || 'code';
 
@@ -65,10 +69,13 @@ export class ProductListComponent implements OnInit, AfterViewInit {
       )
       .subscribe({
         next: (resp) => {
+          this.isLoading = false;
           this.dataSource = resp._embedded?.products ?? [];
           this.totalElements = resp.page?.totalElements ?? 0;
         },
         error: (err) => {
+          this.isLoading = false;
+          this.loadError = true;
           this.dataSource = [];
           this.totalElements = 0;
           this.snackbar.error('Erro ao carregar os produtos.', err);

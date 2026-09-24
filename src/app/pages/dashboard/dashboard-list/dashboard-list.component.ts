@@ -1,3 +1,4 @@
+import { forkJoin, finalize } from 'rxjs';
 import { Component, OnInit } from '@angular/core';
 import { AuthService } from '@app/services/auth.service';
 import { ClientService } from '@app/services/client.service';
@@ -11,6 +12,9 @@ import { SaleItemService } from '@app/services/saleItem.service';
   styleUrls: ['./dashboard-list.component.scss']
 })
 export class DashboardListComponent implements OnInit {
+
+  isLoading = false;
+  loadError = false;
 
   salesByDay: { name: string; value: number }[] = [];
 
@@ -51,80 +55,39 @@ export class DashboardListComponent implements OnInit {
   }
 
   public loadTotalVendasHoje(): void {
-    this.saleService.countByCreatedDateBetweenAndSaleStatusAndStatus().subscribe(today => {
-
-  this.totalVendasHoje = today;
-
-  this.saleService.countYesterdaySales().subscribe(yesterday => {
-
-    this.yesterday = yesterday;
-
-    this.variationSale = this.calculateVariation(
-      this.totalVendasHoje,
-      this.yesterday
-    );
-  });
-
-});
-
-  this.saleService.countSalesCurrentMonth().subscribe((count) => {
-  this.totalVendasMes = count;
-
-  this.saleService.countSalesPreviousMonth().subscribe((count) => {
-    this.salesPreviousMonth = count;
-
-    this.variationSaleMonth = this.calculateVariation(
-      this.totalVendasMes,
-      this.salesPreviousMonth
-    );
-  });
-});
-
-    this.clientService.countClients().subscribe(
-      (count) => {
-        this.totalClientes = count;
-      }
-    );
-
-    this.productService.countProducts().subscribe(
-      (count) => {
-        this.totalProdutos = count;
-      }
-    );
-
-    this.saleService.countByStatusAndSaleStatus().subscribe(
-      (count) => {
-        this.totalOrders = count;
-      }
-    );
-
-    this.saleService.getSalesWeek().subscribe({
-      next: (data) => {
-
-        const merged = this.weekTemplate.map(day => {
-          const found = data.find(d => d.name === day.name);
-          return {
-            name: day.name,
-            value: found ? found.value : 0
-          };
-        });
-
-        this.salesByDay = merged;
-
-        const maxSales = Math.max(...merged.map(d => d.value), 1);
-        this.yAxisTicks = [];
-        for (let i = 0; i <= maxSales + 1; i++) {
-          this.yAxisTicks.push(i);
-        }
-
+    if (this.isLoading || !this.hasAdminPermission()) return;
+    this.isLoading = true;
+    this.loadError = false;
+    forkJoin({
+      today: this.saleService.countByCreatedDateBetweenAndSaleStatusAndStatus(),
+      yesterday: this.saleService.countYesterdaySales(),
+      month: this.saleService.countSalesCurrentMonth(),
+      previousMonth: this.saleService.countSalesPreviousMonth(),
+      clients: this.clientService.countClients(),
+      products: this.productService.countProducts(),
+      orders: this.saleService.countByStatusAndSaleStatus(),
+      week: this.saleService.getSalesWeek(),
+      top: this.saleItemService.getTopProducts()
+    }).pipe(finalize(() => { this.isLoading = false; })).subscribe({
+      next: data => {
+        this.totalVendasHoje = data.today;
+        this.yesterday = data.yesterday;
+        this.totalVendasMes = data.month;
+        this.salesPreviousMonth = data.previousMonth;
+        this.totalClientes = data.clients;
+        this.totalProdutos = data.products;
+        this.totalOrders = data.orders;
+        this.variationSale = this.calculateVariation(data.today, data.yesterday);
+        this.variationSaleMonth = this.calculateVariation(data.month, data.previousMonth);
+        this.salesByDay = this.weekTemplate.map(day => ({
+          name: day.name, value: data.week.find(d => d.name === day.name)?.value ?? 0
+        }));
+        const max = Math.max(...this.salesByDay.map(day => day.value), 1);
+        const step = Math.max(1, Math.ceil(max / 5));
+        this.yAxisTicks = Array.from({ length: Math.ceil(max / step) + 1 }, (_, i) => i * step);
+        this.topProducts = data.top;
       },
-      error: () => {
-        this.salesByDay = [...this.weekTemplate];
-        this.yAxisTicks = [0, 1];
-      }
-    });
-    this.saleItemService.getTopProducts().subscribe(data => {
-      this.topProducts = data;
+      error: () => { this.loadError = true; }
     });
   }
 
@@ -141,8 +104,7 @@ export class DashboardListComponent implements OnInit {
 
   // Verificar permissão de admin
   public hasAdminPermission(): boolean {
-    const user = this.auth.getUser();
-    return user?.roles?.includes('ROLE_MANAGER') || false;
+    return this.auth.hasAnyRole(['ROLE_ADMIN', 'ROLE_MANAGER']);
   }
 
   calculateVariation(current: number, previous: number): number {

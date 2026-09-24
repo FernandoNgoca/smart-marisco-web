@@ -56,11 +56,11 @@
             >
               Nome de usuário é obrigatório
             </mat-error>
-            <mat-error *ngIf="form.get('userName')?.hasError('minlength')">
-              Mínimo de 3 caracteres
+            <mat-error *ngIf="form.get('userName')?.hasError('pattern')">
+              O nome não pode conter apenas espaços
             </mat-error>
             <mat-error *ngIf="form.get('userName')?.hasError('maxlength')">
-              Máximo de 50 caracteres
+              Máximo de 20 caracteres
             </mat-error>
           </mat-form-field>
         </div>
@@ -122,15 +122,16 @@
                 hidePassword ? "visibility_off" : "visibility"
               }}</mat-icon>
             </button>
+            <mat-hint>Use entre 12 e 128 caracteres.</mat-hint>
+            <mat-error *ngIf="form.get('password')?.hasError('maxlength')">Máximo de 128 caracteres</mat-error>
             <mat-error *ngIf="form.get('password')?.hasError('required')">
               Senha é obrigatória
             </mat-error>
             <mat-error *ngIf="form.get('password')?.hasError('minlength')">
-              Mínimo de 6 caracteres
+              Mínimo de 12 caracteres
             </mat-error>
             <mat-error *ngIf="form.get('password')?.hasError('pattern')">
-              A senha deve conter pelo menos uma letra maiúscula, uma minúscula
-              e um número
+              A senha não pode conter apenas espaços
             </mat-error>
           </mat-form-field>
 

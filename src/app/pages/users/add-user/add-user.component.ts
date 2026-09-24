@@ -50,12 +50,13 @@ export class AddUserComponent implements OnInit {
 
   private createForm(): void {
     this.form = this.fb.group({
-      userName: ['', [Validators.required, Validators.minLength(3), Validators.maxLength(50)]],
+      userName: ['', [Validators.required, Validators.pattern(/.*\S.*/), Validators.maxLength(20)]],
       fullName: ['', [Validators.required, Validators.minLength(3), Validators.maxLength(100)]],
       password: ['', [
         Validators.required,
-        Validators.minLength(6),
-        Validators.pattern(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/)
+        Validators.minLength(12),
+        Validators.maxLength(128),
+        Validators.pattern(/.*\S.*/s)
       ]],
       confirmPassword: ['', [Validators.required]],
       roles: [[], [Validators.required, Validators.minLength(1)]],
@@ -118,7 +119,7 @@ export class AddUserComponent implements OnInit {
 
   // Criar usuário
   onSubmit(): void {
-    if (this.form.invalid) return;
+    if (this.form.invalid || this.isLoading || !this.hasAdminPermission()) return;
 
     this.isLoading = true;
 

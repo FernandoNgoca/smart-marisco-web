@@ -1,6 +1,6 @@
 import { HttpClient, HttpParams } from "@angular/common/http";
 import { Injectable } from "@angular/core";
-import { Client } from "@app/shared/models/client";
+import { Client, PagedClients } from "@app/shared/models/client";
 import { Observable } from "rxjs";
 import { environment } from "src/environments/environment";
 
@@ -17,18 +17,18 @@ export class ClientService {
     sortField: string,
     direction: 'asc' | 'desc',
     filter: string = ''
-  ): Observable<any> {
+  ): Observable<PagedClients> {
     let params = new HttpParams()
       .set('page', page)
       .set('size', size)
-      .set('sortField', sortField)
+      .set('sortField', sortField || 'firstName')
       .set('direction', direction);
 
     if (filter) {
       params = params.set('search', filter);
     }
 
-    return this.http.get<any>(this.baseURL, { params });
+    return this.http.get<PagedClients>(this.baseURL, { params });
   }
 
   create(client: Client): Observable<Client> {

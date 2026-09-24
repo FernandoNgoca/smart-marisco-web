@@ -13,12 +13,13 @@
       <mat-icon>person</mat-icon>
       Profile
     </a>
-    <a mat-tab-link routerLink="/users/addUser" routerLinkActive="active-link">
+    <a *ngIf="auth.hasRole('ROLE_ADMIN')" mat-tab-link routerLink="/users/addUser" routerLinkActive="active-link">
       <mat-icon>person_add</mat-icon>
       Adicionar Usuário
     </a>
     <a
       mat-tab-link
+      *ngIf="auth.hasRole('ROLE_ADMIN')"
       routerLink="/users/allUser"
       routerLinkActive="active-link"
     >

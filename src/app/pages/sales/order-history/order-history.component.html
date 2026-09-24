@@ -1,3 +1,7 @@
+<div *ngIf="loadError" role="alert">Não foi possível carregar os dados.
+  <button mat-button (click)="loadOrders()">Tentar novamente</button>
+</div>
+<p *ngIf="isLoading" role="status">A carregar...</p>
 <div class="toolbar">
   <mat-form-field appearance="outline" class="filter-field">
     <mat-label>Pesquisar</mat-label>
@@ -84,7 +88,7 @@
     <!-- Sem dados -->
     <tr class="mat-row" *matNoDataRow>
       <td class="mat-cell" colspan="5">
-        Não há dados para o filtro "{{ filterValue }}"
+        {{ loadError ? 'Dados indisponíveis. Tente novamente.' : isLoading ? 'A carregar...' : 'Nenhum resultado encontrado.' }}
       </td>
     </tr>
   </mat-table>

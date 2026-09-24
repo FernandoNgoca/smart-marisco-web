@@ -15,6 +15,7 @@ const routes: Routes = [
     path: '',
     component: MainLayoutComponent,
     canActivate: [AuthGuard],
+    canActivateChild: [AuthGuard],
     children: [
       {
         path: 'users',
@@ -33,12 +34,14 @@ const routes: Routes = [
       },
       {
         path: 'settings',
+        data: { roles: ['ROLE_ADMIN', 'ROLE_MANAGER'] },
         loadChildren: () => import('./pages/settings/settings.module')
           .then(m => m.SettingsModule),
         canActivate: [AuthGuard]
       },
       {
         path: 'product',
+        data: { roles: ['ROLE_ADMIN', 'ROLE_MANAGER'] },
         loadChildren: () => import('./pages/product/product.module')
           .then(m => m.ProductModule),
         canActivate: [AuthGuard]
@@ -51,6 +54,7 @@ const routes: Routes = [
       },
       {
         path: 'stock',
+        data: { roles: ['ROLE_ADMIN', 'ROLE_MANAGER'] },
         loadChildren: () => import('./pages/stock/stock.module')
           .then(m => m.StockModule),
         canActivate: [AuthGuard]
@@ -69,15 +73,15 @@ const routes: Routes = [
     ]
   },
 
-  { path: 'pages/settings', loadChildren: () => import('./pages/settings/settings.module').then(m => m.SettingsModule) },
+  { path: 'pages/settings', redirectTo: 'settings', pathMatch: 'prefix' },
 
-  { path: 'pages/product', loadChildren: () => import('./pages/product/product.module').then(m => m.ProductModule) },
+  { path: 'pages/product', redirectTo: 'product', pathMatch: 'prefix' },
 
-  { path: 'pages/client', loadChildren: () => import('./pages/client/client.module').then(m => m.ClientModule) },
+  { path: 'pages/client', redirectTo: 'client', pathMatch: 'prefix' },
 
-  { path: 'pages/stock', loadChildren: () => import('./pages/stock/stock.module').then(m => m.StockModule) },
+  { path: 'pages/stock', redirectTo: 'stock', pathMatch: 'prefix' },
 
-  { path: 'pages/sales', loadChildren: () => import('./pages/sales/sales.module').then(m => m.SalesModule) },
+  { path: 'pages/sales', redirectTo: 'sales', pathMatch: 'prefix' },
 
   {
     path: '**',

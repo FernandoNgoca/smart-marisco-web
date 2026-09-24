@@ -45,8 +45,8 @@ export class SaleService {
     return this.http.get<any>(this.baseURL, { params });
   }
 
-  create(payload: SaleRequest): Observable<any> {
-    return this.http.post<Sale>(this.baseURL, payload);
+  create(payload: SaleRequest, operationKey: string): Observable<any> {
+    return this.http.post<Sale>(this.baseURL, payload, { headers: { 'Idempotency-Key': operationKey } });
   }
 
   update(sale: Sale): Observable<Sale> {
@@ -103,7 +103,7 @@ export class SaleService {
       .set('direction', direction);
 
     if (filter) {
-      params = params.set('searchOrders', filter);
+      params = params.set('search', filter);
     }
 
     return this.http.get<any>(`${this.baseURL}/findAllOrders`, { params });
