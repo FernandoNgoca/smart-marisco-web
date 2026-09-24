@@ -1,3 +1,4 @@
+import { MAX_QUANTITY, QUANTITY_MESSAGE, quantityValidator } from '@app/shared/validators/quantity.validator';
 import { Component, Inject, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
@@ -20,6 +21,8 @@ export interface DialogData {
 export class AddStockMovementComponent implements OnInit {
 
   form: FormGroup;
+  readonly maxQuantity = MAX_QUANTITY;
+  readonly quantityMessage = QUANTITY_MESSAGE;
   isLoading = false;
   loadingProducts = false;
   products: Product[] = [];
@@ -52,7 +55,7 @@ export class AddStockMovementComponent implements OnInit {
     this.form = this.fb.group({
       id: [],
       stockId: ['', Validators.required],
-      quantity: [null, [Validators.required, Validators.min(1)]],
+      quantity: [null, [Validators.required, quantityValidator]],
     });
   }
 
@@ -80,11 +83,17 @@ export class AddStockMovementComponent implements OnInit {
     const msg = error.error?.message
       || error.error?.errors?.map((e: any) => e.message).join(', ')
       || `Erro ao ${this.isEditMode ? 'atualizar' : 'salvar'} movimento de estoque.`;
-    alert(msg);
+    this.snackbar.error(msg);
   }
 
   salvar(): void {
     if (this.form.valid && !this.isLoading) {
+      const quantity = Number(this.form.get('quantity')?.value);
+      if (this.stock && this.stock.quantity + quantity > MAX_QUANTITY) {
+        this.snackbar.error('A entrada excede o limite do stock. Quantidade máxima a entrar: '
+          + Math.max(0, MAX_QUANTITY - this.stock.quantity).toFixed(3));
+        return;
+      }
       this.isLoading = true;
 
       const formValue = this.form.getRawValue();
@@ -108,7 +117,7 @@ export class AddStockMovementComponent implements OnInit {
         error: (error) => {
           this.isLoading = false;
           this.handleError(error);
-          this.snackbar.error('Erro ao salvar movimento de estoque.');
+
         }
       });
     } else {

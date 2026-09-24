@@ -30,13 +30,14 @@
         matInput
         type="number"
         formControlName="quantity"
+        min="0.001" [max]="maxQuantity" step="0.001"
         placeholder="Ex: 10"
       />
       <mat-error *ngIf="form.get('quantity')?.hasError('required')">
         Entrada é obrigatória
       </mat-error>
-      <mat-error *ngIf="form.get('quantity')?.hasError('min')">
-        A quantidade deve ser maior que 0
+      <mat-error *ngIf="form.get('quantity')?.hasError('quantity')">
+        {{ quantityMessage }}
       </mat-error>
     </mat-form-field>
   </div>

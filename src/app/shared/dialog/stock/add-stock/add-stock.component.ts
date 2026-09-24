@@ -1,3 +1,4 @@
+import { MAX_QUANTITY, QUANTITY_MESSAGE, quantityValidator } from '@app/shared/validators/quantity.validator';
 import { Component, Inject, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
@@ -19,6 +20,8 @@ export interface DialogData {
 export class AddStockComponent implements OnInit {
 
   form: FormGroup;
+  readonly maxQuantity = MAX_QUANTITY;
+  readonly quantityMessage = QUANTITY_MESSAGE;
   isLoading = false;
   loadingProducts = false;
   products: Product[] = [];
@@ -44,7 +47,7 @@ export class AddStockComponent implements OnInit {
     this.form = this.fb.group({
       id: [],
       productId: ['', Validators.required],
-      quantity: [null, [Validators.required, Validators.min(1)]],
+      quantity: [null, [Validators.required, quantityValidator]],
     });
   }
 
@@ -120,7 +123,7 @@ export class AddStockComponent implements OnInit {
     const msg = error.error?.message
       || error.error?.errors?.map((e: any) => e.message).join(', ')
       || `Erro ao ${this.isEditMode ? 'atualizar' : 'salvar'} cliente.`;
-    alert(msg);
+    this.snackbar.error(msg);
   }
 
   salvar(): void {
@@ -149,7 +152,7 @@ export class AddStockComponent implements OnInit {
         error: (error) => {
           this.isLoading = false;
           this.handleError(error);
-          this.snackbar.error('Erro ao salvar estoque.');
+
         }
       });
     } else {
