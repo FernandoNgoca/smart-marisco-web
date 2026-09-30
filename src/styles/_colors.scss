@@ -1,0 +1,42 @@
+@use '@angular/material' as mat;
+@use 'sass:map';
+
+$brand: map.merge(mat.$teal-palette, (500: #0f5265, 600: #0c4555, 700: #093744,
+  contrast: map.merge(map.get(mat.$teal-palette, contrast), (500: white, 600: white, 700: white))));
+$theme: mat.define-light-theme((color: (
+  primary: mat.define-palette($brand),
+  accent: mat.define-palette($brand),
+  warn: mat.define-palette(mat.$red-palette, 700)
+)));
+// Keep the existing Material typography and density; replace its indigo/pink colors.
+@include mat.all-component-colors($theme);
+
+:root {
+  --app-primary: #0f5265;
+  --app-primary-hover: #0c4555;
+  --app-primary-active: #093744;
+  --app-primary-soft: #e7f1f4;
+  --app-header: linear-gradient(135deg, #0f3a68, #1e5f9b);
+  --app-text: #18334c;
+  --app-muted: #586b7c;
+  --app-border: #e1e8ef;
+  --app-surface: #ffffff;
+  --app-background: #f3f7fa;
+  --app-success: #187044;
+  --app-danger: #b42318;
+  --app-warning: #805311;
+  --app-disabled: #e1e8ef;
+}
+body { color: var(--app-text); background: var(--app-background); }
+button.app-button.mat-button-base {
+  &.btn-add, &.btn-save, &.primary-action {
+    background: var(--app-primary);
+    color: white;
+    box-shadow: none;
+    &:hover:not(:disabled) { background: var(--app-primary-hover); }
+    &:active:not(:disabled) { background: var(--app-primary-active); }
+    &:disabled { background: var(--app-disabled); color: var(--app-muted); opacity: 1; box-shadow: none; }
+  }
+  &.btn-cancel { background: var(--app-background); color: var(--app-muted); border: 1px solid var(--app-border); }
+}
+.global-loader mat-spinner circle { stroke: var(--app-primary); }
