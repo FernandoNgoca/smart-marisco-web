@@ -1,3 +1,6 @@
+@use './styles/tables';
+@use './styles/buttons';
+@use './styles/colors';
 /* You can add global styles to this file, and also import other style files */
 @import '../node_modules/@fortawesome/fontawesome-free/css/all.min.css';
 
@@ -91,5 +94,5 @@ body {
 }
 
 .global-loader mat-spinner circle {
-  stroke: #ff1744 !important;
+  stroke: var(--app-primary);
 }

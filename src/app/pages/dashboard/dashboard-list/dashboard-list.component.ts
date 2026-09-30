@@ -1,4 +1,5 @@
-import { forkJoin, finalize } from 'rxjs';
+import { DashboardService, DashboardSummary } from '@app/services/dashboard.service';
+import { forkJoin, finalize, catchError, of, Observable, switchMap, timeout } from 'rxjs';
 import { Component, OnInit } from '@angular/core';
 import { AuthService } from '@app/services/auth.service';
 import { ClientService } from '@app/services/client.service';
@@ -19,16 +20,17 @@ export class DashboardListComponent implements OnInit {
   salesByDay: { name: string; value: number }[] = [];
 
   topProducts: any[] = [];
+  weekUnavailable = false;
+  topUnavailable = false;
 
-  totalVendasHoje: number = 0;
-  totalVendasMes: number = 0;
-  totalClientes: number = 0;
-  totalProdutos: number = 0;
-  totalOrders: number = 0;
-  variationSale: number = 0;
-  yesterday: number = 0;
-  salesPreviousMonth: number = 0;
-  variationSaleMonth: number = 0;
+  totalVendasHoje: number | null = null;
+  totalVendasMes: number | null = null;
+  totalClientes: number | null = null;
+  totalProdutos: number | null = null;
+  totalOrders: number | null = null;
+  summary: DashboardSummary | null = null;
+  variationSale: number | null = 0;
+  variationSaleMonth: number | null = 0;
 
   yAxisTicks: number[] = [0, 1];
 
@@ -43,6 +45,7 @@ export class DashboardListComponent implements OnInit {
   ];
 
   constructor(
+    private dashboardService: DashboardService,
     private saleService: SaleService,
     private clientService: ClientService,
     private productService: ProductService,
@@ -55,40 +58,52 @@ export class DashboardListComponent implements OnInit {
   }
 
   public loadTotalVendasHoje(): void {
-    if (this.isLoading || !this.hasAdminPermission()) return;
+    if (this.isLoading || !this.hasDashboardPermission()) return;
     this.isLoading = true;
     this.loadError = false;
     forkJoin({
-      today: this.saleService.countByCreatedDateBetweenAndSaleStatusAndStatus(),
-      yesterday: this.saleService.countYesterdaySales(),
-      month: this.saleService.countSalesCurrentMonth(),
-      previousMonth: this.saleService.countSalesPreviousMonth(),
-      clients: this.clientService.countClients(),
-      products: this.productService.countProducts(),
-      orders: this.saleService.countByStatusAndSaleStatus(),
-      week: this.saleService.getSalesWeek(),
-      top: this.saleItemService.getTopProducts()
-    }).pipe(finalize(() => { this.isLoading = false; })).subscribe({
-      next: data => {
-        this.totalVendasHoje = data.today;
-        this.yesterday = data.yesterday;
-        this.totalVendasMes = data.month;
-        this.salesPreviousMonth = data.previousMonth;
-        this.totalClientes = data.clients;
-        this.totalProdutos = data.products;
-        this.totalOrders = data.orders;
-        this.variationSale = this.calculateVariation(data.today, data.yesterday);
-        this.variationSaleMonth = this.calculateVariation(data.month, data.previousMonth);
-        this.salesByDay = this.weekTemplate.map(day => ({
-          name: day.name, value: data.week.find(d => d.name === day.name)?.value ?? 0
-        }));
-        const max = Math.max(...this.salesByDay.map(day => day.value), 1);
-        const step = Math.max(1, Math.ceil(max / 5));
-        this.yAxisTicks = Array.from({ length: Math.ceil(max / step) + 1 }, (_, i) => i * step);
-        this.topProducts = data.top;
-      },
-      error: () => { this.loadError = true; }
+      sales: this.available(this.dashboardService.summary()).pipe(switchMap(summary => {
+        if (summary) return of({ summary, today: summary.salesToday, month: summary.salesMonth });
+        // Keep existing counters available when the new summary endpoint is unavailable.
+        return forkJoin({
+          summary: of(null),
+          today: this.available(this.saleService.countByCreatedDateBetweenAndSaleStatusAndStatus()),
+          month: this.available(this.saleService.countSalesCurrentMonth())
+        });
+      })),
+      clients: this.available(this.clientService.countClients()),
+      products: this.available(this.productService.countProducts()),
+      orders: this.available(this.saleService.countByStatusAndSaleStatus()),
+      week: this.available(this.saleService.getSalesWeek()),
+      top: this.available(this.saleItemService.getTopProducts())
+    }).pipe(finalize(() => { this.isLoading = false; })).subscribe(data => {
+      this.summary = data.sales.summary;
+      this.totalVendasHoje = data.sales.today;
+      this.totalVendasMes = data.sales.month;
+      this.totalClientes = data.clients;
+      this.totalProdutos = data.products;
+      this.totalOrders = data.orders;
+      this.variationSale = this.summary
+        ? this.calculateVariation(this.summary.salesToday, this.summary.salesYesterday) : null;
+      this.variationSaleMonth = this.summary
+        ? this.calculateVariation(this.summary.salesMonth, this.summary.salesPreviousPeriod) : null;
+      this.weekUnavailable = data.week === null;
+      this.topUnavailable = data.top === null;
+      this.salesByDay = this.weekTemplate.map(day => ({
+        name: day.name, value: data.week?.find(d => d.name === day.name)?.value ?? 0
+      }));
+      const max = Math.max(...this.salesByDay.map(day => day.value), 1);
+      const step = Math.max(1, Math.ceil(max / 5));
+      this.yAxisTicks = Array.from({ length: Math.ceil(max / step) + 1 }, (_, i) => i * step);
+      this.topProducts = data.top ?? [];
     });
+  }
+
+  private available<T>(request: Observable<T>): Observable<T | null> {
+    return request.pipe(timeout(15000), catchError(() => {
+      this.loadError = true;
+      return of(null);
+    }));
   }
 
   getImage(image: string | undefined): string {
@@ -102,12 +117,12 @@ export class DashboardListComponent implements OnInit {
     return Math.floor(val).toString();
   }
 
-  // Verificar permissão de admin
-  public hasAdminPermission(): boolean {
-    return this.auth.hasAnyRole(['ROLE_ADMIN', 'ROLE_MANAGER']);
+  // Dashboard exclusiva do gerente
+  public hasDashboardPermission(): boolean {
+    return !this.auth.hasAnyRole(['ROLE_ADMIN']) && this.auth.hasAnyRole(['ROLE_MANAGER']);
   }
 
-  calculateVariation(current: number, previous: number): number {
+  calculateVariation(current: number, previous: number): number | null {
 
     if (previous === 0) {
 
@@ -115,7 +130,7 @@ export class DashboardListComponent implements OnInit {
         return 0;
       }
 
-      return 100; // ou null, ou Infinity, conforme a regra de negócio
+      return null;
     }
 
     return Number((((current - previous) / previous) * 100).toFixed(1));

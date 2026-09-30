@@ -164,6 +164,7 @@ const rx = require('rxjs');
     saleResponses[1].next({});
     saleResponses[1].complete();
     component.saleItems = [item];
+    component.selectedClient = client;
     component.calculateTotal();
     component.processSale();
     assert.notEqual(keys[2], keys[0], 'A new sale needs a new key');
@@ -175,7 +176,9 @@ const rx = require('rxjs');
   const saleCounts = {};
   for (const name of ['countByCreatedDateBetweenAndSaleStatusAndStatus', 'countYesterdaySales', 'countSalesCurrentMonth', 'countSalesPreviousMonth', 'countByStatusAndSaleStatus']) saleCounts[name] = () => rx.of(0);
   saleCounts.getSalesWeek = () => rx.of([]);
-  const dashboard = new Dashboard(saleCounts, { countClients: () => rx.of(0) }, { countProducts: () => rx.of(0) }, { hasAnyRole: () => true }, { getTopProducts: () => rx.of([]) });
+  const summaryData = { salesToday: 0, salesYesterday: 0, salesMonth: 0, salesPreviousPeriod: 0, revenueToday: 0, revenueMonth: 0, lowStockProducts: 0 };
+  const summaryApi = { summary: () => rx.of(summaryData) };
+  const dashboard = new Dashboard(summaryApi, saleCounts, { countClients: () => rx.of(0) }, { countProducts: () => rx.of(0) }, { hasAnyRole: required => required.includes('ROLE_MANAGER') }, { getTopProducts: () => rx.of([]) });
   dashboard.loadTotalVendasHoje();
   assert.equal(dashboard.loadError, false);
   assert.equal(dashboard.totalVendasHoje, 0);
@@ -183,6 +186,52 @@ const rx = require('rxjs');
   dashboard.loadTotalVendasHoje();
   assert.equal(dashboard.loadError, true, 'Failed dashboard is distinct from zero sales');
   assert.equal(dashboard.isLoading, false);
+  assert.equal(dashboard.totalVendasHoje, 0, 'A failed chart must not hide available counters');
+  assert.equal(dashboard.weekUnavailable, true);
+  summaryApi.summary = () => rx.throwError(() => new Error('summary endpoint unavailable'));
+  saleCounts.countByCreatedDateBetweenAndSaleStatusAndStatus = () => rx.of(7);
+  dashboard.loadTotalVendasHoje();
+  assert.equal(dashboard.summary, null, 'Unavailable revenue must not be represented as zero');
+  assert.equal(dashboard.totalVendasHoje, 7, 'Legacy counters remain available without the new endpoint');
+  assert.equal(dashboard.variationSale, null, 'Do not compare incompatible periods in fallback');
+  saleCounts.countByCreatedDateBetweenAndSaleStatusAndStatus = () => rx.throwError(() => new Error('offline'));
+  dashboard.loadTotalVendasHoje();
+  assert.equal(dashboard.totalVendasHoje, null, 'Failed counts must not display zero or stale values');
+  summaryApi.summary = () => rx.of(summaryData);
+  saleCounts.getSalesWeek = () => rx.of([]);
+  dashboard.loadTotalVendasHoje();
+  assert.equal(dashboard.loadError, false, 'Retry clears the error after recovery');
+  assert.equal(dashboard.weekUnavailable, false);
+  assert.equal(dashboard.totalVendasHoje, 0);
+
+
+  const dashboardRoute = { pathFromRoot: [{ data: {} }, { routeConfig: { path: 'dashboard' }, data: { roles: ['ROLE_MANAGER'] } }] };
+  for (const role of ['ROLE_ADMIN', 'ROLE_USER', 'ROLE_MANAGER']) {
+    const dashboardGuard = new AuthGuard({ isAuthenticated: () => true, hasAnyRole: required => required.includes(role) }, { createUrlTree: commands => commands[0] });
+    assert.equal(dashboardGuard.canActivateChild(dashboardRoute), role === 'ROLE_MANAGER' ? true : role === 'ROLE_ADMIN' ? '/users/allUser' : '/sales/sale');
+    const menu = load('shared/models/menu.ts').menuItems.find(item => item.link === '/dashboard');
+    assert.equal(menu.roles.includes(role), role === 'ROLE_MANAGER');
+  }
+
+  const stockRoles = ['ROLE_MANAGER', 'ROLE_USER'];
+  for (const role of stockRoles) {
+    assert.ok(load('shared/models/menu.ts').menuForRoles([role]).some(item => item.link === '/stock'));
+    const stockGuard = new AuthGuard({ isAuthenticated: () => true, hasAnyRole: required => required.includes(role) }, { createUrlTree: () => 'denied' });
+    assert.equal(stockGuard.canActivateChild({ pathFromRoot: [{ data: { roles: stockRoles } }] }), true);
+  }
+  const adminRoles = ['ROLE_ADMIN', 'ROLE_MANAGER', 'ROLE_USER'];
+  const mixedGuard = new AuthGuard({ isAuthenticated: () => true, hasAnyRole: required => required.some(role => adminRoles.includes(role)) }, { createUrlTree: commands => commands[0] });
+  for (const businessRoles of [['ROLE_MANAGER'], ['ROLE_MANAGER', 'ROLE_USER']]) {
+    assert.equal(mixedGuard.canActivateChild({ pathFromRoot: [{ data: { roles: businessRoles } }] }), '/users/allUser');
+  }
+  const visibleAdminMenu = load('shared/models/menu.ts').menuForRoles(adminRoles);
+  assert.deepEqual(Array.from(visibleAdminMenu, item => item.link), ['/users/allUser', '/support']);
+
+  for (const role of ['ROLE_ADMIN', 'ROLE_MANAGER', 'ROLE_USER']) {
+    const supportGuard = new AuthGuard({ isAuthenticated: () => true, hasAnyRole: required => required.includes(role) }, { createUrlTree: () => 'denied' });
+    assert.equal(supportGuard.canActivateChild({ pathFromRoot: [{ data: { roles: ['ROLE_ADMIN', 'ROLE_MANAGER', 'ROLE_USER'] } }] }), true);
+    assert.ok(load('shared/models/menu.ts').menuForRoles([role]).some(item => item.link === '/support'));
+  }
 
   const AddUser = load('pages/users/add-user/add-user.component.ts').AddUserComponent;
   const addUser = new AddUser(new modules['@angular/forms'].FormBuilder(), {}, {}, {}, {});
@@ -208,6 +257,7 @@ const rx = require('rxjs');
   let target = '/sales/sale?client=1#details';
   let navigated = '';
   const login = new Login(new modules['@angular/forms'].FormBuilder(), {
+    hasAnyRole: required => required.includes('ROLE_MANAGER'),
     login: payload => {
       loginCalls++;
       assert.equal(payload.username, 'tester');
@@ -241,6 +291,15 @@ const rx = require('rxjs');
     login.login(); loginResponse.next({}); loginResponse.complete();
     assert.equal(navigated, '/dashboard');
   }
+  login.auth.hasAnyRole = required => required.includes('ROLE_ADMIN');
+  for (const destination of ['', '/dashboard', '/sales/sale', '/stock']) {
+    target = destination;
+    loginResponse = new rx.Subject();
+    login.login(); loginResponse.next({}); loginResponse.complete();
+    assert.equal(navigated, '/users/allUser', 'Administrators land in user management');
+  }
+  const adminMenu = load('shared/models/menu.ts').menuItems.filter(item => item.roles.includes('ROLE_ADMIN'));
+  assert.deepEqual(Array.from(adminMenu, item => item.link), ['/users/allUser', '/support']);
   login.ngOnDestroy();
   let savedUrl;
   const returnGuard = new AuthGuard({ isAuthenticated: () => false, getRefreshToken: () => null }, {

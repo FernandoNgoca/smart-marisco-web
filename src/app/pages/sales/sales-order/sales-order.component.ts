@@ -1,3 +1,4 @@
+import { ActivatedRoute, Router } from '@angular/router';
 import { QUANTITY_MESSAGE, quantityValidator } from '@app/shared/validators/quantity.validator';
 import { Subject, of, timer, switchMap, catchError, finalize, takeUntil, map, distinctUntilChanged, startWith } from 'rxjs';
 import { Client } from './../../../shared/models/client';
@@ -41,6 +42,11 @@ export class SalesOrderComponent implements OnInit, OnDestroy {
   saleRequest = {} as SaleRequest;
   form: FormGroup;
   isSaving = false;
+  orderId: number | null = null;
+  loadingOrder = false;
+  orderLoadError = false;
+  legacyPrices = false;
+  agreedPrices = new Map<number, number>();
   isAdding = false;
   clientsLoading = false;
   clientsError = false;
@@ -57,7 +63,9 @@ export class SalesOrderComponent implements OnInit, OnDestroy {
     private clientService: ClientService,
     private snackbar: SnackbarService,
     private saleService: SaleService,
-    private stockService: StockService
+    private stockService: StockService,
+    private route: ActivatedRoute,
+    private router: Router
   ) {
     this.form = this.fb.group({
       productId: [null,],
@@ -85,6 +93,40 @@ export class SalesOrderComponent implements OnInit, OnDestroy {
     });
 
 this.countOrders();
+    const id = this.route?.snapshot.queryParamMap.get('orderId');
+    if (id) {
+      this.orderId = Number(id);
+      this.loadOrder();
+    }
+  }
+
+  loadOrder(): void {
+    if (!this.orderId) return;
+    this.loadingOrder = true;
+    this.orderLoadError = false;
+    this.saleService.findOrder(this.orderId).pipe(takeUntil(this.destroy$), finalize(() => { this.loadingOrder = false; })).subscribe({
+      next: request => {
+        if (request.sale.saleStatus !== SaleStatus.ORDERS) {
+          this.snackbar.error('Só é possível editar pedidos pendentes.');
+          this.orderLoadError = true;
+          return;
+        }
+        this.sale = request.sale;
+        this.legacyPrices = request.items.some(item => item.unitPrice == null);
+        this.agreedPrices.clear();
+        this.saleItems = request.items.map(item => {
+          const price = item.unitPrice ?? item.product.salePrice;
+          this.agreedPrices.set(item.productId, price);
+          return { ...item, unitPrice: price };
+        });
+        this.dataSource.data = this.saleItems;
+        this.selectedClient = request.sale.client ?? null;
+        this.form.get('clientId')?.setValue(this.selectedClient);
+        this.form.get('clientId')?.disable();
+        this.calculateTotal();
+      },
+      error: err => { this.orderLoadError = true; this.snackbar.error(err.error?.detail || err.error?.message || 'Não foi possível carregar o pedido.'); }
+    });
   }
 
   countOrders() {
@@ -96,7 +138,7 @@ this.countOrders();
   }
 
   loadingProducts() {
-    this.productService.findAvailableProducts().subscribe({
+    this.productService.findOrderProducts().subscribe({
       next: (data) => {
         this.products = data;
         this.filteredProducts = data;
@@ -153,7 +195,7 @@ this.countOrders();
 
   calculateTotal() {
     const total = this.saleItems.reduce((sum, item) => {
-      const price = item.product?.salePrice || 0;
+      const price = item.unitPrice ?? item.product?.salePrice ?? 0;
       return sum + (item.quantity * price);
     }, 0);
 
@@ -171,6 +213,7 @@ this.countOrders();
       productId: product.id!,
       product: product,
       quantity: quantity,
+      unitPrice: this.agreedPrices.get(product.id!) ?? product.salePrice,
     };
 
     // Adicionar à lista e atualizar tabela
@@ -192,7 +235,7 @@ this.countOrders();
   }
 
   addItem() {
-    if (this.isSaving || this.isAdding) return;
+    if (this.isSaving || this.isAdding || this.loadingOrder || this.orderLoadError) return;
     // Verificar se os campos obrigatórios estão preenchidos
     const product: Product = this.form.value.productId;
     const quantity: number = this.form.value.quantity;
@@ -221,30 +264,11 @@ this.countOrders();
       return;
     }
 
-    this.isAdding = true;
-    this.stockService.findByProductId(product.id!).pipe(
-      finalize(() => { this.isAdding = false; })
-    ).subscribe({
-      next: (stock) => {
-        if (stock.quantity < quantity) {
-          this.snackbar.error(
-            `Estoque insuficiente. Disponível: ${stock.quantity} unidade(s).`
-          );
-          return;
-        } else {
-          this.addItemToSale(product, quantity);
-        }
-      },
-      error: (err) => {
-        this.snackbar.error(
-          'Não foi possível verificar o estoque do produto.'
-        );
-      }
-    });
+    this.addItemToSale(product, quantity);
   }
 
   removeItem(item: SaleItem) {
-    if (this.isSaving || this.isAdding) return;
+    if (this.isSaving || this.isAdding || this.loadingOrder || this.orderLoadError) return;
     this.saleItems = this.saleItems.filter(i => i !== item);
     this.dataSource.data = [...this.saleItems];
 
@@ -259,7 +283,7 @@ this.countOrders();
   }
 
   editItem(item: SaleItem) {
-    if (this.isSaving || this.isAdding) return;
+    if (this.isSaving || this.isAdding || this.loadingOrder || this.orderLoadError) return;
     // Preencher formulário
     this.form.patchValue({
       productId: item.product,
@@ -273,7 +297,7 @@ this.countOrders();
   }
 
   processSale() {
-    if (this.isSaving || this.isAdding) return;
+    if (this.isSaving || this.isAdding || this.loadingOrder || this.orderLoadError) return;
     if (this.saleItems.length === 0) {
       this.snackbar.error(
         'Adicione pelo menos um produto antes de finalizar o pedido.'
@@ -281,9 +305,14 @@ this.countOrders();
       return;
     }
 
+    if (!this.selectedClient?.id) {
+      this.snackbar.error('Selecione um cliente para continuar.');
+      return;
+    }
     this.saleRequest = {
       sale: {
-        clientId: this.selectedClient?.id,
+        clientId: this.selectedClient.id,
+        version: this.sale.version,
         totalValue: this.sale.totalValue,
         saleStatus: SaleStatus.ORDERS
       },
@@ -296,13 +325,17 @@ this.countOrders();
       this.operationPayload = fingerprint;
     }
     this.isSaving = true;
-    this.saleService.create(this.saleRequest, this.operationKey).pipe(
+    const operation = this.orderId
+      ? this.saleService.updateOrder(this.orderId, this.saleRequest)
+      : this.saleService.create(this.saleRequest, this.operationKey);
+    operation.pipe(
       finalize(() => { this.isSaving = false; })
     ).subscribe({
       next: () => {
         this.operationKey = null;
         this.operationPayload = '';
-        this.snackbar.success('Pedido registado com sucesso!');
+        this.snackbar.success(this.orderId ? 'Pedido atualizado!' : 'Pedido registado sem reservar stock.');
+        if (this.orderId) { void this.router.navigate(['/sales/orderHistory']); return; }
         // Resetar tudo
         this.saleItems = [];
         this.dataSource.data = [];
@@ -314,7 +347,7 @@ this.countOrders();
       },
       error: (err) => {
         this.snackbar.error(
-          err.error?.message ||
+          err.error?.detail || err.error?.message ||
           'Não foi possível concluir o pedido. Tente novamente.'
         );
       }

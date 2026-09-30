@@ -1,199 +1,83 @@
-<p *ngIf="isLoading" role="status">A carregar o resumo...</p>
-<div *ngIf="loadError" role="alert">
-  <p>Não foi possível carregar o resumo. Os valores estão indisponíveis.</p>
-  <button mat-raised-button (click)="loadTotalVendasHoje()">Tentar novamente</button>
+<header class="overview-header">
+  <div><h2>Visão geral</h2><p>Acompanhe as vendas e as prioridades do negócio.</p></div>
+  <a class="primary-action" routerLink="/sales/sale"><i class="fa-solid fa-plus" aria-hidden="true"></i> Registar venda</a>
+</header>
+<p *ngIf="isLoading" class="status-message" role="status">A carregar o resumo...</p>
+<div *ngIf="!isLoading && loadError" class="status-message error" role="alert">
+  <p>Alguns indicadores não puderam ser carregados. Os restantes continuam disponíveis.</p>
+  <button class="app-button" mat-raised-button (click)="loadTotalVendasHoje()">Tentar novamente</button>
 </div>
-<p *ngIf="!hasAdminPermission()">Use o menu para consultar clientes e registar vendas ou pedidos.</p>
-<ng-container *ngIf="!isLoading && !loadError">
-<div class="counters-grid">
-  <div
-    *ngIf="hasAdminPermission()"
-    class="counter-card blue"
-    matTooltip="Quantidade total de vendas realizadas hoje no sistema"
-    matTooltipPosition="above"
-    matTooltipClass="tooltip-custom"
-  >
-    <div class="card-header red">
-      <span class="card-title">
-        Total de Vendas Hoje
-        <i
-          class="fa-solid fa-circle-info info-icon"
-          matTooltip="Número total de vendas registadas hoje"
-          matTooltipPosition="above"
-          matTooltipClass="tooltip-custom"
-        ></i>
-      </span>
-      <i class="fa-solid fa-calendar-day"></i>
-    </div>
-    <div class="card-value">{{ this.totalVendasHoje }}</div>
-    <div
-        class="trend"
-        [ngClass]="{
-          positive: variationSale >= 0,
-          negative: variationSale < 0
-        }"
-      >
-        <div class="badge">
-          <i
-            class="fa-solid"
-            [class.fa-arrow-up]="variationSale > 0"
-            [class.fa-arrow-down]="variationSale < 0"
-          ></i>
-
-          <span>{{ variationSale }}%</span>
-        </div>
-
-        <span class="text">vs ontem</span>
+<p *ngIf="!hasDashboardPermission()">Use o menu para consultar clientes e registar vendas ou pedidos.</p>
+<ng-container *ngIf="!isLoading && hasDashboardPermission()">
+  <div class="counters-grid">
+    <article class="counter-card featured">
+      <span class="card-title">Faturação hoje <i class="fa-solid fa-wallet" aria-hidden="true"></i></span>
+      <div class="card-value">{{ summary ? (summary.revenueToday | currency:'MZN ':'symbol':'1.2-2') : 'Indisponível' }}</div>
+      <span class="card-note">Vendas concluídas</span>
+    </article>
+    <article class="counter-card">
+      <span class="card-title">Faturação do mês <i class="fa-solid fa-calendar-days" aria-hidden="true"></i></span>
+      <div class="card-value">{{ summary ? (summary.revenueMonth | currency:'MZN ':'symbol':'1.2-2') : 'Indisponível' }}</div>
+      <span class="card-note">Acumulado até agora</span>
+    </article>
+    <article class="counter-card">
+      <span class="card-title">Vendas hoje <i class="fa-solid fa-receipt" aria-hidden="true"></i></span>
+      <div class="card-value">{{ totalVendasHoje === null ? '—' : (totalVendasHoje | number) }}</div>
+      <div *ngIf="summary" class="trend" [class.positive]="variationSale !== null && variationSale > 0" [class.negative]="variationSale !== null && variationSale < 0">
+        <strong>{{ variationSale === null ? 'Sem base de comparação' : ((variationSale > 0 ? '+' : '') + variationSale + '%') }}</strong>
+        <span>vs ontem até à mesma hora</span>
       </div>
-
-  </div>
-
-  <div
-    *ngIf="hasAdminPermission()"
-    class="counter-card red"
-    matTooltip="Quantidade total de vendas realizadas no mês corrente"
-    matTooltipPosition="above"
-    matTooltipClass="tooltip-custom"
-  >
-    <div class="card-header">
-      <span class="card-title">
-        Total de Vendas do Mês
-        <i
-          class="fa-solid fa-circle-info info-icon"
-          matTooltip="Número total de vendas registadas no mês corrente"
-          matTooltipPosition="above"
-          matTooltipClass="tooltip-custom"
-        ></i>
-      </span>
-      <i class="fa-solid fa-calendar-days"></i>
-    </div>
-
-    <div class="card-value">{{ this.totalVendasMes }}</div>
-
-    <div
-        class="trend"
-        [ngClass]="{
-          positive: variationSaleMonth >= 0,
-          negative: variationSaleMonth < 0
-        }"
-      >
-        <div class="badge">
-          <i
-            class="fa-solid"
-            [class.fa-arrow-up]="variationSaleMonth >= 0"
-            [class.fa-arrow-down]="variationSaleMonth < 0"
-          ></i>
-
-          <span>{{ variationSaleMonth }}%</span>
-        </div>
-
-        <span class="text">vs mês passado.</span>
+    </article>
+    <article class="counter-card">
+      <span class="card-title">Vendas do mês <i class="fa-solid fa-chart-line" aria-hidden="true"></i></span>
+      <div class="card-value">{{ totalVendasMes === null ? '—' : (totalVendasMes | number) }}</div>
+      <div *ngIf="summary" class="trend" [class.positive]="variationSaleMonth !== null && variationSaleMonth > 0" [class.negative]="variationSaleMonth !== null && variationSaleMonth < 0">
+        <strong>{{ variationSaleMonth === null ? 'Sem base de comparação' : ((variationSaleMonth > 0 ? '+' : '') + variationSaleMonth + '%') }}</strong>
+        <span>vs 1–{{ summary.previousPeriodEnd | date:'dd/MM' }}, até {{ summary.previousPeriodEnd | date:'HH:mm' }}</span>
       </div>
+    </article>
   </div>
 
-  <div
-    *ngIf="hasAdminPermission()"
-    class="counter-card green"
-    matTooltip="Quantidade total de clientes cadastrados no sistema"
-    matTooltipPosition="above"
-    matTooltipClass="tooltip-custom"
-  >
-    <div class="card-header">
-      <span class="card-title">
-        Total de Clientes Cadastrados
-        <i
-          class="fa-solid fa-circle-info info-icon"
-          matTooltip="Número total de clientes registados no sistema"
-          matTooltipPosition="above"
-          matTooltipClass="tooltip-custom"
-        ></i>
-      </span>
-      <i class="fa-solid fa-users"></i>
+  <section class="attention-panel" aria-labelledby="attention-title">
+    <div class="section-heading"><h3 id="attention-title">Precisa de atenção</h3><span>Próximos passos</span></div>
+    <div class="attention-grid">
+      <a routerLink="/sales/orderHistory" class="attention-item" [class.warning]="totalOrders !== null && totalOrders > 0">
+        <i class="fa-solid fa-inbox" aria-hidden="true"></i>
+        <div><strong>{{ totalOrders === null ? '—' : (totalOrders | number) }} pedidos pendentes</strong><span>{{ totalOrders === null ? 'Contagem indisponível · Consultar pedidos' : (totalOrders ? 'Consultar encomendas por concluir' : 'Não há pedidos por concluir') }}</span></div>
+        <i class="fa-solid fa-arrow-right" aria-hidden="true"></i>
+      </a>
+      <a routerLink="/stock" class="attention-item" [class.warning]="summary && summary.lowStockProducts > 0">
+        <i class="fa-solid fa-boxes-stacked" aria-hidden="true"></i>
+        <div><strong>{{ summary ? (summary.lowStockProducts | number) : '—' }} produtos com stock baixo</strong><span *ngIf="summary">Stock até {{ summary.lowStockThreshold }}, na unidade de cada produto, incluindo produtos sem stock · Consultar stock</span><span *ngIf="!summary">Contagem indisponível · Consultar stock</span></div>
+        <i class="fa-solid fa-arrow-right" aria-hidden="true"></i>
+      </a>
     </div>
+  </section>
 
-    <div class="card-value">{{ this.totalClientes }}</div>
+  <div class="dashboard-row">
+    <section class="panel">
+      <div class="section-heading"><h3>Vendas da semana</h3><span>Número de vendas concluídas</span></div>
+      <p *ngIf="weekUnavailable" class="empty-state">Não foi possível carregar as vendas da semana.</p>
+      <div *ngIf="!weekUnavailable" class="chart-area">
+        <ngx-charts-bar-vertical [results]="salesByDay" [xAxis]="true" [yAxis]="true" [showDataLabel]="true"
+          [yAxisTicks]="yAxisTicks" [yAxisTickFormatting]="formatYAxisTicks" [roundEdges]="false">
+        </ngx-charts-bar-vertical>
+      </div>
+    </section>
+    <section class="panel">
+      <div class="section-heading"><h3>Produtos mais vendidos</h3><span>Quantidade e valor de vendas</span></div>
+      <p *ngIf="!topUnavailable && topProducts.length === 0" class="empty-state">Os produtos mais vendidos aparecerão aqui após as primeiras vendas.</p>
+      <p *ngIf="topUnavailable" class="empty-state">Não foi possível carregar os produtos mais vendidos.</p>
+      <div class="product-item" *ngFor="let p of topProducts; let i = index">
+        <span class="rank">{{ i + 1 }}</span>
+        <img [src]="getImage(p.image)" class="avatar" alt="" />
+        <div class="product-info"><strong>{{ p.name }}</strong><span>{{ p.quantity | number:'1.0-3' }} vendidos</span></div>
+        <strong class="product-total">{{ p.totalValue | currency:'MZN ':'symbol':'1.2-2' }}</strong>
+      </div>
+    </section>
   </div>
-
-  <div
-    *ngIf="hasAdminPermission()"
-    class="counter-card teal"
-    matTooltip="Quantidade total de produtos disponíveis em estoque"
-    matTooltipPosition="above"
-    matTooltipClass="tooltip-custom"
-  >
-    <div class="card-header">
-      <span class="card-title">
-        Total de Produtos em Estoque
-        <i
-          class="fa-solid fa-circle-info info-icon"
-          matTooltip="Número total de produtos atualmente disponíveis em estoque"
-          matTooltipPosition="above"
-          matTooltipClass="tooltip-custom"
-        ></i>
-      </span>
-      <i class="fa-solid fa-boxes-stacked"></i>
-    </div>
-
-    <div class="card-value">{{ this.totalProdutos }}</div>
-  </div>
-
-  <div
-    *ngIf="hasAdminPermission()"
-    class="counter-card teal"
-    matTooltip="Número total de encomendas."
-    matTooltipPosition="above"
-    matTooltipClass="tooltip-custom"
-  >
-    <div class="card-header">
-      <span class="card-title">
-        Total de Pedidos
-        <i
-          class="fa-solid fa-circle-info info-icon"
-          matTooltip="Número total de encomendas."
-          matTooltipPosition="above"
-          matTooltipClass="tooltip-custom"
-        ></i>
-      </span>
-      <i class="fa-solid fa-inbox"></i>
-    </div>
-
-    <div class="card-value">{{ totalOrders }}</div>
-  </div>
-</div>
-
-<div class="dashboard-row" *ngIf="hasAdminPermission()">
-  <div class="chart-container">
-    <h3 class="chart-title">Vendas da Semana</h3>
-    <ngx-charts-bar-vertical
-      [results]="salesByDay"
-      [xAxis]="true"
-      [yAxis]="true"
-      [showDataLabel]="true"
-      [view]="[320, 250]"
-      [yAxisTicks]="yAxisTicks"
-      [yAxisTickFormatting]="formatYAxisTicks"
-    >
-    </ngx-charts-bar-vertical>
-  </div>
-
-  <div class="top-products-card">
-    <div class="header">
-      <h3 class="chart-title">Top Produtos</h3>
-    </div>
-
-    <p *ngIf="topProducts.length === 0">Ainda não existem produtos vendidos.</p>
-    <div class="product-item" *ngFor="let p of topProducts">
-      <img [src]="getImage(p.image)" class="avatar" alt="Imagem do Produto" />
-
-      <div class="name">{{ p.name }}</div>
-
-      <div class="qty">{{ p.quantity }} vendidos</div>
-
-      <div class="total">{{ p.totalValue | currency: "MZN " }}</div>
-
-
-    </div>
-  </div>
-</div>
-
+  <footer class="overview-footer">
+    <div><a routerLink="/client">{{ totalClientes === null ? '—' : (totalClientes | number) }} clientes</a><span aria-hidden="true"> · </span><a routerLink="/product">{{ totalProdutos === null ? '—' : (totalProdutos | number) }} produtos registados</a></div>
+    <span><span *ngIf="summary">Atualizado às {{ summary.updatedAt | date:'HH:mm' }}</span> <button class="refresh-button" (click)="loadTotalVendasHoje()">Atualizar</button></span>
+  </footer>
 </ng-container>

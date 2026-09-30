@@ -10,9 +10,13 @@ export class AuthGuard implements CanActivate, CanActivateChild {
   canActivate(route?: ActivatedRouteSnapshot, state?: RouterStateSnapshot): boolean | UrlTree | Observable<boolean | UrlTree> {
     const allowed = () => !route || route.pathFromRoot.every(node => {
       const roles = node.data['roles'] as string[] | undefined;
+      if (roles && !roles.includes('ROLE_ADMIN') && this.auth.hasAnyRole(['ROLE_ADMIN'])) return false;
       return !roles || this.auth.hasAnyRole(roles);
     });
-    const destination = () => allowed() ? true : this.router.createUrlTree(['/users/myProfile']);
+    const destination = () => allowed() ? true : this.router.createUrlTree([
+      this.auth.hasAnyRole(['ROLE_ADMIN']) ? '/users/allUser' :
+      (route?.pathFromRoot.some(node => node.routeConfig?.path === 'dashboard') ? '/sales/sale' : '/users/myProfile')
+    ]);
     if (this.auth.isAuthenticated()) return destination();
     const login = this.router.createUrlTree(['/auth/login'], { queryParams: state ? { returnUrl: state.url } : {} });
     if (!this.auth.getRefreshToken()) return login;

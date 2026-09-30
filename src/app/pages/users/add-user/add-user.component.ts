@@ -1,4 +1,5 @@
-import { Component, OnInit } from '@angular/core';
+import { Subject, takeUntil } from 'rxjs';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { AbstractControl, FormBuilder, FormGroup, ValidationErrors, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import { AuthService } from '@app/services/auth.service';
@@ -11,10 +12,18 @@ import imageCompression from 'browser-image-compression';
   templateUrl: './add-user.component.html',
   styleUrls: ['./add-user.component.scss']
 })
-export class AddUserComponent implements OnInit {
+export class AddUserComponent implements OnInit, OnDestroy {
 
   form!: FormGroup;
   isLoading = false;
+  processingImage = false;
+  imageError = '';
+  saveError = '';
+  private destroyed = new Subject<void>();
+  private closed = false;
+  private imageRevision = 0;
+  get busy(): boolean { return this.isLoading || this.processingImage; }
+  get isViewMode(): boolean { return false; }
   hidePassword = true;
   hideConfirmPassword = true;
 
@@ -44,14 +53,14 @@ export class AddUserComponent implements OnInit {
     // Verificar permissão do usuário logado
     if (!this.hasAdminPermission()) {
       this.snackbar.error('Você não tem permissão para criar usuários');
-      this.router.navigate(['/dashboard']);
+      this.router.navigate(['/users/myProfile']);
     }
   }
 
   private createForm(): void {
     this.form = this.fb.group({
       userName: ['', [Validators.required, Validators.pattern(/.*\S.*/), Validators.maxLength(20)]],
-      fullName: ['', [Validators.required, Validators.minLength(3), Validators.maxLength(100)]],
+      fullName: ['', [Validators.required, Validators.pattern(/\S/), Validators.minLength(3), Validators.maxLength(100)]],
       password: ['', [
         Validators.required,
         Validators.minLength(12),
@@ -77,70 +86,65 @@ export class AddUserComponent implements OnInit {
   }
 
   // Upload e compressão de imagem
-  async onFileSelected(event: any): Promise<void> {
-    const file: File = event.target.files[0];
-    if (!file) return;
-
-    // Validar tipo de arquivo
-    if (!file.type.match(/image\/(jpeg|png|jpg)/i)) {
-      this.snackbar.error('Formato inválido. Use JPG ou PNG');
-      return;
+  async onFileSelected(event: Event): Promise<void> {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    input.value = '';
+    if (!file || this.isViewMode || this.busy) return;
+    this.imageError = '';
+    if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type) || file.size > 10 * 1024 * 1024) {
+      this.imageError = 'Selecione uma imagem JPG, PNG ou WebP até 10 MB.'; return;
     }
-
+    const revision = ++this.imageRevision;
+    this.processingImage = true;
     try {
-      const options = {
-        maxSizeMB: 0.3,
-        maxWidthOrHeight: 800,
-        useWebWorker: true
-      };
-
-      const compressedFile = await imageCompression(file, options);
-      this.selectedFile = compressedFile;
-
-      const reader = new FileReader();
-      reader.onload = () => {
-        this.imagePreview = reader.result;
-        this.imageBase64 = reader.result as string;
-      };
-      reader.readAsDataURL(compressedFile);
-
-    } catch (error) {
-      console.error('Erro ao comprimir imagem:', error);
-      this.snackbar.error('Erro ao processar imagem');
-    }
+      const compressed = await imageCompression(file, { maxSizeMB: 0.3, maxWidthOrHeight: 800, useWebWorker: true });
+      const result = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = () => reject(new Error('Imagem ilegível'));
+        reader.readAsDataURL(compressed);
+      });
+      if (!this.closed && revision === this.imageRevision) { this.imagePreview = result; this.imageBase64 = result; }
+    } catch {
+      if (!this.closed) this.imageError = 'Não foi possível processar a imagem. Escolha outra imagem.';
+    } finally { if (!this.closed) this.processingImage = false; }
   }
-
-  // Remover imagem selecionada
   removeImage(): void {
-    this.selectedFile = null;
-    this.imagePreview = null;
-    this.imageBase64 = null;
+    if (this.busy) return;
+    this.imageRevision++;
+    this.selectedFile = null; this.imagePreview = null; this.imageBase64 = null; this.imageError = '';
   }
+  ngOnDestroy(): void { this.closed = true; this.imageRevision++; this.destroyed.next(); this.destroyed.complete(); }
 
   // Criar usuário
   onSubmit(): void {
-    if (this.form.invalid || this.isLoading || !this.hasAdminPermission()) return;
+    if (this.form.invalid || this.busy || !this.hasAdminPermission()) return;
 
     this.isLoading = true;
+    this.saveError = '';
 
     const userData = {
-      username: this.form.value.userName,
-      fullname: this.form.value.fullName,
+      username: this.form.value.userName.trim(),
+      fullname: this.form.value.fullName.trim(),
       password: this.form.value.password,
       roles: this.form.value.roles,
       image: this.imageBase64 || ''
     };
 
-    this.userService.createUser(userData).subscribe({
+    this.form.disable({ emitEvent: false });
+    this.userService.createUser(userData).pipe(takeUntil(this.destroyed)).subscribe({
       next: (result) => {
         this.isLoading = false;
+        this.form.enable({ emitEvent: false });
         this.snackbar.success(`Usuário ${this.form.value.userName} criado com sucesso!`);
         this.resetForm();
         this.router.navigate(['/users/allUser']);
       },
       error: (error) => {
         this.isLoading = false;
-        this.snackbar.error(error.error?.message || 'Erro ao criar usuário');
+        this.form.enable({ emitEvent: false });
+        this.saveError = error.error?.detail || error.error?.message || 'Não foi possível guardar o utilizador. Tente novamente.';
       }
     });
   }
@@ -161,6 +165,7 @@ export class AddUserComponent implements OnInit {
 
   // Cancelar e voltar
   onCancel(): void {
+    if (this.busy) return;
     this.router.navigate(['/users/allUser']);
     this.resetForm();
   }
@@ -173,6 +178,7 @@ export class AddUserComponent implements OnInit {
 
   // Alternar permissão
   toggleRole(role: string): void {
+    if (this.isLoading) return;
     const roles = this.form.get('roles')?.value || [];
     const index = roles.indexOf(role);
 

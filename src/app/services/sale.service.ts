@@ -49,6 +49,22 @@ export class SaleService {
     return this.http.post<Sale>(this.baseURL, payload, { headers: { 'Idempotency-Key': operationKey } });
   }
 
+  findOrder(id: number): Observable<SaleRequest> {
+    return this.http.get<SaleRequest>(`${this.baseURL}/orders/${id}`);
+  }
+
+  updateOrder(id: number, request: SaleRequest): Observable<Sale> {
+    return this.http.put<Sale>(`${this.baseURL}/orders/${id}`, request);
+  }
+
+  completeOrder(id: number, version: number): Observable<Sale> {
+    return this.http.post<Sale>(`${this.baseURL}/orders/${id}/complete`, { version });
+  }
+
+  cancelOrder(id: number, version: number): Observable<Sale> {
+    return this.http.post<Sale>(`${this.baseURL}/orders/${id}/cancel`, { version });
+  }
+
   update(sale: Sale): Observable<Sale> {
     return this.http.put<Sale>(this.baseURL, sale);
   }

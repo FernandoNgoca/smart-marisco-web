@@ -2,15 +2,15 @@
   <i
     class="fa-solid"
     [class.fa-arrow-right-arrow-left]="isEditMode"
-    [class.fa-user-pen]="isEditMode"
+    [class.fa-pen]="isEditMode"
   >
   </i>
-  {{ isEditMode ? "Adicionar Estoque" : "Adicionar Estoque" }}
+  Nova entrada de stock
 </h2>
 
 <mat-dialog-content [formGroup]="form">
   <div class="row">
-    <mat-form-field appearance="fill" class="full">
+    <mat-form-field appearance="outline" class="full">
       <mat-label>Produto</mat-label>
 
       <mat-select formControlName="stockId" required>
@@ -24,7 +24,7 @@
       </mat-error>
     </mat-form-field>
 
-    <mat-form-field appearance="fill">
+    <mat-form-field appearance="outline">
       <mat-label>Quantidade a entrar</mat-label>
       <input
         matInput
@@ -41,10 +41,11 @@
       </mat-error>
     </mat-form-field>
   </div>
+  <p *ngIf="saveError" class="field-error" role="alert">{{ saveError }}</p>
 </mat-dialog-content>
 
-<mat-dialog-actions align="end">
-  <button mat-button (click)="cancelar()" type="button" class="btn-cancel">
+<mat-dialog-actions class="app-action-row" align="end">
+  <button mat-button (click)="cancelar()" type="button" class="app-button btn-cancel" [disabled]="isLoading">
     <i class="fa-regular fa-circle-xmark"></i>
     Cancelar
   </button>
@@ -53,14 +54,13 @@
     mat-raised-button
     (click)="salvar()"
     [disabled]="form.invalid || isLoading"
-    type="submit"
-    class="btn-save"
-    (selectionChange)="onProductChange($event)"
+    type="button"
+    class="app-button btn-save"
   >
     <!-- Ícone quando não está carregando -->
     <i *ngIf="!isLoading" class="fa-regular fa-floppy-disk"></i>
 
     <!-- Texto dinâmico -->
-    {{ isLoading ? "Salvando..." : "Salvar" }}
+    {{ isLoading ? "A guardar..." : "Guardar" }}
   </button>
 </mat-dialog-actions>

@@ -32,8 +32,9 @@
       >
     </div>
 
-    <div class="mat-elevation-z4">
-      <mat-table [dataSource]="dataSource" matSort>
+    <div class="app-table-panel">
+      <div class="app-table-scroll">
+  <mat-table class="app-data-table" style="--table-min-width: 870px" [dataSource]="dataSource" matSort>
         <ng-container matColumnDef="image">
           <mat-header-cell *matHeaderCellDef mat-sort-header>
             Imagem
@@ -86,7 +87,7 @@
           >
           <mat-cell *matCellDef="let saleItem"
             ><strong>{{
-              saleItem.product.salePrice | mtzCurrency
+              saleItem.unitPrice == null ? 'Não registado' : (saleItem.unitPrice | mtzCurrency)
             }}</strong></mat-cell
           >
         </ng-container>
@@ -97,7 +98,7 @@
           >
           <mat-cell *matCellDef="let saleItem"
             ><strong>{{
-              price(saleItem.product.salePrice, saleItem.quantity) | mtzCurrency
+              saleItem.unitPrice == null ? 'Não registado' : (price(saleItem.unitPrice, saleItem.quantity) | mtzCurrency)
             }}</strong></mat-cell
           >
         </ng-container>
@@ -106,11 +107,12 @@
         <mat-row *matRowDef="let row; columns: displayedColumns"></mat-row>
 
         <!-- <tr class="mat-row" *matNoDataRow>
-      <td class="mat-cell" colspan="5">
+      <td class="mat-cell" [attr.colspan]="displayedColumns.length">
         Não há dados para o filtro "{{ filterValue }}"
       </td>
     </tr> -->
       </mat-table>
+  </div>
     </div>
   </mat-dialog-content>
 </div>

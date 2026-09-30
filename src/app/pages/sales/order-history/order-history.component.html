@@ -1,44 +1,45 @@
 <div *ngIf="loadError" role="alert">Não foi possível carregar os dados.
-  <button mat-button (click)="loadOrders()">Tentar novamente</button>
+  <button class="app-button" mat-button (click)="loadOrders()">Tentar novamente</button>
 </div>
 <p *ngIf="isLoading" role="status">A carregar...</p>
-<div class="toolbar">
+<div class="toolbar app-list-toolbar">
   <mat-form-field appearance="outline" class="filter-field">
     <mat-label>Pesquisar</mat-label>
     <input
       matInput
       (keyup)="applyFilter($event)"
-      placeholder="Ex: Nome, Descrição..."
+      placeholder="Nome ou apelido do cliente"
     />
     <button mat-icon-button matSuffix>
       <i class="fa-solid fa-magnifying-glass"></i>
     </button>
   </mat-form-field>
 
-  <button mat-raised-button class="btn-add" >
+  <button mat-raised-button class="app-button btn-add" routerLink="/sales/orders">
     <i class="fa-solid fa-plus"></i>
     Adicionar
   </button>
 </div>
 
-<div class="mat-elevation-z4">
-  <mat-table mat-table [dataSource]="dataSource" matSort>
+<div class="app-table-panel">
+  <div class="app-table-scroll">
+  <mat-table class="app-data-table" style="--table-min-width: 1015px" mat-table [dataSource]="dataSource" matSort>
     <!-- firstName -->
     <ng-container matColumnDef="firstName">
       <mat-header-cell *matHeaderCellDef mat-sort-header>Nome</mat-header-cell>
-      <mat-cell *matCellDef="let sales">{{ sales.client.firstName }}</mat-cell>
+      <mat-cell *matCellDef="let sales">{{ sales.client?.firstName }}</mat-cell>
     </ng-container>
 
     <!-- lastName -->
     <ng-container matColumnDef="lastName">
       <mat-header-cell *matHeaderCellDef mat-sort-header>Apelido</mat-header-cell>
-      <mat-cell *matCellDef="let sales">{{ sales.client.lastName }}</mat-cell>
+      <mat-cell *matCellDef="let sales">{{ sales.client?.lastName }}</mat-cell>
     </ng-container>
 
     <!-- phoneNumber -->
     <ng-container matColumnDef="phoneNumber">
       <mat-header-cell *matHeaderCellDef mat-sort-header>Telefone</mat-header-cell>
-      <mat-cell *matCellDef="let sales">{{ sales.client.phoneNumber }}</mat-cell>
+      <mat-cell *matCellDef="let sales">{{ sales.client?.phoneNumber }}</mat-cell>
     </ng-container>
 
     <!-- totalValue -->
@@ -53,31 +54,19 @@
       <mat-cell *matCellDef="let sales">{{ sales.createdDate | date: "dd/MM/yyyy HH:mm"}}</mat-cell>
     </ng-container>
 
+    <ng-container matColumnDef="state">
+      <mat-header-cell *matHeaderCellDef>Estado</mat-header-cell>
+      <mat-cell *matCellDef="let sale">{{ sale.saleStatus === 'ORDERS' ? 'Pendente' : sale.saleStatus === 'COMPLETED' ? 'Concluído' : 'Cancelado' }}</mat-cell>
+    </ng-container>
     <ng-container matColumnDef="action">
-      <mat-header-cell *matHeaderCellDef mat-sort-header>Ação</mat-header-cell>
-      <mat-cell *matCellDef="let sales">
-        <!-- Ícone de editar -->
-        <button
-          mat-icon-button
-          color="primary"
-          matTooltip="Editar categoria"
-
-        >
-          <i class="fa-solid fa-user-pen"></i>
-        </button>
-        <button
-          mat-icon-button
-          color=""
-          matTooltip="Visualizar Pedido"
-          (click)="visualizarProduto(sales)"
-          aria-label="Visualizar Pedido"
-        >
-          <i class="fa-solid fa-eye"></i>
-        </button>
-        <!-- Ícone de deletar -->
-        <button mat-icon-button color="warn" matTooltip="Desativar cliente">
-          <i class="fa-solid fa-trash-can"></i>
-        </button>
+      <mat-header-cell *matHeaderCellDef>Ações</mat-header-cell>
+      <mat-cell *matCellDef="let sale">
+        <button mat-icon-button matTooltip="Ver pedido" aria-label="Ver pedido" (click)="visualizarProduto(sale)"><i class="fa-solid fa-eye"></i></button>
+        <ng-container *ngIf="sale.saleStatus === 'ORDERS'">
+          <a mat-icon-button matTooltip="Editar pedido" aria-label="Editar pedido" routerLink="/sales/orders" [queryParams]="{ orderId: sale.id }"><i class="fa-solid fa-pen"></i></a>
+          <button mat-icon-button color="primary" matTooltip="Concluir pedido" aria-label="Concluir pedido" [disabled]="busyId !== null" (click)="changeState(sale, true)"><i class="fa-solid fa-check"></i></button>
+          <button mat-icon-button color="warn" matTooltip="Cancelar pedido" aria-label="Cancelar pedido" [disabled]="busyId !== null" (click)="changeState(sale, false)"><i class="fa-solid fa-xmark"></i></button>
+        </ng-container>
       </mat-cell>
     </ng-container>
 
@@ -87,13 +76,14 @@
 
     <!-- Sem dados -->
     <tr class="mat-row" *matNoDataRow>
-      <td class="mat-cell" colspan="5">
+      <td class="mat-cell" [attr.colspan]="displayedColumns.length">
         {{ loadError ? 'Dados indisponíveis. Tente novamente.' : isLoading ? 'A carregar...' : 'Nenhum resultado encontrado.' }}
       </td>
     </tr>
   </mat-table>
+  </div>
 
-  <mat-paginator
+  <mat-paginator class="app-table-paginator"
     [length]="totalElements"
     [pageSize]="pageSize"
     [pageIndex]="pageIndex"

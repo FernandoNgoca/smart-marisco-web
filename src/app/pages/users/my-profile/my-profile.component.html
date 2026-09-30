@@ -14,13 +14,13 @@
           accept="image/*"
           style="display: none"
         />
-        <button mat-stroked-button (click)="fileInput.click()">
+        <button class="app-button" mat-stroked-button (click)="fileInput.click()">
           <i class="fa-solid fa-upload"></i>
           Selecionar
         </button>
         <button
           mat-raised-button
-          class="btn-save"
+          class="app-button btn-save"
           (click)="updateImage()"
           [disabled]="!imagePreview"
         >
@@ -147,7 +147,7 @@
 
         <button
           mat-raised-button
-          class="btn-save btn-block"
+          class="app-button btn-save btn-block"
           [disabled]="form.invalid || isLoading"
           (click)="changePassword()"
         >

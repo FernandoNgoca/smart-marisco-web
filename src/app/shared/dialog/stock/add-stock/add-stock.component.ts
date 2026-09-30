@@ -1,5 +1,6 @@
+import { Subject, takeUntil } from 'rxjs';
 import { MAX_QUANTITY, QUANTITY_MESSAGE, quantityValidator } from '@app/shared/validators/quantity.validator';
-import { Component, Inject, OnInit } from '@angular/core';
+import { Component, Inject, OnInit, OnDestroy } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 import { ProductService } from '@app/services/product.service';
@@ -17,13 +18,30 @@ export interface DialogData {
   templateUrl: './add-stock.component.html',
   styleUrls: ['./add-stock.component.scss']
 })
-export class AddStockComponent implements OnInit {
+export class AddStockComponent implements OnInit, OnDestroy {
 
   form: FormGroup;
   readonly maxQuantity = MAX_QUANTITY;
   readonly quantityMessage = QUANTITY_MESSAGE;
   isLoading = false;
+  saveError = '';
+  private destroyed = new Subject<void>();
+  private disabledFields: string[] = [];
+  private lockForm(): void {
+    this.saveError = '';
+    this.disabledFields = Object.keys(this.form.controls).filter(key => this.form.get(key)!.disabled);
+    this.form.disable({ emitEvent: false });
+    this.dialogRef.disableClose = true;
+  }
+  private unlockForm(): void {
+    this.dialogRef.disableClose = false;
+    this.form.enable({ emitEvent: false });
+    this.disabledFields.forEach(key => this.form.get(key)!.disable({ emitEvent: false }));
+  }
+  ngOnDestroy(): void { this.destroyed.next(); this.destroyed.complete(); }
+
   loadingProducts = false;
+  productsError = false;
   products: Product[] = [];
 
   //Getter para saber se é edição
@@ -72,21 +90,20 @@ export class AddStockComponent implements OnInit {
 
   }
 
-  private loadProducts(): void {
+  loadProducts(): void {
+    if (this.loadingProducts) return;
+    this.productsError = false;
     this.loadingProducts = true;
 
-    this.productService.findProductsWithoutStock().subscribe({
+    this.productService.findProductsWithoutStock().pipe(takeUntil(this.destroyed)).subscribe({
       next: (resp) => {
         this.products = resp;
         this.loadingProducts = false;
-
-        if (this.isEditMode && this.data?.stock) {
-          this.patchForm(this.data.stock);
-        }
       },
       error: (err) => {
         console.error('Erro ao carregar produtos', err);
-        this.snackbar.error('Erro ao carregar produtos');
+        this.productsError = true;
+          this.loadingProducts = false;
         this.products = [];
         this.loadingProducts = false;
       }
@@ -94,19 +111,18 @@ export class AddStockComponent implements OnInit {
   }
 
   loadProductsEdicao(): void {
+    this.loadingProducts = true;
+    this.productsError = false;
     if (this.isEditMode && this.data?.stock) {
-      this.productService.findAll(0, 100, '', 'asc').subscribe({
+      this.productService.findAll(0, 100, 'name', 'asc').pipe(takeUntil(this.destroyed)).subscribe({
         next: (resp) => {
           this.products = resp._embedded?.products ?? [];
           this.loadingProducts = false;
-
-          if (this.isEditMode && this.data?.stock) {
-            this.patchForm(this.data.stock);
-          }
         },
         error: (err) => {
           console.error('Erro ao carregar produtos', err);
-          this.snackbar.error('Erro ao carregar produtos');
+          this.productsError = true;
+          this.loadingProducts = false;
           this.products = [];
         }
       });
@@ -120,15 +136,17 @@ export class AddStockComponent implements OnInit {
 
   //Tratamento de erro centralizado
   private handleError(error: any): void {
-    const msg = error.error?.message
+    const msg = error.error?.detail || error.error?.message
       || error.error?.errors?.map((e: any) => e.message).join(', ')
-      || `Erro ao ${this.isEditMode ? 'atualizar' : 'salvar'} cliente.`;
-    this.snackbar.error(msg);
+      || `Erro ao ${this.isEditMode ? 'atualizar' : 'guardar'} os dados.`;
+    this.saveError = msg;
   }
 
   salvar(): void {
+    if (this.loadingProducts || this.productsError) return;
     if (this.form.valid && !this.isLoading) {
       this.isLoading = true;
+      this.lockForm();
 
       const formValue = this.form.getRawValue();
 
@@ -143,14 +161,16 @@ export class AddStockComponent implements OnInit {
         ? this.stockService.update({ ...payload, id: formValue.id })
         : this.stockService.create(payload);
 
-      operation.subscribe({
+      operation.pipe(takeUntil(this.destroyed)).subscribe({
         next: (stock: Stock) => {
           this.isLoading = false;
+          this.unlockForm();
           this.dialogRef.close(stock);
           this.snackbar.success(`Estoque ${this.isEditMode ? 'atualizado' : 'criado'} com sucesso!`);
         },
         error: (error) => {
           this.isLoading = false;
+          this.unlockForm();
           this.handleError(error);
 
         }
@@ -161,6 +181,7 @@ export class AddStockComponent implements OnInit {
   }
 
   cancelar() {
+    if (this.isLoading) return;
     this.dialogRef.close();
   }
 

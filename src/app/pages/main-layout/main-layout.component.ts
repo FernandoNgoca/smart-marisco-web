@@ -3,7 +3,7 @@ import { BreakpointObserver } from '@angular/cdk/layout';
 import { filter, fromEvent, map } from 'rxjs';
 import { Router, NavigationEnd } from '@angular/router';
 import { MenuItem } from '@app/shared/models/menuItem';
-import { menuItems } from '@app/shared/models/menu';
+import { menuItems, menuForRoles } from '@app/shared/models/menu';
 import { AuthService } from '@app/services/auth.service';
 
 export const SCROLL_CONTAINER = 'mat-sidenav-content';
@@ -43,10 +43,7 @@ export class MainLayoutComponent implements OnInit {
 
     const userRoles = user?.roles || [];
 
-    this.items_menu = menuItems.filter(item =>
-      !item.roles ||
-      item.roles.some(role => userRoles.includes(role))
-    );
+    this.items_menu = menuForRoles(userRoles);
 
     if (userRoles.includes('ROLE_ADMIN')) {
       this.userRole = 'Administrador';
@@ -74,7 +71,7 @@ export class MainLayoutComponent implements OnInit {
       let moduleName = event.url.split('/')[1];
 
       const menu = this.items_menu.find(
-        (item: MenuItem) => item.link == `/${moduleName}`
+        (item: MenuItem) => item.link.split('/')[1] === moduleName
       );
 
       if (menu) {

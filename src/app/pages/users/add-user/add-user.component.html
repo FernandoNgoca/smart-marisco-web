@@ -3,45 +3,15 @@
   <mat-card class="profile-card">
     <!-- IMPORTANTE: Form group container -->
     <form [formGroup]="form" (ngSubmit)="onSubmit()">
-      <!-- Avatar Section -->
-      <div class="avatar-section">
-        <div class="avatar-wrapper">
-          <img
-            class="avatar"
-            [src]="imagePreview || defaultAvatar"
-            alt="Foto do usuário"
-          />
-        </div>
-        <div class="avatar-buttons">
-          <input
-            type="file"
-            #fileInput
-            (change)="onFileSelected($event)"
-            accept="image/*"
-            style="display: none"
-          />
-          <button mat-stroked-button (click)="fileInput.click()" type="button">
-            <i class="fa-solid fa-upload"></i>
-            Selecionar
-          </button>
-          <button
-            *ngIf="imagePreview"
-            mat-stroked-button
-            (click)="removeImage()"
-            type="button"
-          >
-            <i class="fa-solid fa-trash"></i>
-            Remover
-          </button>
-        </div>
-      </div>
-
+      <h2>Novo utilizador</h2>
+      <h3>Identificação</h3>
       <!-- User Info -->
       <div class="user-info">
         <div class="info-item">
           <i class="fa-solid fa-user"></i>
-          <strong>Usuário:</strong>
+
           <mat-form-field appearance="outline" class="inline-form">
+            <mat-label>Nome de utilizador</mat-label>
             <input
               matInput
               formControlName="userName"
@@ -67,8 +37,9 @@
 
         <div class="info-item">
           <i class="fa-solid fa-user-tag"></i>
-          <strong>Nome Completo:</strong>
+
           <mat-form-field appearance="outline" class="inline-form">
+            <mat-label>Nome completo</mat-label>
             <input
               matInput
               formControlName="fullName"
@@ -83,6 +54,7 @@
             >
               Nome completo é obrigatório
             </mat-error>
+            <mat-error *ngIf="form.get('fullName')?.hasError('pattern')">O nome não pode conter apenas espaços.</mat-error>
             <mat-error *ngIf="form.get('fullName')?.hasError('minlength')">
               Mínimo de 3 caracteres
             </mat-error>
@@ -171,6 +143,7 @@
         </div>
       </div>
 
+      <p *ngIf="form.hasError('passwordsMismatch') && form.get('confirmPassword')?.touched" class="field-error" role="alert">As palavras-passe não coincidem.</p>
       <mat-divider></mat-divider>
 
       <!-- Permissões Section -->
@@ -188,8 +161,9 @@
               [selected]="isRoleSelected(role)"
               (click)="toggleRole(role)"
               [selectable]="true"
+              [disabled]="isLoading"
             >
-              {{ role.replace("ROLE_", "") | titlecase }}
+              {{ role === 'ROLE_MANAGER' ? 'Gerente' : 'Utilizador' }}
             </mat-chip>
           </mat-chip-list>
           <mat-error
@@ -203,22 +177,60 @@
         </div>
       </div>
 
+      <h3>Imagem (opcional)</h3>
+      <!-- Avatar Section -->
+      <div class="avatar-section">
+        <div class="avatar-wrapper">
+          <img
+            class="avatar"
+            [src]="imagePreview || defaultAvatar"
+            alt="Foto do usuário"
+          />
+        </div>
+        <div class="avatar-buttons">
+          <small>JPG, PNG ou WebP até 10 MB.</small>
+          <input
+            type="file"
+            #fileInput
+            (change)="onFileSelected($event)"
+            accept="image/jpeg,image/png,image/webp"
+            style="display: none"
+          />
+          <button class="app-button" mat-stroked-button [disabled]="busy" (click)="fileInput.click()" type="button">
+            <i class="fa-solid fa-upload"></i>
+            Selecionar
+          </button>
+          <button class="app-button"
+            *ngIf="imagePreview"
+            mat-stroked-button
+            [disabled]="busy" (click)="removeImage()"
+            type="button"
+          >
+            <i class="fa-solid fa-trash"></i>
+            Remover
+          </button>
+        </div>
+      </div>
+
+      <p *ngIf="processingImage" role="status">A processar imagem...</p>
+      <p *ngIf="imageError" class="field-error" role="alert">{{ imageError }}</p>
+      <p *ngIf="saveError" class="field-error" role="alert">{{ saveError }}</p>
       <!-- Action Buttons -->
-      <div class="action-buttons">
+      <div class="action-buttons app-action-row">
         <button
           mat-button
-          class="btn-cancel"
-          (click)="onCancel()"
+          class="app-button btn-cancel"
+          [disabled]="busy" (click)="onCancel()"
           type="button"
         >
           <i class="fa-solid fa-eraser"></i>
-          Limpar
+          Cancelar
         </button>
 
         <button
           mat-raised-button
-          class="btn-save"
-          [disabled]="form.invalid || isLoading"
+          class="app-button btn-save"
+          [disabled]="form.invalid || busy"
           type="submit"
         >
           <i
@@ -226,7 +238,7 @@
             [class.fa-spinner]="isLoading"
             [class.fa-save]="!isLoading"
           ></i>
-          {{ isLoading ? "Criando..." : "Criar Usuário" }}
+          {{ isLoading ? "A guardar..." : "Guardar utilizador" }}
         </button>
       </div>
     </form>

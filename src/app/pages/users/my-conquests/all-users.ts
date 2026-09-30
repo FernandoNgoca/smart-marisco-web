@@ -35,7 +35,7 @@ export class AllUsersComponent implements OnInit, AfterViewInit {
   ngOnInit(): void {
     if (!this.hasAdminPermission()) {
       this.snackbar.error('Você não tem permissão para criar usuários');
-      this.router.navigate(['/dashboard']);
+      this.router.navigate(['/users/myProfile']);
     }
     this.loadUsers();
   }

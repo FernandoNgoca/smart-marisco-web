@@ -1,3 +1,4 @@
+@use '../../../shared/dialog/form-dialog';
 .profile-container {
   max-width: 800px;
   margin: 0 auto;
@@ -31,7 +32,7 @@
       height: 150px;
       border-radius: 50%;
       object-fit: cover;
-      border: 3px solid #D32F2F;
+      border: 3px solid var(--app-primary);
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
     }
   }
@@ -66,7 +67,7 @@
     color: #333;
 
     i {
-      color: #D32F2F;
+      color: var(--app-primary);
       font-size: 16px;
       min-width: 20px;
     }
@@ -97,7 +98,7 @@
 
     i {
       font-size: 22px;
-      color: #D32F2F;
+      color: var(--app-primary);
     }
 
     h3 {
@@ -130,7 +131,7 @@
 
     i {
       font-size: 22px;
-      color: #D32F2F;
+      color: var(--app-primary);
     }
 
     h3 {
@@ -165,11 +166,11 @@
         }
         
         &.mat-chip-selected {
-          background-color: #D32F2F;
+          background-color: var(--app-primary);
           color: white;
           
           &:hover {
-            background-color: #B71C1C;
+            background-color: var(--app-primary-hover);
           }
         }
       }
@@ -208,7 +209,7 @@
   mat-checkbox {
     i {
       margin-right: 8px;
-      color: #D32F2F;
+      color: var(--app-primary);
     }
   }
 }
@@ -246,7 +247,7 @@
   align-items: center;
   justify-content: center;
   gap: 8px;
-  background: #D32F2F;
+  background: var(--app-primary);
   color: #FFFFFF;
   padding: 0 24px;
   height: 42px;
@@ -258,9 +259,9 @@
   transition: all 0.2s ease;
 
   &:hover:not(:disabled) {
-    background-color: #B71C1C;
+    background-color: var(--app-primary-hover);
     transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(211, 47, 47, 0.3);
+    box-shadow: 0 4px 12px rgba(15, 82, 101, 0.2);
   }
 
   &:active:not(:disabled) {
@@ -268,8 +269,8 @@
   }
 
   &:disabled {
-    background: #FECACA;
-    color: #991B1B;
+    background: var(--app-disabled);
+    color: var(--app-muted);
     cursor: not-allowed;
     opacity: 0.6;
   }
@@ -296,18 +297,20 @@
   }
 
   .mat-form-field-appearance-outline.mat-focused .mat-form-field-outline-thick {
-    color: #D32F2F;
+    color: var(--app-primary);
   }
 
   .mat-form-field.mat-focused .mat-form-field-label {
-    color: #D32F2F;
+    color: var(--app-primary);
   }
   
   .mat-checkbox-checked.mat-accent .mat-checkbox-background {
-    background-color: #D32F2F;
+    background-color: var(--app-primary);
   }
   
   .mat-chip.mat-standard-chip.mat-chip-selected.mat-primary {
-    background-color: #D32F2F;
+    background-color: var(--app-primary);
   }
 }
+.field-error { color: var(--app-danger); }
+@media (max-width: 600px) { .password-form, .user-info { display: flex; flex-direction: column; } .info-item { width: 100%; } }

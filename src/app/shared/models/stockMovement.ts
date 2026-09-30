@@ -15,6 +15,8 @@ export const MovementTypeLabel: { [key in MovementType]: string } = {
 export interface StockMovement extends Auditable{
   stock?: Stock;
   stockId: number;
+  description?: string;
+  createdBy?: string;
   quantity: number;
   type: MovementType;
 }
@@ -30,4 +32,12 @@ export interface PagedStockMovement {
     number: number;
   };
   _links?: any;
+}
+
+export interface StockHistory {
+  items: StockMovement[];
+  totalElements: number;
+  movements: number;
+  entries: number;
+  exits: number;
 }

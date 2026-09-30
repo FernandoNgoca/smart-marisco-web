@@ -1,176 +1,86 @@
 <h2 mat-dialog-title class="dialog-title">
-  <i
-    class="fa-solid"
-    [class.fa-plus]="!isEditMode && !isViewMode"
-    [class.fa-user-pen]="isEditMode"
-    [class.fa-eye]="isViewMode"
-  >
-  </i>
-
-  {{
-    isViewMode
-      ? "Visualizar Produto"
-      : isEditMode
-        ? "Editar Produto"
-        : "Novo Produto"
-  }}
+  <i class="fa-solid" [class.fa-plus]="!isEditMode && !isViewMode" [class.fa-pen]="isEditMode && !isViewMode" [class.fa-eye]="isViewMode" aria-hidden="true"></i>
+  {{ isViewMode ? 'Detalhes do produto' : isEditMode ? 'Editar produto' : 'Novo produto' }}
 </h2>
-
-<mat-dialog-content [formGroup]="form" [class.view-mode]="isViewMode">
+<mat-dialog-content [formGroup]="form">
+  <h3>Identificação</h3>
+  <mat-form-field appearance="outline">
+    <mat-label>Nome do produto</mat-label>
+    <input matInput formControlName="name" maxlength="255" placeholder="Ex.: Camarão médio" />
+    <mat-error *ngIf="form.get('name')?.invalid">Indique o nome do produto, até 255 caracteres.</mat-error>
+  </mat-form-field>
   <div class="row">
-    <mat-form-field appearance="fill">
-      <mat-label>Nome</mat-label>
-      <input matInput formControlName="name" [readonly]="isViewMode" />
-      <mat-error *ngIf="form.get('name')?.hasError('required')">
-        Nome é obrigatório
-      </mat-error>
-    </mat-form-field>
-  </div>
-  <div class="row">
-    <mat-form-field appearance="fill">
-      <mat-label>Descrição</mat-label>
-      <textarea
-        matInput
-        formControlName="description"
-        rows="4"
-        [readonly]="isViewMode"
-      ></textarea>
-      <mat-error *ngIf="form.get('description')?.hasError('required')">
-        Descrição é obrigatória
-      </mat-error>
-    </mat-form-field>
-  </div>
-
-  <div class="row">
-    <mat-form-field appearance="fill">
-      <mat-label>Preço de compra</mat-label>
-
-      <input
-        matInput
-        formControlName="price"
-        type="text"
-        currencyMzn
-        placeholder="0,00"
-        inputmode="decimal"
-        [readonly]="isViewMode"
-      />
-
-      <mat-error *ngIf="form.get('price')?.hasError('required')">
-        Preço de compra é obrigatório
-      </mat-error>
-      <mat-error *ngIf="form.get('price')?.hasError('min')">
-        Preço de compra deve ser maior que zero
-      </mat-error>
-    </mat-form-field>
-
-    <mat-form-field appearance="fill">
-      <mat-label>Preço de venda</mat-label>
-
-      <input
-        matInput
-        formControlName="salePrice"
-        type="text"
-        currencyMzn
-        placeholder="0,00"
-        inputmode="decimal"
-        [readonly]="isViewMode"
-      />
-
-      <mat-error *ngIf="form.get('salePrice')?.hasError('required')">
-        Preço de venda é obrigatório
-      </mat-error>
-      <mat-error *ngIf="form.get('salePrice')?.hasError('min')">
-        Preço de venda deve ser maior que zero
-      </mat-error>
-    </mat-form-field>
-  </div>
-
-  <div class="row">
-    <mat-form-field appearance="fill" class="full">
+    <mat-form-field appearance="outline">
       <mat-label>Categoria</mat-label>
-
-      <mat-select formControlName="categoryId" [disabled]="isViewMode">
-        <mat-option *ngFor="let cat of categorys" [value]="cat.id">
-          {{ cat.name }}
-        </mat-option>
+      <mat-select formControlName="categoryId">
+        <mat-option *ngFor="let category of categorys" [value]="category.id">{{ category.name }}</mat-option>
       </mat-select>
-
-      <mat-error *ngIf="form.get('speciesId')?.hasError('required')">
-        Categoria é obrigatória
-      </mat-error>
+      <mat-hint *ngIf="loadingCategorys">A carregar categorias...</mat-hint>
+      <mat-hint *ngIf="!loadingCategorys && !categoriesError && !categorys.length">Não existem categorias registadas.</mat-hint>
+      <mat-error *ngIf="form.get('categoryId')?.hasError('required')">Selecione uma categoria.</mat-error>
     </mat-form-field>
-
-    <mat-form-field appearance="fill" class="full">
+    <mat-form-field appearance="outline">
       <mat-label>Espécie</mat-label>
-
-      <mat-select formControlName="speciesId" [disabled]="isViewMode">
-        <mat-option *ngFor="let spe of species" [value]="spe.id">
-          {{ spe.name }}
-        </mat-option>
+      <mat-select formControlName="speciesId">
+        <mat-option *ngFor="let species of species" [value]="species.id">{{ species.name }}</mat-option>
       </mat-select>
-
-      <mat-error *ngIf="form.get('speciesId')?.hasError('required')">
-        Espécie é obrigatória
-      </mat-error>
+      <mat-hint *ngIf="loadingSpecies">A carregar espécies...</mat-hint>
+      <mat-hint *ngIf="!form.get('categoryId')?.value">Escolha primeiro a categoria.</mat-hint>
+      <mat-hint *ngIf="form.get('categoryId')?.value && !loadingSpecies && !speciesError && !species.length">Não existem espécies nesta categoria.</mat-hint>
+      <mat-error *ngIf="form.get('speciesId')?.hasError('required')">Selecione uma espécie.</mat-error>
     </mat-form-field>
   </div>
+  <div class="field-error" *ngIf="categoriesError" role="alert">Não foi possível carregar categorias. <button class="app-button" mat-button type="button" (click)="loadCategorys()">Tentar novamente</button></div>
+  <div class="field-error" *ngIf="speciesError" role="alert">Não foi possível carregar espécies. <button class="app-button" mat-button type="button" (click)="loadSpecies()">Tentar novamente</button></div>
+  <mat-form-field appearance="outline">
+    <mat-label>Unidade de medida</mat-label>
+    <mat-select formControlName="unitId">
+      <mat-option *ngFor="let unit of units" [value]="unit.id">{{ unit.name }} ({{ unit.symbol }})</mat-option>
+    </mat-select>
+    <mat-hint *ngIf="loadingUnit">A carregar unidades...</mat-hint>
+    <mat-hint *ngIf="!loadingUnit && !unitsError && !units.length">Não existem unidades registadas.</mat-hint>
+    <mat-error *ngIf="form.get('unitId')?.hasError('required')">Selecione uma unidade de medida.</mat-error>
+  </mat-form-field>
+  <div class="field-error" *ngIf="unitsError" role="alert">Não foi possível carregar unidades. <button class="app-button" mat-button type="button" (click)="loadUnits()">Tentar novamente</button></div>
 
+  <h3>Preços por unidade</h3>
   <div class="row">
-    <mat-form-field appearance="fill" class="full">
-      <mat-label>Unidade de medida</mat-label>
-
-      <mat-select formControlName="unitId" [disabled]="isViewMode">
-        <mat-option *ngFor="let un of units" [value]="un.id">
-          {{ un.name }}
-        </mat-option>
-      </mat-select>
-
-      <mat-error *ngIf="form.get('speciesId')?.hasError('required')">
-        Unidade de medida é obrigatória
-      </mat-error>
+    <mat-form-field appearance="outline">
+      <mat-label>Preço de compra ({{ priceUnit }})</mat-label>
+      <input matInput type="number" inputmode="decimal" min="0.01" max="99999999.99" step="0.01" formControlName="price" placeholder="0,00" />
+      <mat-error *ngIf="form.get('price')?.hasError('required')">Indique o preço de compra.</mat-error>
+      <mat-error *ngIf="form.get('price')?.hasError('price')">Use um valor entre 0,01 e 99 999 999,99, com até 2 casas decimais.</mat-error>
+    </mat-form-field>
+    <mat-form-field appearance="outline">
+      <mat-label>Preço de venda ({{ priceUnit }})</mat-label>
+      <input matInput type="number" inputmode="decimal" min="0.01" max="99999999.99" step="0.01" formControlName="salePrice" placeholder="0,00" />
+      <mat-error *ngIf="form.get('salePrice')?.hasError('required')">Indique o preço de venda.</mat-error>
+      <mat-error *ngIf="form.get('salePrice')?.hasError('price')">Use um valor entre 0,01 e 99 999 999,99, com até 2 casas decimais.</mat-error>
     </mat-form-field>
   </div>
-
-  <div class="row">
-    <div class="full image-upload">
-      <label class="imageText">Imagem do Produto</label>
-
+  <h3>Informações adicionais</h3>
+  <mat-form-field appearance="outline">
+    <mat-label>Descrição (opcional)</mat-label>
+    <textarea matInput formControlName="description" rows="3" placeholder="Tamanho, apresentação ou outras características"></textarea>
+  </mat-form-field>
+  <div class="image-upload">
+    <span>Imagem do produto (opcional)</span>
+    <ng-container *ngIf="!isViewMode">
+      <small>JPG, PNG ou WebP até 10 MB. A imagem será otimizada automaticamente.</small>
+      <input type="file" #fileInput (change)="onFileSelected($event)" accept="image/jpeg,image/png,image/webp" hidden />
       <div class="avatar-buttons">
-        <input
-          type="file"
-          #fileInput
-          (change)="onFileSelected($event)"
-          accept="image/*"
-          style="display: none"
-        />
-        <button mat-stroked-button (click)="fileInput.click()">
-          <i class="fa-solid fa-upload"></i>
-          Selecionar
-        </button>
+        <button class="app-button" mat-stroked-button type="button" [disabled]="busy" (click)="fileInput.click()">{{ imagePreview ? 'Substituir imagem' : 'Selecionar imagem' }}</button>
+        <button class="app-button" *ngIf="imagePreview" mat-button type="button" [disabled]="busy" (click)="removeImage()">Remover imagem</button>
       </div>
-      <!-- Preview da imagem -->
-      <div *ngIf="imagePreview" class="image-preview-container">
-        <img [src]="imagePreview" alt="Produto" />
-      </div>
-    </div>
+    </ng-container>
+    <p *ngIf="processingImage" role="status">A processar imagem...</p>
+    <p *ngIf="imageError" class="field-error" role="alert">{{ imageError }}</p>
+    <div *ngIf="imagePreview" class="image-preview-container"><img [src]="imagePreview" alt="Pré-visualização do produto" /></div>
+    <small *ngIf="isViewMode && !imagePreview">Sem imagem.</small>
   </div>
+  <p *ngIf="saveError" class="field-error" role="alert">{{ saveError }}</p>
 </mat-dialog-content>
-
-<mat-dialog-actions align="end">
-  <button mat-button (click)="cancelar()" type="button" class="btn-cancel">
-    <i class="fa-regular fa-circle-xmark"></i>
-    Cancelar
-  </button>
-  <!-- Botão Salvar com Loading -->
-  <button
-    mat-raised-button
-    (click)="salvar()"
-    [disabled]="form.invalid || isLoading"
-    type="submit"
-    class="btn-save"
-    *ngIf="!isViewMode"
-  >
-    <i *ngIf="!isLoading" class="fa-regular fa-floppy-disk"></i>
-    Salvar
-  </button>
+<mat-dialog-actions class="app-action-row" align="end">
+  <button mat-button type="button" class="app-button btn-cancel" [disabled]="isLoading" (click)="cancelar()">{{ isViewMode ? 'Fechar' : 'Cancelar' }}</button>
+  <button *ngIf="!isViewMode" mat-raised-button type="button" class="app-button btn-save" [disabled]="!canSave" (click)="salvar()">{{ isLoading ? 'A guardar...' : 'Guardar produto' }}</button>
 </mat-dialog-actions>

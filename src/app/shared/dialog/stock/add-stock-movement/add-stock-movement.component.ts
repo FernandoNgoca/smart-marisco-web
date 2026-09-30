@@ -1,5 +1,6 @@
+import { Subject, takeUntil } from 'rxjs';
 import { MAX_QUANTITY, QUANTITY_MESSAGE, quantityValidator } from '@app/shared/validators/quantity.validator';
-import { Component, Inject, OnInit } from '@angular/core';
+import { Component, Inject, OnInit, OnDestroy } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 import { ProductService } from '@app/services/product.service';
@@ -18,12 +19,28 @@ export interface DialogData {
   templateUrl: './add-stock-movement.component.html',
   styleUrls: ['./add-stock-movement.component.scss']
 })
-export class AddStockMovementComponent implements OnInit {
+export class AddStockMovementComponent implements OnInit, OnDestroy {
 
   form: FormGroup;
   readonly maxQuantity = MAX_QUANTITY;
   readonly quantityMessage = QUANTITY_MESSAGE;
   isLoading = false;
+  saveError = '';
+  private destroyed = new Subject<void>();
+  private disabledFields: string[] = [];
+  private lockForm(): void {
+    this.saveError = '';
+    this.disabledFields = Object.keys(this.form.controls).filter(key => this.form.get(key)!.disabled);
+    this.form.disable({ emitEvent: false });
+    this.dialogRef.disableClose = true;
+  }
+  private unlockForm(): void {
+    this.dialogRef.disableClose = false;
+    this.form.enable({ emitEvent: false });
+    this.disabledFields.forEach(key => this.form.get(key)!.disable({ emitEvent: false }));
+  }
+  ngOnDestroy(): void { this.destroyed.next(); this.destroyed.complete(); }
+
   loadingProducts = false;
   products: Product[] = [];
   stockSelecionado: Stock | null = null;
@@ -80,21 +97,22 @@ export class AddStockMovementComponent implements OnInit {
 
   //Tratamento de erro centralizado
   private handleError(error: any): void {
-    const msg = error.error?.message
+    const msg = error.error?.detail || error.error?.message
       || error.error?.errors?.map((e: any) => e.message).join(', ')
       || `Erro ao ${this.isEditMode ? 'atualizar' : 'salvar'} movimento de estoque.`;
-    this.snackbar.error(msg);
+    this.saveError = msg;
   }
 
   salvar(): void {
     if (this.form.valid && !this.isLoading) {
       const quantity = Number(this.form.get('quantity')?.value);
       if (this.stock && this.stock.quantity + quantity > MAX_QUANTITY) {
-        this.snackbar.error('A entrada excede o limite do stock. Quantidade máxima a entrar: '
-          + Math.max(0, MAX_QUANTITY - this.stock.quantity).toFixed(3));
+        this.saveError = 'A entrada excede o limite do stock. Quantidade máxima a entrar: '
+          + Math.max(0, MAX_QUANTITY - this.stock.quantity).toFixed(3);
         return;
       }
       this.isLoading = true;
+      this.lockForm();
 
       const formValue = this.form.getRawValue();
 
@@ -108,14 +126,16 @@ export class AddStockMovementComponent implements OnInit {
 
       const operation = this.stockMovementService.create(payload);
 
-      operation.subscribe({
+      operation.pipe(takeUntil(this.destroyed)).subscribe({
         next: (stockMovement: StockMovement) => {
           this.isLoading = false;
+          this.unlockForm();
           this.dialogRef.close(stockMovement);
           this.snackbar.success(`Movimento de estoque ${this.isEditMode ? 'atualizado' : 'criado'} com sucesso!`);
         },
         error: (error) => {
           this.isLoading = false;
+          this.unlockForm();
           this.handleError(error);
 
         }
@@ -126,6 +146,7 @@ export class AddStockMovementComponent implements OnInit {
   }
 
   cancelar() {
+    if (this.isLoading) return;
     this.dialogRef.close();
   }
 

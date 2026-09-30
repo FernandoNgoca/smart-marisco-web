@@ -2,27 +2,30 @@
   <i
     class="fa-solid"
     [class.fa-plus]="!isEditMode"
-    [class.fa-user-pen]="isEditMode"
+    [class.fa-pen]="isEditMode"
   >
   </i>
   {{ isEditMode ? "Editar Espécie" : "Nova Espécie" }}
 </h2>
 
 <mat-dialog-content [formGroup]="form">
+  <p *ngIf="loadingCategory" role="status">A carregar categorias...</p>
+  <p *ngIf="categoryError" role="alert" class="field-error">Não foi possível carregar categorias. <button class="app-button" mat-button (click)="loadCategorys()">Tentar novamente</button></p>
+  <p *ngIf="!loadingCategory && !categoryError && !categorys.length">Não existem categorias registadas.</p>
   <div class="row">
-    <mat-form-field appearance="fill">
+    <mat-form-field appearance="outline">
       <mat-label>Nome</mat-label>
       <input matInput formControlName="name" />
-      <mat-error *ngIf="form.get('name')?.hasError('required')">
+      <mat-error *ngIf="form.get('name')?.invalid">
         Nome é obrigatório
       </mat-error>
     </mat-form-field>
   </div>
   <div class="row">
-    <mat-form-field appearance="fill" class="full">
+    <mat-form-field appearance="outline" class="full">
       <mat-label>Categoria</mat-label>
 
-      <mat-select formControlName="categoryId" [disabled]="isViewMode">
+      <mat-select formControlName="categoryId">
         <mat-option *ngFor="let cat of categorys" [value]="cat.id">
           {{ cat.name }}
         </mat-option>
@@ -34,18 +37,19 @@
     </mat-form-field>
   </div>
   <div class="row">
-    <mat-form-field appearance="fill">
+    <mat-form-field appearance="outline">
       <mat-label>Descrição</mat-label>
       <textarea matInput formControlName="description" rows="4"></textarea>
-      <mat-error *ngIf="form.get('description')?.hasError('required')">
+      <mat-error *ngIf="form.get('description')?.invalid">
         Descrição é obrigatória
       </mat-error>
     </mat-form-field>
   </div>
+  <p *ngIf="saveError" class="field-error" role="alert">{{ saveError }}</p>
 </mat-dialog-content>
 
-  <mat-dialog-actions align="end">
-    <button mat-button (click)="cancelar()" type="button" class="btn-cancel">
+  <mat-dialog-actions class="app-action-row" align="end">
+    <button mat-button (click)="cancelar()" type="button" class="app-button btn-cancel" [disabled]="isLoading">
       <i class="fa-regular fa-circle-xmark"></i>
       Cancelar
     </button>
@@ -53,16 +57,16 @@
     <button
       mat-raised-button
       (click)="salvar()"
-      [disabled]="form.invalid || isLoading"
-      type="submit"
-      class="btn-save"
+      [disabled]="form.invalid || isLoading || loadingCategory || categoryError" *ngIf="!isViewMode"
+      type="button"
+      class="app-button btn-save"
     >
 
       <!-- Ícone quando não está carregando -->
       <i *ngIf="!isLoading" class="fa-regular fa-floppy-disk"></i>
 
       <!-- Texto dinâmico -->
-      {{ isLoading ? "Salvando..." : "Salvar" }}
+      {{ isLoading ? "A guardar..." : "Guardar" }}
     </button>
   </mat-dialog-actions>
 

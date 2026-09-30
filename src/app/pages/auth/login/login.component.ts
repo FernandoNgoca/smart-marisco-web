@@ -39,9 +39,13 @@ export class LoginComponent implements OnDestroy {
 
   private returnUrl(): string {
     const url = this.route.snapshot.queryParamMap.get('returnUrl') || '';
+    const home = this.auth.hasAnyRole(['ROLE_ADMIN']) ? '/users/allUser'
+      : this.auth.hasAnyRole(['ROLE_MANAGER']) ? '/dashboard' : '/sales/sale';
+    if (home === '/users/allUser' && !/^\/(users|support)(?:\/|[?#]|$)/.test(url)) return home;
+    if (/^\/dashboard(?:\/|[?#]|$)/.test(url) && home !== '/dashboard') return home;
     // Apenas páginas internas conhecidas; as permissões continuam a ser verificadas pelo guard.
     return /^\/(dashboard|users|support|settings|product|client|stock|sales)(?:\/|[?#]|$)/.test(url)
-      && !/[\\\u0000-\u001f]/.test(url) ? url : '/dashboard';
+      && !/[\\\u0000-\u001f]/.test(url) ? url : home;
   }
 
   login(): void {
