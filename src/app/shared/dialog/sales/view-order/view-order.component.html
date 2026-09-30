@@ -1,0 +1,116 @@
+<div class="dialog-container">
+  <!-- Header -->
+  <div class="dialog-header">
+    <div class="header-left">
+      <h2 mat-dialog-title>
+        <i class="fa-solid fa-circle-info"></i>
+        {{ tituloDialog }}
+        <!--Título dinâmico -->
+      </h2>
+    </div>
+
+    <button
+      mat-icon-button
+      (click)="close()"
+      class="btn-close"
+      aria-label="Fechar diálogo"
+    >
+      <i class="fa-solid fa-xmark"></i>
+    </button>
+  </div>
+
+  <!-- Content -->
+  <mat-dialog-content>
+    <div *ngIf="sale" class="stock-info">
+      <i class="fa-solid fa-cart-arrow-down"></i>
+      <span
+        ><strong>Nome do cliente:</strong> {{ sale.client?.firstName }}
+        {{ sale.client?.lastName }}</span
+      >
+      <span
+        ><strong>Montante:</strong> {{ sale.totalValue | mtzCurrency }}</span
+      >
+    </div>
+
+    <div class="mat-elevation-z4">
+      <mat-table [dataSource]="dataSource" matSort>
+        <ng-container matColumnDef="image">
+          <mat-header-cell *matHeaderCellDef mat-sort-header>
+            Imagem
+          </mat-header-cell>
+
+          <mat-cell *matCellDef="let element">
+            <img
+              class="imagem"
+              [src]="getImage(element.product.image)"
+              alt="Produto"
+              width="50"
+              height="50"
+              (mouseenter)="showPreview($event, element.product.image)"
+              (mousemove)="movePreview($event)"
+              (mouseleave)="hidePreview()"
+              aria-label="Visualizar Imagem"
+            />
+          </mat-cell>
+        </ng-container>
+        <ng-container matColumnDef="productName">
+          <mat-header-cell *matHeaderCellDef mat-sort-header
+            >Nome</mat-header-cell
+          >
+          <mat-cell *matCellDef="let salaItem">{{
+            salaItem.product.name
+          }}</mat-cell>
+        </ng-container>
+
+        <ng-container matColumnDef="quantity">
+          <mat-header-cell *matHeaderCellDef mat-sort-header
+            >Quantidade</mat-header-cell
+          >
+          <mat-cell *matCellDef="let salaItem">{{
+            salaItem.quantity
+          }}</mat-cell>
+        </ng-container>
+
+        <ng-container matColumnDef="unit">
+          <mat-header-cell *matHeaderCellDef mat-sort-header
+            >Unidade de medida</mat-header-cell
+          >
+          <mat-cell *matCellDef="let salaItem">{{
+            salaItem.product.unit.symbol
+          }}</mat-cell>
+        </ng-container>
+
+        <ng-container matColumnDef="productPrice">
+          <mat-header-cell *matHeaderCellDef mat-sort-header
+            >Preço de venda</mat-header-cell
+          >
+          <mat-cell *matCellDef="let saleItem"
+            ><strong>{{
+              saleItem.product.salePrice | mtzCurrency
+            }}</strong></mat-cell
+          >
+        </ng-container>
+
+        <ng-container matColumnDef="priceTotal">
+          <mat-header-cell *matHeaderCellDef mat-sort-header
+            >Montante por produto</mat-header-cell
+          >
+          <mat-cell *matCellDef="let saleItem"
+            ><strong>{{
+              price(saleItem.product.salePrice, saleItem.quantity) | mtzCurrency
+            }}</strong></mat-cell
+          >
+        </ng-container>
+
+        <mat-header-row *matHeaderRowDef="displayedColumns"></mat-header-row>
+        <mat-row *matRowDef="let row; columns: displayedColumns"></mat-row>
+
+        <!-- <tr class="mat-row" *matNoDataRow>
+      <td class="mat-cell" colspan="5">
+        Não há dados para o filtro "{{ filterValue }}"
+      </td>
+    </tr> -->
+      </mat-table>
+    </div>
+  </mat-dialog-content>
+</div>

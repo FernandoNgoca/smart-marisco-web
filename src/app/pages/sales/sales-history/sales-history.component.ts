@@ -2,22 +2,19 @@ import { AfterViewInit, Component, OnInit, ViewChild } from '@angular/core';
 import { MatDialog } from '@angular/material/dialog';
 import { MatPaginator } from '@angular/material/paginator';
 import { MatSort } from '@angular/material/sort';
-import { CategoryService } from '@app/services/category.service';
+import { SaleService } from '@app/services/sale.service';
 import { SnackbarService } from '@app/services/snackbar.service';
-import { AddCategoryComponent } from '@app/shared/dialog/settings/add-category/add-category.component';
-import { Category } from '@app/shared/models/category';
+import { Sale } from '@app/shared/models/sale';
 
 @Component({
-  selector: 'app-category',
-  templateUrl: './category.component.html',
-  styleUrls: ['./category.component.scss']
+  selector: 'app-sales-history',
+  templateUrl: './sales-history.component.html',
+  styleUrls: ['./sales-history.component.scss']
 })
-export class CategoryComponent implements OnInit, AfterViewInit {
+export class SalesHistoryComponent implements OnInit, AfterViewInit {
 
   displayedColumns: string[] = ['name', 'description', 'action'];
-
-  dataSource: Category[] = [];
-
+  dataSource: Sale[] = [];
   totalElements = 0;
   pageSize = 5;
   pageIndex = 0;
@@ -27,33 +24,32 @@ export class CategoryComponent implements OnInit, AfterViewInit {
   @ViewChild(MatSort) sort!: MatSort;
 
   constructor(
-    private categoryService: CategoryService,
+    private saleService: SaleService,
     private snackbar: SnackbarService,
     private dialog: MatDialog,
   ) { }
 
   ngOnInit(): void {
-    this.loadCategory();
+    this.loadSales();
   }
 
   ngAfterViewInit(): void {
     this.paginator.page.subscribe(() => {
       this.pageIndex = this.paginator.pageIndex;
       this.pageSize = this.paginator.pageSize;
-      this.loadCategory();
+      this.loadSales();
     });
 
     this.sort.sortChange.subscribe(() => {
       this.pageIndex = 0;
-      this.loadCategory();
+      this.loadSales();
     });
   }
 
-
-  loadCategory(): void {
+  loadSales(): void {
     const direction = this.sort?.direction || 'asc';
     const sortField = this.sort?.active || 'name';
-    this.categoryService.findAll(
+    this.saleService.findAll(
       this.pageIndex,
       this.pageSize,
       sortField,
@@ -61,12 +57,11 @@ export class CategoryComponent implements OnInit, AfterViewInit {
       this.filterValue
     ).subscribe({
       next: (response) => {
-        this.dataSource = response._embedded?.categorys ?? [];
+        this.dataSource = response._embedded?.sales ?? [];
         this.totalElements = response.page?.totalElements ?? 0; // Ajuste para total de elementos
       },
       error: (err) => {
-        console.error('Erro ao carregar categorias:', err);
-        this.snackbar.error('Erro ao carregar categorias');
+        this.snackbar.error('Erro ao carregar as vendas.');
       }
     });
   }
@@ -77,22 +72,6 @@ export class CategoryComponent implements OnInit, AfterViewInit {
     this.filterValue = value.trim().toLowerCase();
     this.pageIndex = 0;
 
-    this.loadCategory();
+    this.loadSales();
   }
-
-
-  abrirDialog(): void {
-    const dialogRef = this.dialog.open(AddCategoryComponent, { width: '600px', data: null });
-    dialogRef.afterClosed().subscribe((result: Category | undefined) => {
-      if (result) this.loadCategory();
-    });
-  }
-
-  editarCategoria(category: Category): void {
-    const dialogRef = this.dialog.open(AddCategoryComponent, { width: '600px', data: { category } });
-    dialogRef.afterClosed().subscribe((result: Category | undefined) => {
-      if (result) this.loadCategory();
-    });
-  }
-
 }

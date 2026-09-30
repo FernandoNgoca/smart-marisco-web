@@ -41,6 +41,6 @@ export const menuItems: MenuItem[] = [
     link: '/support',
     icon: 'fa-headset',
     label: 'Suporte',
-    roles: ['ROLE_ADMIN', 'ROLE_MANAGER']
+    roles: ['ROLE_ADMIN', 'ROLE_MANAGER','ROLE_USER']
   }
 ]

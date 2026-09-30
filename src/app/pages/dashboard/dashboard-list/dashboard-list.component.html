@@ -1,5 +1,6 @@
 <div class="counters-grid">
   <div
+    *ngIf="hasAdminPermission()"
     class="counter-card blue"
     matTooltip="Quantidade total de vendas realizadas hoje no sistema"
     matTooltipPosition="above"
@@ -17,11 +18,31 @@
       </span>
       <i class="fa-solid fa-calendar-day"></i>
     </div>
-
     <div class="card-value">{{ this.totalVendasHoje }}</div>
+    <div
+        class="trend"
+        [ngClass]="{
+          positive: variationSale >= 0,
+          negative: variationSale < 0
+        }"
+      >
+        <div class="badge">
+          <i
+            class="fa-solid"
+            [class.fa-arrow-up]="variationSale > 0"
+            [class.fa-arrow-down]="variationSale < 0"
+          ></i>
+
+          <span>{{ variationSale }}%</span>
+        </div>
+
+        <span class="text">vs ontem</span>
+      </div>
+
   </div>
 
   <div
+    *ngIf="hasAdminPermission()"
     class="counter-card red"
     matTooltip="Quantidade total de vendas realizadas no mês corrente"
     matTooltipPosition="above"
@@ -41,9 +62,30 @@
     </div>
 
     <div class="card-value">{{ this.totalVendasMes }}</div>
+
+    <div
+        class="trend"
+        [ngClass]="{
+          positive: variationSaleMonth >= 0,
+          negative: variationSaleMonth < 0
+        }"
+      >
+        <div class="badge">
+          <i
+            class="fa-solid"
+            [class.fa-arrow-up]="variationSaleMonth >= 0"
+            [class.fa-arrow-down]="variationSaleMonth < 0"
+          ></i>
+
+          <span>{{ variationSaleMonth }}%</span>
+        </div>
+
+        <span class="text">vs mês passado.</span>
+      </div>
   </div>
 
   <div
+    *ngIf="hasAdminPermission()"
     class="counter-card green"
     matTooltip="Quantidade total de clientes cadastrados no sistema"
     matTooltipPosition="above"
@@ -66,6 +108,7 @@
   </div>
 
   <div
+    *ngIf="hasAdminPermission()"
     class="counter-card teal"
     matTooltip="Quantidade total de produtos disponíveis em estoque"
     matTooltipPosition="above"
@@ -85,19 +128,41 @@
     </div>
 
     <div class="card-value">{{ this.totalProdutos }}</div>
+
+      <div
+        class="trend"
+        [ngClass]="{
+          positive: variationSale >= 0,
+          negative: variationSale < 0
+        }"
+      >
+        <div class="badge">
+          <i
+            class="fa-solid"
+            [class.fa-arrow-up]="variationSale >= 0"
+            [class.fa-arrow-down]="variationSale < 0"
+          ></i>
+
+          <span>{{ variationSale }}%</span>
+        </div>
+
+        <span class="text">vs ontem</span>
+      </div>
   </div>
+
   <div
+    *ngIf="hasAdminPermission()"
     class="counter-card teal"
-    matTooltip="Quantidade total de produtos disponíveis em estoque"
+    matTooltip="Número total de encomendas."
     matTooltipPosition="above"
     matTooltipClass="tooltip-custom"
   >
     <div class="card-header">
       <span class="card-title">
-        Total de Pedidos em Aberto
+        Total de Pedidos
         <i
           class="fa-solid fa-circle-info info-icon"
-          matTooltip="Número total de pedidos atualmente em aberto"
+          matTooltip="Número total de encomendas."
           matTooltipPosition="above"
           matTooltipClass="tooltip-custom"
         ></i>
@@ -105,11 +170,11 @@
       <i class="fa-solid fa-inbox"></i>
     </div>
 
-    <div class="card-value">10</div>
+    <div class="card-value">{{ totalOrders }}</div>
   </div>
 </div>
 
-<div class="dashboard-row">
+<div class="dashboard-row" *ngIf="hasAdminPermission()">
   <div class="chart-container">
     <h3 class="chart-title">Vendas da Semana</h3>
     <ngx-charts-bar-vertical
@@ -118,6 +183,8 @@
       [yAxis]="true"
       [showDataLabel]="true"
       [view]="[320, 250]"
+      [yAxisTicks]="yAxisTicks"
+      [yAxisTickFormatting]="formatYAxisTicks"
     >
       >
     </ngx-charts-bar-vertical>

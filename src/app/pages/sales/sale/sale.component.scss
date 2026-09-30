@@ -89,6 +89,7 @@
   border: none;
   box-shadow: 0 2px 4px rgba(15, 58, 104, 0.25);
   transition: all 0.2s ease;
+  margin-left: auto;
 
   &:hover {
     background: linear-gradient(135deg, #0B2E52 0%, #174B7D 100%);

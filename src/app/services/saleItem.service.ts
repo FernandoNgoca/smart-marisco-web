@@ -1,6 +1,6 @@
 import { HttpClient } from "@angular/common/http";
 import { Injectable } from "@angular/core";
-import { Sale } from "@app/shared/models/sale";
+import { Sale, SaleItem } from "@app/shared/models/sale";
 import { Observable } from "rxjs";
 import { environment } from "src/environments/environment";
 
@@ -29,6 +29,10 @@ export class SaleItemService {
   getTopProducts(): Observable<any[]> {
     return this.http.get<any[]>(`${this.baseURL}/get-top-products`);
   }
+
+  findAllBySaleId(id: number): Observable<SaleItem[]> {
+      return this.http.get<SaleItem[]>(`${this.baseURL}/findAllBySaleId/${id}`);
+    }
 }
 
 
