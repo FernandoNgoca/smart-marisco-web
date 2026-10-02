@@ -1,4 +1,5 @@
-import { Component, Inject, OnInit } from '@angular/core';
+import { Subject, takeUntil, startWith } from 'rxjs';
+import { Component, Inject, OnInit, OnDestroy } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 import { ClientService } from '@app/services/client.service';
@@ -14,11 +15,27 @@ export interface DialogData {
   templateUrl: './add-client.component.html',
   styleUrls: ['./add-client.component.scss']
 })
-export class AddClientComponent implements OnInit {
+export class AddClientComponent implements OnInit, OnDestroy {
 
   form: FormGroup;
   ClientType = ClientType;
   isLoading = false;
+  saveError = '';
+  private destroyed = new Subject<void>();
+  private disabledFields: string[] = [];
+  private lockForm(): void {
+    this.saveError = '';
+    this.disabledFields = Object.keys(this.form.controls).filter(key => this.form.get(key)!.disabled);
+    this.form.disable({ emitEvent: false });
+    this.dialogRef.disableClose = true;
+  }
+  private unlockForm(): void {
+    this.dialogRef.disableClose = false;
+    this.form.enable({ emitEvent: false });
+    this.disabledFields.forEach(key => this.form.get(key)!.disable({ emitEvent: false }));
+  }
+  ngOnDestroy(): void { this.destroyed.next(); this.destroyed.complete(); }
+
 
   //Getter para saber se é edição
   get isEditMode(): boolean {
@@ -44,12 +61,12 @@ export class AddClientComponent implements OnInit {
   ) {
     this.form = this.fb.group({
       id: [],
-      firstName: ['', Validators.required],
+      firstName: ['', [Validators.required, Validators.pattern(/\S/)]],
       lastName: [''],
       email: ['', [Validators.required, Validators.email]],
       phoneNumber: ['', [Validators.required,
       Validators.pattern(/^8[2-7]\d{7}$/)]],
-      address: ['', Validators.required],
+      address: ['', [Validators.required, Validators.pattern(/\S/)]],
       type: ['', Validators.required]
     });
   }
@@ -60,11 +77,11 @@ export class AddClientComponent implements OnInit {
       this.patchForm(this.data.client);
     }
 
-    this.form.get('type')?.valueChanges.subscribe(type => {
+    this.form.get('type')?.valueChanges.pipe(startWith(this.form.get('type')?.value), takeUntil(this.destroyed)).subscribe(type => {
       const lastNameControl = this.form.get('lastName');
 
       if (type === ClientType.INDIVIDUAL) {
-        lastNameControl?.setValidators([Validators.required]);
+        lastNameControl?.setValidators([Validators.required, Validators.pattern(/\S/)]);
       } else {
         lastNameControl?.clearValidators();
         lastNameControl?.setValue('');
@@ -89,10 +106,10 @@ export class AddClientComponent implements OnInit {
 
   //Tratamento de erro centralizado
   private handleError(error: any): void {
-    const msg = error.error?.message
+    const msg = error.error?.detail || error.error?.message
       || error.error?.errors?.map((e: any) => e.message).join(', ')
-      || `Erro ao ${this.isEditMode ? 'atualizar' : 'salvar'} cliente.`;
-    alert(msg);
+      || `Erro ao ${this.isEditMode ? 'atualizar' : 'guardar'} os dados.`;
+    this.saveError = msg;
   }
 
   // Salvar: decide entre create ou update (lógica centralizada)
@@ -100,8 +117,9 @@ export class AddClientComponent implements OnInit {
 
     if (this.form.valid && !this.isLoading) {
       this.isLoading = true;
+      this.lockForm();
 
-      const formValue = { ...this.form.value };
+      const formValue = { ...this.form.getRawValue() };
       formValue.phoneNumber = formValue.phoneNumber?.replace(/\D/g, '');
 
 
@@ -110,16 +128,17 @@ export class AddClientComponent implements OnInit {
         ? this.clientService.update(formValue)
         : this.clientService.create(formValue);
 
-      operation.subscribe({
+      operation.pipe(takeUntil(this.destroyed)).subscribe({
         next: (client: Client) => {
           this.isLoading = false;
+          this.unlockForm();
           this.dialogRef.close(client);
           this.snackbar.success(`Cliente ${this.isEditMode ? 'atualizado' : 'Cadastrado'} com sucesso!`);
         },
         error: (error) => {
           this.isLoading = false;
+          this.unlockForm();
           this.handleError(error);
-          this.snackbar.error('Erro ao salvar cliente.');
         }
       });
     } else {
@@ -128,6 +147,7 @@ export class AddClientComponent implements OnInit {
   }
 
   cancelar() {
+    if (this.isLoading) return;
     this.dialogRef.close();
   }
 

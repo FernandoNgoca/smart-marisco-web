@@ -1,6 +1,6 @@
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Injectable } from '@angular/core';
-import { tap, EMPTY, Observable, catchError, throwError } from 'rxjs';
+import { tap, Observable, catchError, throwError, finalize, shareReplay } from 'rxjs';
 import { environment } from 'src/environments/environment';
 import { jwtDecode } from 'jwt-decode';
 import { BehaviorSubject } from 'rxjs';
@@ -19,6 +19,8 @@ interface ApiResponse<T> {
 export class AuthService {
 
   baseURL = `${environment.apiURL}auth`;
+
+  private refreshRequest$: Observable<any> | null = null;
 
   private authStatus = new BehaviorSubject<boolean>(false);
   private userSubject = new BehaviorSubject<User | null>(null);
@@ -75,34 +77,41 @@ export class AuthService {
 
   // REFRESH TOKEN
   refreshToken(): Observable<any> {
+    if (this.refreshRequest$) return this.refreshRequest$;
+
     const refreshToken = this.getRefreshToken();
     const username = this.getUsername();
 
     if (!refreshToken || !username) {
-      return EMPTY;
+      return throwError(() => new Error('Sessão expirada. Inicie sessão novamente.'));
     }
 
     const headers = new HttpHeaders({
       Authorization: `Bearer ${refreshToken}`
     });
 
-    return this.http.put<any>(
+    this.refreshRequest$ = this.http.put<any>(
       `${this.baseURL}/refresh/${username}`,
       {},
       { headers }
     ).pipe(
       tap(res => {
         const data = res.body;
-        if (data) {
-          this.saveTokens(data);
+        if (!data?.accessToken) throw new Error('Resposta de renovação inválida');
+        if (this.getRefreshToken() !== refreshToken) {
+          throw new Error('A sessão foi alterada durante a renovação');
         }
+        this.saveTokens(data);
       }),
       catchError(error => {
         console.error('Erro ao renovar token:', error);
-        this.logout();
+        if (this.getRefreshToken() === refreshToken) this.logout();
         return throwError(() => error);
-      })
+      }),
+      finalize(() => { this.refreshRequest$ = null; }),
+      shareReplay({ bufferSize: 1, refCount: false })
     );
+    return this.refreshRequest$;
   }
 
   // SALVAR TOKENS
@@ -190,7 +199,7 @@ export class AuthService {
     try {
       const expirationTime = parseInt(exp, 10);
       // Adicionar margem de segurança de 5 segundos
-      return new Date().getTime() + 5000 > expirationTime;
+      return !Number.isFinite(expirationTime) || Date.now() + 5000 > expirationTime;
     } catch {
       return true;
     }

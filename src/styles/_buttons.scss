@@ -1,0 +1,43 @@
+// Shared alignment for form actions and list toolbars; icon-only controls keep their size.
+button.app-button.mat-button-base {
+  min-height: 44px;
+  height: auto;
+  min-width: 104px;
+  padding: 0 18px;
+  line-height: 1.4;
+  border-radius: 8px;
+  box-sizing: border-box;
+  vertical-align: middle;
+  white-space: normal;
+  transform: none;
+
+  .mat-button-wrapper { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 42px; }
+  .mat-button-wrapper > i, .mat-button-wrapper > mat-icon { margin: 0; flex-shrink: 0; line-height: 1; }
+}
+.app-action-row.app-action-row {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+
+  > button.app-button { margin: 0; }
+}
+.app-list-toolbar.app-list-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-bottom: 20px;
+
+  > .mat-form-field { width: 300px; max-width: 100%; min-width: 0; }
+  > .mat-form-field .mat-form-field-wrapper { margin: 0; padding-bottom: 0; }
+  > .mat-form-field .mat-form-field-flex { margin-top: 0; }
+  > button.app-button { min-height: 56px; margin: 0; flex-shrink: 0; }
+}
+@media (max-width: 600px) {
+  .app-list-toolbar.app-list-toolbar > .mat-form-field { flex: 1 1 100%; width: 100%; }
+  .app-list-toolbar.app-list-toolbar > button.app-button { margin-left: auto; }
+  .app-action-row.app-action-row > button.app-button { flex: 1 1 120px; }
+}

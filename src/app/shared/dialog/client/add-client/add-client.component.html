@@ -3,7 +3,7 @@
   <i
     class="fa-solid"
     [class.fa-user-plus]="!isEditMode"
-    [class.fa-user-pen]="isEditMode"
+    [class.fa-pen]="isEditMode"
   >
   </i>
   {{ isEditMode ? "Editar Cliente" : "Novo Cliente" }}
@@ -11,7 +11,7 @@
 
 <mat-dialog-content [formGroup]="form">
   <div class="row">
-    <mat-form-field appearance="fill" class="full">
+    <mat-form-field appearance="outline" class="full">
       <mat-label>Tipo</mat-label>
       <mat-select formControlName="type">
         <mat-option *ngFor="let t of tipos" [value]="t.value">
@@ -23,25 +23,25 @@
       </mat-error>
     </mat-form-field>
 
-    <mat-form-field appearance="fill">
+    <mat-form-field appearance="outline">
       <mat-label>Nome</mat-label>
       <input matInput formControlName="firstName" />
-      <mat-error *ngIf="form.get('firstName')?.hasError('required')">
+      <mat-error *ngIf="form.get('firstName')?.invalid">
         Nome é obrigatório
       </mat-error>
     </mat-form-field>
   </div>
 
   <div class="row">
-    <mat-form-field appearance="fill" *ngIf="isIndividual">
+    <mat-form-field appearance="outline" *ngIf="isIndividual">
       <mat-label>Apelido</mat-label>
       <input matInput formControlName="lastName" />
-      <mat-error *ngIf="form.get('lastName')?.hasError('required')">
+      <mat-error *ngIf="form.get('lastName')?.invalid">
         Apelido é obrigatório
       </mat-error>
     </mat-form-field>
 
-    <mat-form-field appearance="fill">
+    <mat-form-field appearance="outline">
       <mat-label>Email</mat-label>
       <input matInput formControlName="email" type="email" />
 
@@ -55,19 +55,19 @@
   </div>
 
   <div class="row">
-    <mat-form-field appearance="fill" class="full">
+    <mat-form-field appearance="outline" class="full">
       <mat-label>Endereço</mat-label>
       <input
         matInput
         formControlName="address"
         placeholder="Ex: Av. Julius Nyerere, nº 123"
       />
-      <mat-error *ngIf="form.get('address')?.hasError('required')">
+      <mat-error *ngIf="form.get('address')?.invalid">
         Endereço é obrigatório
       </mat-error>
     </mat-form-field>
 
-    <mat-form-field appearance="fill">
+    <mat-form-field appearance="outline">
       <mat-label>Telefone</mat-label>
       <input
         matInput
@@ -80,15 +80,16 @@
       <mat-error *ngIf="form.get('phoneNumber')?.hasError('required')">
         Telefone é obrigatório
       </mat-error>
-      <mat-error *ngIf="form.get('phoneNumber')?.hasError('invalidPhone')">
-        Telefone deve ter 9 dígitos
+      <mat-error *ngIf="form.get('phoneNumber')?.hasError('pattern')">
+        Use 9 dígitos, começando por 82 a 87.
       </mat-error>
     </mat-form-field>
   </div>
+  <p *ngIf="saveError" class="field-error" role="alert">{{ saveError }}</p>
 </mat-dialog-content>
 
-<mat-dialog-actions align="end">
-  <button mat-button (click)="cancelar()" type="button" class="btn-cancel">
+<mat-dialog-actions class="app-action-row" align="end">
+  <button mat-button (click)="cancelar()" type="button" class="app-button btn-cancel" [disabled]="isLoading">
     <i class="fa-regular fa-circle-xmark"></i>
     Cancelar
   </button>
@@ -97,13 +98,13 @@
     mat-raised-button
     (click)="salvar()"
     [disabled]="form.invalid || isLoading"
-    type="submit"
-    class="btn-save"
+    type="button"
+    class="app-button btn-save"
   >
     <!-- Ícone quando não está carregando -->
     <i *ngIf="!isLoading" class="fa-regular fa-floppy-disk"></i>
 
     <!-- Texto dinâmico -->
-    {{ isLoading ? "Salvando..." : "Salvar" }}
+    {{ isLoading ? "A guardar..." : "Guardar" }}
   </button>
 </mat-dialog-actions>

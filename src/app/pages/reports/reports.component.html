@@ -1,0 +1,30 @@
+<section class="content reports">
+  <header><div><h2>Relatórios</h2><p>Consulte os resultados e acompanhe o stock do negócio.</p></div></header>
+  <form [formGroup]="form" (ngSubmit)="apply()" class="filters">
+    <mat-form-field appearance="outline"><mat-label>Relatório</mat-label><mat-select formControlName="type" (selectionChange)="changeType()" [disabled]="exporting"><mat-option value="sales">Vendas</mat-option><mat-option value="stock">Stock atual</mat-option><mat-option value="movements">Movimentos de stock</mat-option></mat-select></mat-form-field>
+    <ng-container *ngIf="form.controls.type.value !== 'stock'">
+      <mat-form-field appearance="outline"><mat-label>Desde</mat-label><input matInput type="date" formControlName="from" [max]="form.controls.to.value || ''"></mat-form-field>
+      <mat-form-field appearance="outline"><mat-label>Até</mat-label><input matInput type="date" formControlName="to" [min]="form.controls.from.value || ''"></mat-form-field>
+    </ng-container>
+    <mat-form-field *ngIf="form.controls.type.value === 'sales'" appearance="outline"><mat-label>Registado por (utilizador)</mat-label><input matInput formControlName="seller" maxlength="100" placeholder="Todos"></mat-form-field>
+    <mat-form-field *ngIf="form.controls.type.value !== 'sales'" appearance="outline"><mat-label>Nome ou código do produto</mat-label><input matInput formControlName="search" maxlength="100"></mat-form-field>
+    <mat-form-field *ngIf="form.controls.type.value === 'stock'" appearance="outline"><mat-label>Estado</mat-label><mat-select formControlName="filter"><mat-option value="">Todos</mat-option><mat-option value="low">Stock baixo (até 5)</mat-option><mat-option value="empty">Esgotado</mat-option></mat-select></mat-form-field>
+    <mat-form-field *ngIf="form.controls.type.value === 'movements'" appearance="outline"><mat-label>Tipo</mat-label><mat-select formControlName="filter"><mat-option value="">Todos</mat-option><mat-option value="ENTRY">Entradas</mat-option><mat-option value="EXIT">Saídas</mat-option></mat-select></mat-form-field>
+    <button mat-flat-button class="app-button btn-add" type="submit" [disabled]="loading || exporting || invalidDates">Aplicar filtros</button>
+  </form>
+  <p *ngIf="invalidDates" class="error" role="alert">Indique um período válido, com a data final igual ou posterior à inicial.</p>
+  <p *ngIf="loading" role="status">A carregar relatório...</p>
+  <div *ngIf="error" class="error" role="alert">{{error}} <button mat-button class="app-button" (click)="load()">Tentar novamente</button></div>
+  <ng-container *ngIf="report as result">
+    <div class="counters-grid"><article *ngFor="let metric of result.metrics; let first = first" class="counter-card" [class.featured]="first"><p>{{metric.label}}</p><strong>{{format(metric.value, metric.kind)}}</strong></article></div>
+    <div class="report-heading"><div><h3>{{result.title}}</h3><p>{{result.period}}</p><small>Gerado em {{format(result.generatedAt, 'date')}}</small></div>
+      <div class="app-action-row"><button mat-stroked-button class="app-button" (click)="excel()" [disabled]="exporting || !result.totalElements">Exportar Excel</button><button mat-flat-button class="app-button btn-add" (click)="print()" [disabled]="exporting || !result.totalElements">Imprimir / PDF</button></div>
+    </div>
+    <p class="note">Os totais e as exportações incluem todos os resultados dos filtros aplicados.</p>
+    <p *ngIf="exporting" role="status">A preparar documento...</p><p *ngIf="exportError" class="error" role="alert">{{exportError}}</p>
+    <div class="app-table-panel"><div class="app-table-scroll"><table class="app-data-table mat-table"><thead><tr class="mat-header-row"><th class="mat-header-cell" *ngFor="let col of result.columns" [class.numeric]="col.kind === 'money' || col.kind === 'number'" scope="col">{{col.label}}</th></tr></thead>
+      <tbody><tr class="mat-row" *ngFor="let row of result.rows"><td class="mat-cell" *ngFor="let value of row; let i = index" [class.numeric]="result.columns[i].kind === 'money' || result.columns[i].kind === 'number'">{{format(value,result.columns[i].kind)}}</td></tr><tr class="mat-row" *ngIf="!result.rows.length"><td class="mat-cell" [attr.colspan]="result.columns.length">Nenhum resultado para os filtros aplicados.</td></tr></tbody></table></div>
+      <mat-paginator class="app-table-paginator" [length]="result.totalElements" [pageIndex]="pageIndex" [pageSize]="pageSize" [pageSizeOptions]="[10,20,50]" (page)="page($event)" [disabled]="loading || exporting" showFirstLastButtons aria-label="Paginação do relatório"></mat-paginator>
+    </div>
+  </ng-container>
+</section>

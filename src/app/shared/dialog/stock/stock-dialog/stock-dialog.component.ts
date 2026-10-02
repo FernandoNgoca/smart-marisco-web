@@ -1,207 +1,87 @@
-import { AfterViewInit, Component, Inject, OnInit, ViewChild } from '@angular/core';
+import { Component, Inject, OnInit, OnDestroy } from '@angular/core';
 import { MAT_DIALOG_DATA, MatDialog, MatDialogRef } from '@angular/material/dialog';
-import { MatPaginator, PageEvent } from '@angular/material/paginator';
-import { MatSort, Sort } from '@angular/material/sort';
-import { MatTableDataSource } from '@angular/material/table';
-import { SnackbarService } from '@app/services/snackbar.service';
+import { PageEvent } from '@angular/material/paginator';
+import { FormControl, FormGroup } from '@angular/forms';
+import { Subject, takeUntil } from 'rxjs';
 import { StockService } from '@app/services/stock.service';
 import { StockMovementService } from '@app/services/stockMovement.service';
 import { Stock, StockCounters } from '@app/shared/models/stock';
-import { MovementType, StockMovement } from '@app/shared/models/stockMovement';
+import { StockMovement } from '@app/shared/models/stockMovement';
 import { DialogData } from '../add-stock/add-stock.component';
 import { AddStockMovementComponent } from '../add-stock-movement/add-stock-movement.component';
 
-@Component({
-  selector: 'app-stock-dialog',
-  templateUrl: './stock-dialog.component.html',
-  styleUrls: ['./stock-dialog.component.scss']
-})
-export class StockDialogComponent implements OnInit, AfterViewInit {
-
-  counters: StockCounters = {
-    totalLancamentos: 0,
-    totalEntradas: 0,
-    totalSaidas: 0,
-    estoqueAtual: 0
-  };
-
-  // isLoading = true;
+@Component({ selector: 'app-stock-dialog', templateUrl: './stock-dialog.component.html', styleUrls: ['./stock-dialog.component.scss'] })
+export class StockDialogComponent implements OnInit, OnDestroy {
   stockSelecionado: Stock | null = null;
-  tituloDialog: string = 'Contadores do estoque';
-  displayedColumns: string[] = ['product', 'quantity', 'type', 'createdAt'];
-  dataSource = new MatTableDataSource<StockMovement>([]);
-
-  // Paginação
+  counters: StockCounters | null = null;
+  movements: StockMovement[] = [];
+  displayedColumns = ['quantity', 'type', 'description', 'createdBy', 'createdDate'];
   totalElements = 0;
   pageSize = 5;
   pageIndex = 0;
-
-  // Ordenação
-  sortProperty = 'product.name';
-  sortDirection: 'asc' | 'desc' = 'asc';
-
-  movements: StockMovement[] = [];
   loading = false;
-  movimentNumber = 0;
+  error = '';
+  stockError = '';
+  filters = new FormGroup({ type: new FormControl(''), from: new FormControl(''), to: new FormControl('') });
+  private destroyed = new Subject<void>();
+  private cancelLoad = new Subject<void>();
+  private quantityFormat = new Intl.NumberFormat('pt-PT', { maximumFractionDigits: 3 });
+  constructor(public dialogRef: MatDialogRef<StockDialogComponent>, private stockService: StockService,
+    private stockMovementService: StockMovementService, private dialog: MatDialog,
+    @Inject(MAT_DIALOG_DATA) public data: DialogData) {}
 
-  // Labels amigáveis
-  movementTypeLabels: { [key in MovementType]: string } = {
-    [MovementType.ENTRY]: 'Entrada',
-    [MovementType.EXIT]: 'Saída'
-  };
-
-  @ViewChild(MatPaginator) paginator!: MatPaginator;
-  @ViewChild(MatSort) sort!: MatSort;
-
-  constructor(
-    public dialogRef: MatDialogRef<StockDialogComponent>,
-    private stockService: StockService,
-    private stockMovementService: StockMovementService,
-    private dialog: MatDialog,
-    private snackbar: SnackbarService,
-    @Inject(MAT_DIALOG_DATA) public data: DialogData
-  ) { }
-
+  get unit(): string { return this.stockSelecionado?.product?.unit?.symbol || this.stockSelecionado?.product?.unit?.name || ''; }
+  get invalidDates(): boolean {
+    const { from, to } = this.filters.getRawValue();
+    return !!(from && to && from > to);
+  }
+  formatQuantity(value: number): string { return this.quantityFormat.format(value); }
   ngOnInit(): void {
-    setTimeout(() => {
-      this.loading = true;
-    });
-    if (this.data?.stock) {
-      this.stockSelecionado = this.data.stock;
-      this.tituloDialog = `Contadores - ${this.stockSelecionado.product?.name || 'Estoque'}`;
-    }
-
-    this.loadCounters();
+    this.stockSelecionado = this.data?.stock || null;
     this.loadMovements();
+    this.refreshStock();
   }
-
-  ngAfterViewInit(): void {
-    this.dataSource.paginator = this.paginator;
-    this.dataSource.sort = this.sort;
-  }
-
-  loadCounters(): void {
-    //this.isLoading = true;
-    // Se não tiver stock, busca todos para mostrar totais gerais
-    this.stockService.findAll(0, 1000, '', 'asc').subscribe({
-      next: (resp) => {
-        const stocks: Stock[] = resp._embedded?.Stock ?? [];
-
-        //this.isLoading = false;
-      },
-      error: (error) => {
-        console.error('Erro ao carregar contadores', error);
-        this.snackbar.error('Erro ao carregar contadores');
-        //this.isLoading = false;
-      }
-    });
-  }
-
-  loadStocks(): void {
-
-    this.stockService.findByProductId(this.stockSelecionado?.productId ?? 0).subscribe({
-      next: (stock) => {
-        this.stockSelecionado = stock;
-        this.loadCounters();
-        this.counters.estoqueAtual = stock.quantity;
-      },
-      error: (error) => {
-        console.error('Erro ao carregar estoque', error);
-        this.snackbar.error('Erro ao carregar estoque');
-      }
-    });
-  }
-
+  ngOnDestroy(): void { this.destroyed.next(); this.destroyed.complete(); this.cancelLoad.next(); this.cancelLoad.complete(); }
   loadMovements(): void {
+    if (this.invalidDates) return;
+    const productId = this.stockSelecionado?.productId ?? this.stockSelecionado?.product?.id;
+    if (!productId) { this.error = 'Não foi possível identificar o produto.'; return; }
+    this.cancelLoad.next();
     this.loading = true;
-
-    if (this.stockSelecionado?.product?.id !== undefined) {
-      this.stockMovementService
-        .findByProductIdAndStatus(this.stockSelecionado?.product?.id, 0, 12, 'createdDate', 'desc')
-        .subscribe({
-          next: (data) => {
-            this.movements = data;
-            this.dataSource.data = data;
-            this.loading = false;
-            this.updateCounters();
-          },
-          error: (err) => {
-            console.error('Erro ao carregar movimentos', err);
-            this.snackbar.error('Erro ao carregar movimentos');
-            this.loading = false;
-          }
-        });
-    }
+    this.error = '';
+    const { type, from, to } = this.filters.getRawValue();
+    this.stockMovementService.history(productId, this.pageIndex, this.pageSize, type || '', from || '', to || '')
+      .pipe(takeUntil(this.cancelLoad), takeUntil(this.destroyed)).subscribe({
+        next: result => {
+          this.movements = result.items;
+          this.totalElements = result.totalElements;
+          this.counters = { totalLancamentos: result.movements, totalEntradas: result.entries,
+            totalSaidas: result.exits, estoqueAtual: this.stockSelecionado?.quantity ?? 0 };
+          this.loading = false;
+        },
+        error: () => { this.loading = false; this.movements = []; this.totalElements = 0; this.counters = null;
+          this.error = 'Não foi possível carregar os movimentos.'; }
+      });
   }
-
-  close(): void {
-    this.dialogRef.close();
-  }
-
-  onSortChange(sort: Sort): void {
-    this.sortProperty = sort.active;
-    this.sortDirection = sort.direction as 'asc' | 'desc';
-    this.pageIndex = 0; // Reseta para a primeira página ao ordenar
-    this.loadMovements();
-  }
-
-  onPageChange(event: PageEvent): void {
-    this.pageIndex = event.pageIndex;
-    this.pageSize = event.pageSize;
-    this.loadMovements();
-  }
-
-  onEdit(movement: StockMovement): void {
-  }
-
-  onDelete(movement: StockMovement): void {
-    if (confirm(`Confirmar exclusão da movimentação de ${movement.stock?.product?.name}?`)) {
-    }
-  }
-
-  updateCounters(): void {
-    const totalEntradas = this.movements
-      .filter(m => m.type === MovementType.ENTRY)
-      .reduce((sum, m) => sum + m.quantity, 0);
-
-    const totalSaidas = this.movements
-      .filter(m => m.type === MovementType.EXIT)
-      .reduce((sum, m) => sum + m.quantity, 0);
-
-    this.counters.totalEntradas = totalEntradas;
-    this.counters.totalSaidas = totalSaidas;
-    this.counters.totalLancamentos = this.movements.length;
-    this.counters.estoqueAtual = this.stockSelecionado?.quantity ?? 0;
-  }
-
-  applyFilter(event: Event) {
-    const filterValue = (event.target as HTMLInputElement).value;
-    this.dataSource.filter = filterValue.trim().toLowerCase();
-  }
-
-  //Método para CRIAR
-  abrirDialog(stock: Stock | null): void {
-    if (!stock) {
-      console.error('Stock não selecionado');
-      return;
-    }
-
-    const dialogRef = this.dialog.open(AddStockMovementComponent, {
-      width: '600px',
-      data: { stock }
-    });
-
-    dialogRef.afterClosed().subscribe((result: StockMovement | undefined) => {
-      if (result) {
-        this.loadMovements();
-        this.updateCounters();
-        this.loadCounters();
-        this.loadStocks();
-      }
+  refreshStock(): void {
+    const productId = this.stockSelecionado?.productId ?? this.stockSelecionado?.product?.id;
+    if (!productId) return;
+    this.stockError = '';
+    this.stockService.findByProductId(productId).pipe(takeUntil(this.destroyed)).subscribe({
+      next: stock => { this.stockSelecionado = { ...stock, product: stock.product || this.stockSelecionado?.product };
+        if (this.counters) this.counters.estoqueAtual = stock.quantity; },
+      error: () => this.stockError = 'Não foi possível atualizar o stock atual.'
     });
   }
-
-  getMovementLabel(movement: StockMovement): string {
-    return this.movementTypeLabels[movement.type];
+  applyFilters(): void { if (!this.invalidDates) { this.pageIndex = 0; this.loadMovements(); } }
+  clearFilters(): void { this.filters.reset({ type: '', from: '', to: '' }); this.applyFilters(); }
+  onPageChange(event: PageEvent): void { this.pageIndex = event.pageIndex; this.pageSize = event.pageSize; this.loadMovements(); }
+  close(): void { this.dialogRef.close(); }
+  abrirDialog(): void {
+    if (!this.stockSelecionado) return;
+    this.dialog.open(AddStockMovementComponent, { width: '600px', data: { stock: this.stockSelecionado } })
+      .afterClosed().pipe(takeUntil(this.destroyed)).subscribe(result => {
+        if (result) { this.pageIndex = 0; this.loadMovements(); this.refreshStock(); }
+      });
   }
 }

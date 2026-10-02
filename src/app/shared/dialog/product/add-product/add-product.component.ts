@@ -1,6 +1,7 @@
-import { Component, Inject, OnInit } from '@angular/core';
-import { FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { Component, Inject, OnDestroy, OnInit } from '@angular/core';
+import { AbstractControl, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
+import { Subject, finalize, takeUntil } from 'rxjs';
 import { CategoryService } from '@app/services/category.service';
 import { ProductService } from '@app/services/product.service';
 import { SnackbarService } from '@app/services/snackbar.service';
@@ -11,9 +12,13 @@ import { Product, Unit } from '@app/shared/models/product';
 import { Species } from '@app/shared/models/species';
 import imageCompression from 'browser-image-compression';
 
-export interface DialogData {
-  product?: Product;
-  viewOnly?: boolean;
+export interface DialogData { product?: Product; viewOnly?: boolean; }
+
+export function productPriceValidator(control: AbstractControl) {
+  const value = control.value;
+  if (value === null || value === undefined || value === '') return null;
+  return typeof value === 'number' && Number.isFinite(value) && value > 0 && value <= 99999999.99
+    && Math.abs(value * 100 - Math.round(value * 100)) < 0.00001 ? null : { price: true };
 }
 
 @Component({
@@ -21,274 +26,180 @@ export interface DialogData {
   templateUrl: './add-product.component.html',
   styleUrls: ['./add-product.component.scss']
 })
-export class AddProductComponent implements OnInit {
-
+export class AddProductComponent implements OnInit, OnDestroy {
   form: FormGroup;
   isLoading = false;
+  processingImage = false;
   loadingSpecies = false;
   loadingCategorys = false;
   loadingUnit = false;
+  categoriesError = false;
+  speciesError = false;
+  unitsError = false;
+  saveError = '';
+  imageError = '';
   species: Species[] = [];
   categorys: Category[] = [];
   units: Unit[] = [];
-  selectedFile: File | null = null;
   imageBase64: string | null = null;
-  imagePreview: string | ArrayBuffer | null = null;
-  private isFormPatched = false;
+  imagePreview: string | null = null;
+  private destroyed = new Subject<void>();
+  private speciesRequest = new Subject<void>();
+  private imageRevision = 0;
+  private closed = false;
 
-  //Getter para saber se é edição
-  get isEditMode(): boolean {
-    return !!this.data?.product?.id;
+  get isEditMode() { return !!this.data?.product?.id; }
+  get isViewMode() { return !!this.data?.viewOnly; }
+  get priceUnit(): string {
+    const unit = this.units.find(item => item.id === this.form.get('unitId')?.value) ?? this.data?.product?.unit;
+    return unit?.symbol ? `MZN/${unit.symbol}` : 'MZN';
+  }
+  get busy(): boolean { return this.isLoading || this.processingImage; }
+  get canSave(): boolean {
+    return !this.isViewMode && !this.busy && !this.form.invalid && !this.loadingCategorys && !this.loadingUnit
+      && !this.loadingSpecies && !this.categoriesError && !this.unitsError && !this.speciesError
+      && !!this.form.get('speciesId')?.value;
   }
 
-  //Getter para ID do Produto (se edição)
-  get productId(): number | undefined {
-    return this.data?.product?.id;
-  }
-
-  get isViewMode(): boolean {
-    return !!this.data?.viewOnly;
-  }
-
-  constructor(
-    private fb: FormBuilder,
-    private dialogRef: MatDialogRef<AddProductComponent>,
-    private productService: ProductService,
-    private speciesService: SpeciesService,
-    private snackbar: SnackbarService,
-    private categoryService: CategoryService,
-    private unitService: unitService,
-    @Inject(MAT_DIALOG_DATA) public data: DialogData
-  ) {
+  constructor(private fb: FormBuilder, private dialogRef: MatDialogRef<AddProductComponent>,
+    private productService: ProductService, private speciesService: SpeciesService,
+    private snackbar: SnackbarService, private categoryService: CategoryService,
+    private unitService: unitService, @Inject(MAT_DIALOG_DATA) public data: DialogData) {
     this.form = this.fb.group({
-      id: [],
-      name: ['', Validators.required],
-      description: [''],
-      price: ['', Validators.required],
-      salePrice: ['', Validators.required],
-      categoryId: ['', Validators.required],
-      species: [],
-      speciesId: ['', Validators.required],
-      unit: [],
-      unitId: ['', Validators.required],
-      image: []
+      id: [null], name: ['', [Validators.required, Validators.pattern(/\S/), Validators.maxLength(255)]],
+      description: [''], price: [null, [Validators.required, productPriceValidator]],
+      salePrice: [null, [Validators.required, productPriceValidator]],
+      categoryId: [null, Validators.required], speciesId: [{ value: null, disabled: true }, Validators.required],
+      unitId: [null, Validators.required]
     });
   }
 
   ngOnInit(): void {
-    // Carrega categorias e unidades
+    const product = this.data?.product;
+    if (product) {
+      this.form.patchValue({ id: product.id, name: product.name, description: product.description,
+        price: product.price, salePrice: product.salePrice,
+        categoryId: product.species?.categoryId ?? product.species?.category?.id,
+        speciesId: product.speciesId ?? product.species?.id, unitId: product.unitId ?? product.unit?.id
+      }, { emitEvent: false });
+      this.imageBase64 = product.image ?? null;
+      this.imagePreview = product.image ? (product.image.startsWith('data:') ? product.image : `data:image/jpeg;base64,${product.image}`) : null;
+    }
+    if (this.isViewMode) this.form.disable({ emitEvent: false });
     this.loadCategorys();
     this.loadUnits();
-
-    // Se for edição, carrega os dados após as listas serem carregadas
-    if (this.isEditMode && this.data?.product) {
-      // Aguarda as listas carregarem
-      setTimeout(() => {
-        const product = this.data.product;
-
-        // Verifica se product existe antes de usar
-        if (product) {
-          // Carrega as espécies da categoria do produto
-          const categoryId = product.species?.categoryId || product.species?.category?.id;
-          if (categoryId) {
-            this.loadSpecies(categoryId);
-          }
-
-          // Preenche o formulário
-          this.patchForm(product);
-        }
-      }, 500);
-    }
-
-    this.form.get('categoryId')?.valueChanges.subscribe(categoryId => {
-      if (categoryId) {
-        this.loadSpecies(categoryId);
-        this.form.get('speciesId')?.reset();
-      }
-    });
+    this.loadSpecies(false);
+    this.form.get('categoryId')!.valueChanges.pipe(takeUntil(this.destroyed)).subscribe(() => this.loadSpecies(true));
   }
 
-  private loadCategorys() {
+  loadCategorys(): void {
+    if (this.loadingCategorys) return;
+    this.categoriesError = false;
     this.loadingCategorys = true;
-
-    this.categoryService.findAll(0, 100, '', 'asc').subscribe({
-      next: (category) => {
-        this.categorys = category._embedded?.categorys ?? [];
-        this.loadingCategorys = false;
-
-        // Se estiver editando e a categoria já estiver carregada, atualiza a seleção
-        if (this.isEditMode && this.data?.product?.species?.category) {
-          this.patchForm(this.data.product);
-        }
-      },
-      error: (err) => {
-        this.snackbar.error('Erro ao carregar categorias. ' + err);
-        this.species = [];
-        this.loadingSpecies = false;
-      }
+    this.categoryService.findAll(0, 100, 'name', 'asc').pipe(takeUntil(this.destroyed),
+      finalize(() => { this.loadingCategorys = false; })).subscribe({
+      next: response => {
+        this.categorys = response._embedded?.categorys ?? [];
+        const current = this.data?.product?.species?.category;
+        if (current && !this.categorys.some(item => item.id === current.id)) this.categorys = [current, ...this.categorys];
+      }, error: () => { this.categoriesError = true; }
     });
   }
 
-  private loadUnits() {
+  loadUnits(): void {
+    if (this.loadingUnit) return;
+    this.unitsError = false;
     this.loadingUnit = true;
-
-    this.unitService.findAll(0, 100, '', 'asc').subscribe({
-      next: (unit) => {
-        this.units = unit._embedded?.Unit ?? [];
-        this.loadingUnit = false;
-
-        // Se estiver editando e a categoria já estiver carregada, atualiza a seleção
-        if (this.isEditMode && this.data?.product?.unit) {
-          this.patchForm(this.data.product);
-        }
-      },
-      error: (err) => {
-        this.snackbar.error('Erro ao carregar Unidades ' + err);
-        this.units = [];
-        this.loadingUnit = false;
-      }
+    this.unitService.findAll(0, 100, 'name', 'asc').pipe(takeUntil(this.destroyed),
+      finalize(() => { this.loadingUnit = false; })).subscribe({
+      next: response => {
+        this.units = response._embedded?.Unit ?? response._embedded?.units ?? [];
+        const current = this.data?.product?.unit;
+        if (current && !this.units.some(item => item.id === current.id)) this.units = [current, ...this.units];
+      }, error: () => { this.unitsError = true; }
     });
   }
 
-  private loadSpecies(id: number): void {
+  loadSpecies(reset = false): void {
+    this.speciesRequest.next();
+    this.species = [];
+    this.speciesError = false;
+    const control = this.form.get('speciesId')!;
+    if (reset) control.reset(null, { emitEvent: false });
+    control.disable({ emitEvent: false });
+    const category = this.form.get('categoryId')!.value;
+    if (!category) return;
     this.loadingSpecies = true;
-
-    this.speciesService.findByCategoryId(id).subscribe({
-      next: (species) => {
+    this.speciesService.findByCategoryId(category).pipe(takeUntil(this.speciesRequest), takeUntil(this.destroyed),
+      finalize(() => { this.loadingSpecies = false; })).subscribe({
+      next: species => {
         this.species = species;
-        this.loadingSpecies = false;
-
-        // Se estiver editando e a categoria já estiver carregada, atualiza a seleção
-        if (this.isEditMode && this.data?.product?.species) {
-          this.patchForm(this.data.product);
-        }
-      },
-      error: (err) => {
-        this.snackbar.error('Erro ao carregar categorias');
-        this.species = [];
-        this.loadingSpecies = false;
-      }
+        if (!species.some(item => item.id === control.value)) control.reset(null, { emitEvent: false });
+        if (species.length && !this.isViewMode && !this.isLoading) control.enable({ emitEvent: false });
+      }, error: () => { this.speciesError = true; }
     });
-  }
-
-  private patchForm(product: Product): void {
-    // Obtém o categoryId através da espécie
-    const categoryId = product.species?.categoryId || product.species?.category?.id;
-
-    // Garante que os IDs sejam definidos
-    const speciesId = product.speciesId || product.species?.id;
-    const unitId = product.unitId || product.unit?.id;
-
-    this.form.patchValue(
-  {
-    id: product.id,
-    name: product.name,
-    description: product.description,
-    price: product.price,
-    salePrice: product.salePrice,
-    categoryId,
-    speciesId,
-    unitId,
-    species: product.species,
-    unit: product.unit,
-    image: product.image
-  },
-  {
-    emitEvent: false
-  }
-);
-
-    if (product.image) {
-      this.imagePreview = product.image;
-      this.imageBase64 = product.image;
-    }
   }
 
   salvar(): void {
-    if (this.form.valid && !this.isLoading) {
-      this.isLoading = true;
-
-      const formValue = this.form.getRawValue();
-
-      // Monta payload: extrai categoryId do objeto Category selecionado
-      const payload = {
-        id: formValue.id,
-        name: formValue.name,
-        description: formValue.description,
-        price: formValue.price,
-        salePrice: formValue.salePrice,
-        speciesId: formValue.speciesId,
-        unitId: formValue.unitId,
-        image: this.imageBase64 ?? undefined
-      };
-      const operation = this.isEditMode
-        ? this.productService.update({ ...payload, id: formValue.id })
-        : this.productService.create(payload);
-
-      operation.subscribe({
-        next: (product: Product) => {
-          this.isLoading = false;
-          this.dialogRef.close(product);
-          this.snackbar.success(`Produto ${this.isEditMode ? 'atualizado' : 'Cadastrado'} com sucesso!`);
-        },
-        error: (error) => {
-          this.isLoading = false;
-          this.handleError(error);
-          this.snackbar.error('Erro ao salvar produto.');
-        }
-      });
-    } else {
-      this.form.markAllAsTouched();
-    }
-  }
-
-  //Tratamento de erro centralizado
-  private handleError(error: any): void {
-    const msg = error.error?.message
-      || error.error?.errors?.map((e: any) => e.message).join(', ')
-      || `Erro ao ${this.isEditMode ? 'atualizar' : 'salvar'} cliente.`;
-    alert(msg);
-  }
-
-  cancelar() {
-    this.dialogRef.close();
-  }
-
-  onSpeciesChange(event: any): void {
-    setTimeout(() => {
-      this.form.get('species')?.updateValueAndValidity();
+    if (!this.canSave) { this.form.markAllAsTouched(); return; }
+    const value = this.form.getRawValue();
+    const payload = { id: value.id, name: value.name.trim(), description: (value.description ?? '').trim(),
+      price: value.price, salePrice: value.salePrice, speciesId: value.speciesId, unitId: value.unitId,
+      image: this.imageBase64 ?? '' };
+    this.saveError = '';
+    this.isLoading = true;
+    this.dialogRef.disableClose = true;
+    this.form.disable({ emitEvent: false });
+    const operation = this.isEditMode ? this.productService.update(payload) : this.productService.create(payload);
+    operation.pipe(takeUntil(this.destroyed), finalize(() => {
+      this.isLoading = false;
+      this.dialogRef.disableClose = false;
+      if (!this.closed) {
+        this.form.enable({ emitEvent: false });
+        if (!this.species.length || this.speciesError) this.form.get('speciesId')!.disable({ emitEvent: false });
+      }
+    })).subscribe({
+      next: product => {
+        this.dialogRef.close(product);
+        this.snackbar.success(`Produto ${this.isEditMode ? 'atualizado' : 'registado'} com sucesso!`);
+      }, error: error => {
+        this.saveError = error.error?.detail || error.error?.message || 'Não foi possível guardar o produto. Tente novamente.';
+      }
     });
   }
 
-  async onFileSelected(event: any) {
-    const file: File = event.target.files[0];
-    if (!file) return;
-
-    try {
-      // Opções de compressão
-      const options = {
-        maxSizeMB: 0.3,
-        maxWidthOrHeight: 800,
-        useWebWorker: true
-      };
-
-      // comprime a imagem
-      const compressedFile = await imageCompression(file, options);
-
-      this.selectedFile = compressedFile;
-
-      const reader = new FileReader();
-
-      reader.onload = () => {
-        this.imagePreview = reader.result;
-        this.imageBase64 = reader.result as string;
-      };
-
-      reader.readAsDataURL(compressedFile);
-
-    } catch (error) {
-      this.snackbar.error('Erro ao comprimir imagem: ' + error);
-    }
+  cancelar(): void { if (!this.isLoading) this.dialogRef.close(); }
+  removeImage(): void {
+    if (this.isViewMode || this.busy) return;
+    this.imageRevision++;
+    this.imageBase64 = null; this.imagePreview = null; this.imageError = '';
   }
-
+  async onFileSelected(event: Event): Promise<void> {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    input.value = '';
+    if (!file || this.isViewMode || this.busy) return;
+    this.imageError = '';
+    if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type) || file.size > 10 * 1024 * 1024) {
+      this.imageError = 'Selecione uma imagem JPG, PNG ou WebP até 10 MB.'; return;
+    }
+    const revision = ++this.imageRevision;
+    this.processingImage = true;
+    try {
+      const compressed = await imageCompression(file, { maxSizeMB: 0.3, maxWidthOrHeight: 800, useWebWorker: true });
+      const result = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = () => reject(new Error('Imagem ilegível'));
+        reader.readAsDataURL(compressed);
+      });
+      if (!this.closed && revision === this.imageRevision) { this.imagePreview = result; this.imageBase64 = result; }
+    } catch {
+      if (!this.closed) this.imageError = 'Não foi possível processar a imagem. Escolha outra imagem.';
+    } finally { if (!this.closed) this.processingImage = false; }
+  }
+  ngOnDestroy(): void {
+    this.closed = true; this.imageRevision++;
+    this.destroyed.next(); this.destroyed.complete(); this.speciesRequest.complete();
+  }
 }

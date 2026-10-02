@@ -59,6 +59,10 @@ export class ProductService {
     return this.http.get<Product[]>(`${this.baseURL}/findProductsWithStock`);
   }
 
+  findOrderProducts(): Observable<Product[]> {
+    return this.http.get<Product[]>(`${this.baseURL}/orderProducts`);
+  }
+
   findAvailableProducts(): Observable<Product[]> {
     return this.http.get<Product[]>(`${this.baseURL}/findAvailableProducts`);
   }

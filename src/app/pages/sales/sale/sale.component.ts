@@ -1,4 +1,6 @@
-import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
+import { QUANTITY_MESSAGE, quantityValidator } from '@app/shared/validators/quantity.validator';
+import { Subject, of, timer, switchMap, catchError, finalize, takeUntil, map, distinctUntilChanged, startWith } from 'rxjs';
+import { ChangeDetectorRef, Component, OnDestroy, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup } from '@angular/forms';
 import { MatTableDataSource } from '@angular/material/table';
 import { ClientService } from '@app/services/client.service';
@@ -15,7 +17,7 @@ import { Sale, SaleItem, SaleRequest, SaleStatus } from '@app/shared/models/sale
   templateUrl: './sale.component.html',
   styleUrls: ['./sale.component.scss']
 })
-export class SaleComponent implements OnInit {
+export class SaleComponent implements OnInit, OnDestroy {
 
   displayedColumns: string[] = [
     'image',
@@ -39,6 +41,15 @@ export class SaleComponent implements OnInit {
   sale: Sale = {} as Sale;
   saleRequest = {} as SaleRequest;
   form: FormGroup;
+  isSaving = false;
+  isAdding = false;
+  clientsLoading = false;
+  clientsError = false;
+  private destroy$ = new Subject<void>();
+  private operationKey: string | null = null;
+  private operationPayload = '';
+
+  ngOnDestroy(): void { this.destroy$.next(); this.destroy$.complete(); }
 
   constructor(
     private fb: FormBuilder,
@@ -51,7 +62,7 @@ export class SaleComponent implements OnInit {
   ) {
     this.form = this.fb.group({
       productId: [null,],
-      quantity: [null,],
+      quantity: [null, quantityValidator],
       clientId: [null,]
     });
   }
@@ -65,10 +76,6 @@ export class SaleComponent implements OnInit {
       this.filterProducts();
     });
 
-    // Cliente
-    this.form.get('clientId')?.valueChanges.subscribe(() => {
-      this.filterClients();
-    });
 
     // Ao selecionar um produto
     this.form.get('productId')?.valueChanges.subscribe((product: Product) => {
@@ -117,12 +124,24 @@ export class SaleComponent implements OnInit {
   }
 
   loadingClients() {
-    this.clientService.findAll(0, 100, '', 'asc').subscribe({
-      next: (data) => {
-        this.clients = data._embedded.client;
-        this.filteredClients = data._embedded.clients;
-      },
-      error: (err) => console.error('Erro ao carregar clientes:', err)
+    this.form.get('clientId')!.valueChanges.pipe(
+      startWith(''),
+      map(value => typeof value === 'string' ? value.trim() : null),
+      distinctUntilChanged(),
+      switchMap(search => {
+        if (search === null) return of(null);
+        this.clientsLoading = true;
+        this.clientsError = false;
+        return timer(300).pipe(
+          switchMap(() => this.clientService.findAll(0, 20, 'firstName', 'asc', search)),
+          catchError(() => { this.clientsError = true; return of(null); }),
+          finalize(() => { this.clientsLoading = false; })
+        );
+      }),
+      takeUntil(this.destroy$)
+    ).subscribe(data => {
+      this.clients = data?._embedded?.clients ?? [];
+      this.filteredClients = this.clients;
     });
   }
 
@@ -141,19 +160,6 @@ export class SaleComponent implements OnInit {
       );
     } else {
       this.filteredProducts = this.products;
-    }
-  }
-
-  // Filtro clientes
-  filterClients() {
-    const value = this.form.get('clientId')?.value;
-
-    if (typeof value === 'string') {
-      this.filteredClients = this.clients.filter(c =>
-        c.firstName.toLowerCase().includes(value.toLowerCase())
-      );
-    } else {
-      this.filteredClients = this.clients;
     }
   }
 
@@ -203,17 +209,18 @@ export class SaleComponent implements OnInit {
   }
 
   addItem() {
+    if (this.isSaving || this.isAdding) return;
     // Verificar se os campos obrigatórios estão preenchidos
     const product: Product = this.form.value.productId;
     const quantity: number = this.form.value.quantity;
 
-    if (!product) {
+    if (!product?.id) {
       this.snackbar.error('Selecione um produto para adicionar à venda.');
       return;
     }
 
-    if (!quantity || quantity <= 0) {
-      this.snackbar.error('Informe uma quantidade válida.');
+    if (this.form.get('quantity')?.invalid) {
+      this.snackbar.error(QUANTITY_MESSAGE);
       return;
     }
 
@@ -226,7 +233,10 @@ export class SaleComponent implements OnInit {
       return;
     }
 
-    this.stockService.findByProductId(product.id!).subscribe({
+    this.isAdding = true;
+    this.stockService.findByProductId(product.id!).pipe(
+      finalize(() => { this.isAdding = false; })
+    ).subscribe({
       next: (stock) => {
         if (stock.quantity < quantity) {
           this.snackbar.error(
@@ -246,6 +256,7 @@ export class SaleComponent implements OnInit {
   }
 
   removeItem(item: SaleItem) {
+    if (this.isSaving || this.isAdding) return;
     this.saleItems = this.saleItems.filter(i => i !== item);
     this.dataSource.data = [...this.saleItems];
 
@@ -260,17 +271,21 @@ export class SaleComponent implements OnInit {
   }
 
   editItem(item: SaleItem) {
+    if (this.isSaving || this.isAdding) return;
     // Preencher formulário
     this.form.patchValue({
       productId: item.product,
       quantity: item.quantity
     });
 
-    // Remover temporariamente para não duplicar
-    this.removeItem(item);
+    // Retirar o artigo para edição sem limpar o cliente selecionado.
+    this.saleItems = this.saleItems.filter(i => i !== item);
+    this.dataSource.data = [...this.saleItems];
+    this.calculateTotal();
   }
 
   processSale() {
+    if (this.isSaving || this.isAdding) return;
     if (this.saleItems.length === 0) {
       this.snackbar.error(
         'Adicione pelo menos um produto antes de finalizar a venda.'
@@ -287,8 +302,18 @@ export class SaleComponent implements OnInit {
       items: this.saleItems
     };
 
-    this.saleService.create(this.saleRequest).subscribe({
+    const fingerprint = JSON.stringify(this.saleRequest);
+    if (!this.operationKey || fingerprint !== this.operationPayload) {
+      this.operationKey = Array.from(crypto.getRandomValues(new Uint8Array(16)), byte => byte.toString(16).padStart(2, '0')).join('');
+      this.operationPayload = fingerprint;
+    }
+    this.isSaving = true;
+    this.saleService.create(this.saleRequest, this.operationKey).pipe(
+      finalize(() => { this.isSaving = false; })
+    ).subscribe({
       next: () => {
+        this.operationKey = null;
+        this.operationPayload = '';
         this.snackbar.success('Venda registada com sucesso!');
         // Resetar tudo
         this.saleItems = [];

@@ -1,4 +1,5 @@
-import { Component, Inject, OnInit } from '@angular/core';
+import { Subject, takeUntil } from 'rxjs';
+import { Component, Inject, OnInit, OnDestroy } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 import { CategoryService } from '@app/services/category.service';
@@ -17,12 +18,29 @@ export interface DialogData {
   templateUrl: './add-species.component.html',
   styleUrls: ['./add-species.component.scss']
 })
-export class AddSpeciesComponent implements OnInit {
+export class AddSpeciesComponent implements OnInit, OnDestroy {
 
   form: FormGroup;
   isLoading = false;
+  saveError = '';
+  private destroyed = new Subject<void>();
+  private disabledFields: string[] = [];
+  private lockForm(): void {
+    this.saveError = '';
+    this.disabledFields = Object.keys(this.form.controls).filter(key => this.form.get(key)!.disabled);
+    this.form.disable({ emitEvent: false });
+    this.dialogRef.disableClose = true;
+  }
+  private unlockForm(): void {
+    this.dialogRef.disableClose = false;
+    this.form.enable({ emitEvent: false });
+    this.disabledFields.forEach(key => this.form.get(key)!.disable({ emitEvent: false }));
+  }
+  ngOnDestroy(): void { this.destroyed.next(); this.destroyed.complete(); }
+
   categorys: Category[] = [];
   loadingCategory = false;
+  categoryError = false;
 
   get isEditMode(): boolean {
     return !!this.data?.species?.id;
@@ -42,8 +60,8 @@ export class AddSpeciesComponent implements OnInit {
   ) {
     this.form = this.fb.group({
       id: [],
-      name: ['', Validators.required],
-      description: ['', Validators.required],
+      name: ['', [Validators.required, Validators.pattern(/\S/)]],
+      description: ['', [Validators.required, Validators.pattern(/\S/)]],
       categoryId: ['', Validators.required],
       category: []
     });
@@ -55,6 +73,7 @@ export class AddSpeciesComponent implements OnInit {
     if (this.isEditMode && this.data?.species) {
       this.patchForm(this.data.species);
     }
+    if (this.isViewMode) this.form.disable({ emitEvent: false });
   }
 
   private patchForm(species: Species): void {
@@ -68,15 +87,17 @@ export class AddSpeciesComponent implements OnInit {
   }
 
   salvar(): void {
+    if (this.isViewMode || this.loadingCategory || this.categoryError) return;
     if (this.form.valid && !this.isLoading) {
       this.isLoading = true;
+      this.lockForm();
 
       const formValue = this.form.getRawValue();
 
       const payload = {
         id: formValue.id,
-        name: formValue.name,
-        description: formValue.description,
+        name: formValue.name.trim(),
+        description: formValue.description.trim(),
         categoryId: formValue.categoryId
       }
 
@@ -84,17 +105,18 @@ export class AddSpeciesComponent implements OnInit {
         ? this.speciesService.update({ ...payload, id: formValue.id })
         : this.speciesService.create(payload);
 
-      operation.subscribe({
+      operation.pipe(takeUntil(this.destroyed)).subscribe({
         next: (response) => {
           this.snackbar.success(`Espécie ${this.isEditMode ? 'atualizada' : 'Cadastrado'} com sucesso!`);
           this.dialogRef.close(true); // Fecha o diálogo e indica sucesso
         },
         error: (err) => {
           this.isLoading = false;
-          const msg = err.error?.message
+          this.unlockForm();
+          const msg = err.error?.detail || err.error?.message
             || err.error?.errors?.map((e: any) => e.message).join(', ')
             || `Erro ao ${this.isEditMode ? 'atualizar' : 'salvar'} Espécie.`;
-          this.snackbar.error(msg);
+          this.saveError = msg;
         }
       });
     }
@@ -104,25 +126,25 @@ export class AddSpeciesComponent implements OnInit {
   }
 
   cancelar() {
+    if (this.isLoading) return;
     this.dialogRef.close();
   }
 
-  private loadCategorys(): void {
+  loadCategorys(): void {
+    if (this.loadingCategory) return;
+    this.categoryError = false;
     this.loadingCategory = true;
 
-    this.categoryService.findAll(0, 100, '', 'asc').subscribe({
+    this.categoryService.findAll(0, 100, 'name', 'asc').pipe(takeUntil(this.destroyed)).subscribe({
       next: (categories) => {
         this.categorys = categories._embedded?.categorys ?? [];
         this.loadingCategory = false;
 
-        // Se estiver editando e a categoria já estiver carregada, atualiza a seleção
-        if (this.isEditMode && this.data?.species?.category) {
-          this.patchForm(this.data.species);
-        }
+
       },
       error: (err) => {
         console.error('Erro ao carregar categorias', err);
-        this.snackbar.error('Erro ao carregar categorias');
+        this.categoryError = true;
         this.categorys = [];
         this.loadingCategory = false;
       }

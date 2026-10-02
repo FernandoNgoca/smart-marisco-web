@@ -1,3 +1,4 @@
+import { ActivatedRoute } from '@angular/router';
 import { AfterViewInit, Component, OnInit, ViewChild } from '@angular/core';
 import { MatDialog } from '@angular/material/dialog';
 import { MatPaginator } from '@angular/material/paginator';
@@ -35,10 +36,12 @@ export class StockListComponent implements OnInit, AfterViewInit {
   constructor(
     private stockService: StockService,
     private dialog: MatDialog,
-    private snackbar: SnackbarService
+    private snackbar: SnackbarService,
+    private route: ActivatedRoute
   ) { }
 
   ngOnInit(): void {
+    this.filterValue = this.route.snapshot.queryParamMap.get('search') || '';
     this.loadStocks();
   }
 

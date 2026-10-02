@@ -9,6 +9,10 @@ export enum SaleStatus {
 }
 
 export interface Sale extends Auditable {
+  version?: number;
+  orderRecord?: boolean;
+  stockDeducted?: boolean;
+  completedDate?: string;
   clientId?: number;
   client?: Client
   totalValue: number;
@@ -22,6 +26,7 @@ export interface SaleItem extends Auditable {
   product: Product;
   quantity: number;
   subTotal?: number;
+  unitPrice?: number | null;
 }
 
 export interface PagedSales {

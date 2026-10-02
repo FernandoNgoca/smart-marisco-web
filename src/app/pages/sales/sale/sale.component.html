@@ -20,7 +20,9 @@
         type="text"
         matInput
         formControlName="productId"
+        [readonly]="isSaving || isAdding"
         [matAutocomplete]="autoProduct"
+        [matAutocompleteDisabled]="isSaving || isAdding"
         placeholder="Digite o nome do produto"
         aria-label="Produto"
       />
@@ -59,6 +61,7 @@
         matInput
         type="number"
         formControlName="quantity"
+        [readonly]="isSaving || isAdding"
         aria-label="Quantidade"
       />
     </mat-form-field>
@@ -70,7 +73,9 @@
         type="text"
         matInput
         formControlName="clientId"
+        [readonly]="isSaving || isAdding"
         [matAutocomplete]="autoClient"
+        [matAutocompleteDisabled]="isSaving || isAdding"
         placeholder="Digite o nome do cliente"
         aria-label="Cliente"
       />
@@ -79,21 +84,25 @@
         #autoClient="matAutocomplete"
         [displayWith]="displayClient"
       >
+        <mat-option disabled *ngIf="clientsLoading">A pesquisar clientes...</mat-option>
+        <mat-option disabled *ngIf="clientsError">Não foi possível pesquisar. Volte a escrever para tentar novamente.</mat-option>
+        <mat-option disabled *ngIf="!clientsLoading && !clientsError && filteredClients.length === 0">Nenhum cliente encontrado.</mat-option>
         <mat-option *ngFor="let client of filteredClients" [value]="client">
           {{ client.firstName }} {{ client.lastName }}
         </mat-option>
       </mat-autocomplete>
     </mat-form-field>
   </div>
-  <div class="button-container">
-    <button mat-raised-button class="btn-add" (click)="addItem()" id="add">
+  <div class="button-container app-action-row">
+    <button mat-raised-button class="app-button btn-add" [disabled]="isSaving || isAdding" (click)="addItem()" id="add">
       <i class="fa-solid fa-cart-plus"></i>
       Adicionar
     </button>
   </div>
 
-  <div class="mat-elevation-z4">
-    <mat-table [dataSource]="dataSource" matSort>
+  <div class="app-table-panel">
+    <div class="app-table-scroll">
+  <mat-table class="app-data-table" style="--table-min-width: 1015px" [dataSource]="dataSource" matSort>
       <ng-container matColumnDef="image">
         <mat-header-cell *matHeaderCellDef mat-sort-header
           >Imagem</mat-header-cell
@@ -163,7 +172,7 @@
             color="primary"
             matTooltip="Editar item"
             aria-label="Editar item"
-            (click)="editItem(item)"
+            [disabled]="isSaving || isAdding" (click)="editItem(item)"
           >
             <i class="fa-solid fa-pen-to-square"></i>
           </button>
@@ -174,7 +183,7 @@
             color="warn"
             matTooltip="Remover item"
             aria-label="Remover item"
-            (click)="removeItem(item)"
+            [disabled]="isSaving || isAdding" (click)="removeItem(item)"
           >
             <i class="fa-solid fa-trash"></i>
           </button>
@@ -186,11 +195,12 @@
       <mat-row *matRowDef="let row; columns: displayedColumns"></mat-row>
     </mat-table>
   </div>
+  </div>
 
-  <div class="button-container">
-    <button mat-raised-button class="btn-add" (click)="processSale()">
+  <div class="button-container app-action-row">
+    <button mat-raised-button class="app-button btn-add" [disabled]="isSaving || isAdding || saleItems.length === 0" (click)="processSale()">
       <i class="fa-solid fa-check"></i>
-      Processar Venda
+      {{ isSaving ? 'A registar...' : 'Processar Venda' }}
     </button>
   </div>
 </div>

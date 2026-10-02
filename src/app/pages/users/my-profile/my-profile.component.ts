@@ -3,6 +3,7 @@ import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { AuthService } from '@app/services/auth.service';
 import { SnackbarService } from '@app/services/snackbar.service';
 import { ChangePasswordDTO, User } from '@app/shared/models/user';
+import { Router } from '@angular/router';
 import imageCompression from 'browser-image-compression';
 
 @Component({
@@ -30,11 +31,12 @@ export class MyProfileComponent implements OnInit {
   constructor(
     private fb: FormBuilder,
     public auth: AuthService,
-    private snackbar: SnackbarService
+    private snackbar: SnackbarService,
+    private router: Router
   ) {
     this.form = this.fb.group({
-      oldPassword: ['', [Validators.required]],
-      newPassword: ['', [Validators.required, Validators.minLength(6)]],
+      oldPassword: ['', [Validators.required, Validators.maxLength(128)]],
+      newPassword: ['', [Validators.required, Validators.minLength(12), Validators.maxLength(128), Validators.pattern(/.*\S.*/s)]],
       confirmPassword: ['', [Validators.required]]
     }, { validators: this.passwordMatchValidator });
   }
@@ -51,11 +53,13 @@ export class MyProfileComponent implements OnInit {
   private passwordMatchValidator(group: FormGroup) {
     const newPassword = group.get('newPassword')?.value;
     const confirmPassword = group.get('confirmPassword')?.value;
+    if (newPassword && newPassword === group.get('oldPassword')?.value) return { samePassword: true };
     return newPassword === confirmPassword ? null : { passwordsMismatch: true };
   }
 
   // Envia a alteração de senha
   changePassword() {
+    if (this.isLoading) return;
     if (this.form.hasError('samePassword')) {
       this.snackbar.error('A nova senha não pode ser igual à atual');
       return;
@@ -84,6 +88,8 @@ export class MyProfileComponent implements OnInit {
         this.isLoading = false;
         this.snackbar.success(res?.message || 'Senha alterada com sucesso!');
         this.form.reset();
+        this.auth.logout();
+        void this.router.navigateByUrl('/auth/login');
       },
       error: (err) => {
         this.isLoading = false;

@@ -40,7 +40,7 @@
       i {
         font-size: 24px;
         line-height: 1;
-        color: #1976d2;
+        color: var(--app-primary);
       }
     }
   }
@@ -68,7 +68,7 @@
     i {
       font-size: 24px;
       line-height: 1;
-      color: #1976d2;
+      color: var(--app-primary);
     }
   }
 }
@@ -86,7 +86,7 @@
 
   i {
     font-size: 18px;
-    color: #1976d2;
+    color: var(--app-primary);
   }
 
   span {
