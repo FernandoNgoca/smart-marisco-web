@@ -1,0 +1,10 @@
+<div class="receipt-actions app-action-row"><a mat-stroked-button routerLink="/sales/salesHistory">Histórico de vendas</a><a mat-stroked-button routerLink="/sales/sale">Nova venda</a><button mat-flat-button class="app-button btn-add" [disabled]="!receipt || loading" (click)="print()">Imprimir / Guardar PDF</button></div>
+<p *ngIf="loading" role="status">A carregar recibo...</p><div *ngIf="error" role="alert">{{error}} <button mat-button class="app-button" (click)="load()">Tentar novamente</button></div><p *ngIf="printError" role="alert">{{printError}}</p>
+<article #paper *ngIf="receipt as sale" class="receipt-paper">
+  <header><div><h2>Mariscos do Índico</h2><p>Recibo de venda</p></div><div><h3>N.º {{sale.id}}</h3><p>{{sale.date | date:'dd/MM/yyyy HH:mm'}}</p></div></header>
+  <p><strong>Cliente:</strong> {{sale.client}}</p><p><strong>Registado por:</strong> {{sale.operator}}</p>
+  <div class="receipt-table"><table><thead><tr><th scope="col">Produto</th><th scope="col" class="numeric">Quantidade</th><th scope="col" class="numeric">Preço (MZN)</th><th scope="col" class="numeric">Subtotal (MZN)</th></tr></thead><tbody><tr *ngFor="let item of sale.items"><td>{{item.product}}</td><td class="numeric">{{item.quantity | number:'1.0-3'}} {{item.unit}}</td><td class="numeric">{{item.unitPrice === null ? '—' : (item.unitPrice | number:'1.2-2')}}</td><td class="numeric">{{item.subtotal === null ? '—' : (item.subtotal | number:'1.2-2')}}</td></tr></tbody></table></div>
+  <p *ngIf="missingPrices" class="note">Esta venda antiga não tem todos os preços por artigo guardados. O total apresentado é o registado na venda.</p>
+  <p *ngIf="sale.roundingAdjustment" class="note">Acerto de arredondamento: {{sale.roundingAdjustment | currency:'MZN ':'symbol':'1.2-2'}}</p>
+  <p class="total">Total: {{sale.total | currency:'MZN ':'symbol':'1.2-2'}}</p><p class="note">Obrigado pela preferência.</p>
+</article>
