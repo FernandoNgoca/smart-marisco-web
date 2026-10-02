@@ -1,3 +1,4 @@
+import { ActivatedRoute } from '@angular/router';
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { FormControl, FormGroup } from '@angular/forms';
@@ -24,8 +25,13 @@ export class ReportsComponent implements OnInit, OnDestroy {
   private destroyed = new Subject<void>();
   private cancel = new Subject<void>();
   private printWindow: Window | null = null;
-  constructor(private http: HttpClient) {}
-  ngOnInit(): void { this.apply(); }
+  constructor(private http: HttpClient, private route: ActivatedRoute) {}
+  ngOnInit(): void {
+    const params = this.route.snapshot.queryParamMap;
+    const from = params.get('from'), to = params.get('to');
+    if (from && to && /^\d{4}-\d{2}-\d{2}$/.test(from) && /^\d{4}-\d{2}-\d{2}$/.test(to)) this.form.patchValue({from,to});
+    this.apply();
+  }
   ngOnDestroy(): void { if (this.exporting) this.printWindow?.close(); this.destroyed.next(); this.destroyed.complete(); this.cancel.next(); this.cancel.complete(); }
   get invalidDates(): boolean { const {type,from,to}=this.form.getRawValue(); return type !== 'stock' && (!from || !to || from > to); }
   changeType(): void { this.form.patchValue({filter:'',search:'',seller:''}); this.apply(); }

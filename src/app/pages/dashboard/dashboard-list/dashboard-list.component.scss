@@ -48,3 +48,13 @@ a:focus-visible, button:focus-visible { outline: 3px solid #2680b4; outline-offs
 @media (max-width: 1200px) { .counters-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } .dashboard-row { grid-template-columns: minmax(0, 1fr); } }
 @media (max-width: 700px) { .attention-grid { grid-template-columns: minmax(0, 1fr); } .counter-card, .panel, .attention-panel { padding: 16px; } }
 @media (max-width: 420px) { .counters-grid { grid-template-columns: minmax(0, 1fr); } .rank { display: none; } .product-item { gap: 8px; } .product-total { max-width: 100px; } }
+.period-filter { display:flex; flex-wrap:wrap; gap:12px; align-items:flex-end; margin-bottom:16px; }
+.period-filter label { display:flex; flex-direction:column; gap:6px; font-size:13px; color:var(--app-muted); }
+.period-filter input, .period-filter select { min-height:44px; box-sizing:border-box; padding:8px 12px; border:1px solid var(--app-border); border-radius:8px; background:white; color:var(--app-text); font:inherit; }
+.period-caption, .comparison-note { font-size:13px; color:var(--app-muted); margin:12px 0; }
+.restock-list { min-width:0; padding:16px; border:1px solid var(--app-border); border-radius:8px; }
+.restock-list .section-heading { margin-bottom:8px; }
+.restock-list a { color:var(--app-primary); }
+.restock-item { display:flex; justify-content:space-between; align-items:center; gap:12px; padding:12px 0; border-bottom:1px solid var(--app-border); }
+.restock-item span { overflow-wrap:anywhere; }.restock-item strong { text-align:right; flex-shrink:0; }
+@media(max-width:600px) { .period-filter label { flex:1 1 100%; } }

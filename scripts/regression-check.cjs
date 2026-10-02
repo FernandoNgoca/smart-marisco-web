@@ -13,6 +13,7 @@ const rx = require('rxjs');
   for (const name of ['@angular/core', '@angular/common/http', '@angular/forms', '@angular/material/table', '@angular/router']) {
     modules[name] = await import(name);
   }
+  modules['@swimlane/ngx-charts'] = { ScaleType: { Ordinal: 'ordinal' } };
   const storage = new Map();
   const localStorage = {
     getItem: key => storage.get(key) ?? null,
@@ -173,36 +174,23 @@ const rx = require('rxjs');
     component.ngOnDestroy();
   }
   const Dashboard = load('pages/dashboard/dashboard-list/dashboard-list.component.ts').DashboardListComponent;
-  const saleCounts = {};
-  for (const name of ['countByCreatedDateBetweenAndSaleStatusAndStatus', 'countYesterdaySales', 'countSalesCurrentMonth', 'countSalesPreviousMonth', 'countByStatusAndSaleStatus']) saleCounts[name] = () => rx.of(0);
-  saleCounts.getSalesWeek = () => rx.of([]);
-  const summaryData = { salesToday: 0, salesYesterday: 0, salesMonth: 0, salesPreviousPeriod: 0, revenueToday: 0, revenueMonth: 0, lowStockProducts: 0 };
-  const summaryApi = { summary: () => rx.of(summaryData) };
-  const dashboard = new Dashboard(summaryApi, saleCounts, { countClients: () => rx.of(0) }, { countProducts: () => rx.of(0) }, { hasAnyRole: required => required.includes('ROLE_MANAGER') }, { getTopProducts: () => rx.of([]) });
-  dashboard.loadTotalVendasHoje();
-  assert.equal(dashboard.loadError, false);
-  assert.equal(dashboard.totalVendasHoje, 0);
-  saleCounts.getSalesWeek = () => rx.throwError(() => new Error('offline'));
-  dashboard.loadTotalVendasHoje();
-  assert.equal(dashboard.loadError, true, 'Failed dashboard is distinct from zero sales');
-  assert.equal(dashboard.isLoading, false);
-  assert.equal(dashboard.totalVendasHoje, 0, 'A failed chart must not hide available counters');
-  assert.equal(dashboard.weekUnavailable, true);
-  summaryApi.summary = () => rx.throwError(() => new Error('summary endpoint unavailable'));
-  saleCounts.countByCreatedDateBetweenAndSaleStatusAndStatus = () => rx.of(7);
-  dashboard.loadTotalVendasHoje();
-  assert.equal(dashboard.summary, null, 'Unavailable revenue must not be represented as zero');
-  assert.equal(dashboard.totalVendasHoje, 7, 'Legacy counters remain available without the new endpoint');
-  assert.equal(dashboard.variationSale, null, 'Do not compare incompatible periods in fallback');
-  saleCounts.countByCreatedDateBetweenAndSaleStatusAndStatus = () => rx.throwError(() => new Error('offline'));
-  dashboard.loadTotalVendasHoje();
-  assert.equal(dashboard.totalVendasHoje, null, 'Failed counts must not display zero or stale values');
-  summaryApi.summary = () => rx.of(summaryData);
-  saleCounts.getSalesWeek = () => rx.of([]);
-  dashboard.loadTotalVendasHoje();
-  assert.equal(dashboard.loadError, false, 'Retry clears the error after recovery');
-  assert.equal(dashboard.weekUnavailable, false);
-  assert.equal(dashboard.totalVendasHoje, 0);
+  const overview = {totals:{sales:0,revenue:0},previous:{sales:0,revenue:0},dailySales:[],pending:{count:0,value:0,oldestDays:null},restock:[],topProducts:[]};
+  const summaryApi = {overview: () => rx.of(overview)};
+  const dashboard = new Dashboard(summaryApi, {hasAnyRole: roles => roles.includes('ROLE_MANAGER')});
+  dashboard.ngOnInit();
+  assert.equal(dashboard.data.totals.sales,0);
+  assert.equal(dashboard.calculateVariation(10,0),null);
+  assert.equal(dashboard.calculateVariation(0,0),0);
+  const older = new rx.Subject(); summaryApi.overview = () => older;
+  dashboard.load();
+  summaryApi.overview = () => rx.of({...overview,totals:{sales:5,revenue:50}});
+  dashboard.selectPeriod('today'); older.next(overview);
+  assert.equal(dashboard.data.totals.sales,5,'A stale request must not overwrite the selected period');
+  summaryApi.overview = () => rx.throwError(() => new Error('offline'));
+  dashboard.load(); assert.equal(dashboard.loadError,true); assert.equal(dashboard.data,null);
+  summaryApi.overview = () => rx.of(overview); dashboard.load(); assert.equal(dashboard.loadError,false);
+  dashboard.from='2026-10-02'; dashboard.to='2026-10-01'; assert.equal(dashboard.invalidPeriod,true);
+  dashboard.ngOnDestroy();
 
 
   const dashboardRoute = { pathFromRoot: [{ data: {} }, { routeConfig: { path: 'dashboard' }, data: { roles: ['ROLE_MANAGER'] } }] };

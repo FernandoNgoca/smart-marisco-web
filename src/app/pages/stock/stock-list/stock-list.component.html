@@ -1,7 +1,7 @@
 <div class="toolbar app-list-toolbar">
   <mat-form-field appearance="outline" class="filter-field">
     <mat-label>Pesquisar</mat-label>
-    <input matInput (keyup)="applyFilter($event)" placeholder="Ex: Nome" />
+    <input matInput [value]="filterValue" (keyup)="applyFilter($event)" placeholder="Ex: Nome" />
     <button mat-icon-button matSuffix>
       <i class="fa-solid fa-magnifying-glass"></i>
     </button>

@@ -1,83 +1,27 @@
-<header class="overview-header">
-  <div><h2>Visão geral</h2><p>Acompanhe as vendas e as prioridades do negócio.</p></div>
-  <a class="primary-action" routerLink="/sales/sale"><i class="fa-solid fa-plus" aria-hidden="true"></i> Registar venda</a>
-</header>
-<p *ngIf="isLoading" class="status-message" role="status">A carregar o resumo...</p>
-<div *ngIf="!isLoading && loadError" class="status-message error" role="alert">
-  <p>Alguns indicadores não puderam ser carregados. Os restantes continuam disponíveis.</p>
-  <button class="app-button" mat-raised-button (click)="loadTotalVendasHoje()">Tentar novamente</button>
+<header class="overview-header"><div><h2>Visão geral</h2><p>Acompanhe as vendas e as prioridades do negócio.</p></div><a class="primary-action" routerLink="/sales/sale"><i class="fa-solid fa-plus" aria-hidden="true"></i> Registar venda</a></header>
+<div class="period-filter" *ngIf="hasDashboardPermission()">
+  <label>Período<select #period [value]="preset" (change)="selectPeriod(period.value)"><option value="today">Hoje</option><option value="week">Últimos 7 dias</option><option value="month">Mês atual</option><option value="custom">Personalizado</option></select></label>
+  <ng-container *ngIf="preset === 'custom'"><label>Desde<input #start type="date" [value]="from" [max]="to || maxDate" (change)="from=start.value"></label><label>Até<input #end type="date" [value]="to" [min]="from" [max]="maxDate" (change)="to=end.value"></label><button mat-flat-button class="app-button btn-add" [disabled]="invalidPeriod || isLoading" (click)="load()">Aplicar</button></ng-container>
 </div>
-<p *ngIf="!hasDashboardPermission()">Use o menu para consultar clientes e registar vendas ou pedidos.</p>
-<ng-container *ngIf="!isLoading && hasDashboardPermission()">
+<p *ngIf="invalidPeriod" class="status-message error" role="alert">Escolha um período de até 366 dias, sem datas futuras.</p>
+<p *ngIf="isLoading" class="status-message" role="status">A carregar o resumo...</p>
+<div *ngIf="loadError" class="status-message error" role="alert"><p>Não foi possível carregar o dashboard.</p><button mat-button class="app-button" (click)="load()">Tentar novamente</button></div>
+<ng-container *ngIf="data as overview">
+  <p class="period-caption">Vendas de {{overview.from | date:'dd/MM/yyyy'}} a {{overview.to | date:'dd/MM/yyyy'}} · Atualizado às {{overview.updatedAt | date:'HH:mm'}}</p>
   <div class="counters-grid">
-    <article class="counter-card featured">
-      <span class="card-title">Faturação hoje <i class="fa-solid fa-wallet" aria-hidden="true"></i></span>
-      <div class="card-value">{{ summary ? (summary.revenueToday | currency:'MZN ':'symbol':'1.2-2') : 'Indisponível' }}</div>
-      <span class="card-note">Vendas concluídas</span>
-    </article>
-    <article class="counter-card">
-      <span class="card-title">Faturação do mês <i class="fa-solid fa-calendar-days" aria-hidden="true"></i></span>
-      <div class="card-value">{{ summary ? (summary.revenueMonth | currency:'MZN ':'symbol':'1.2-2') : 'Indisponível' }}</div>
-      <span class="card-note">Acumulado até agora</span>
-    </article>
-    <article class="counter-card">
-      <span class="card-title">Vendas hoje <i class="fa-solid fa-receipt" aria-hidden="true"></i></span>
-      <div class="card-value">{{ totalVendasHoje === null ? '—' : (totalVendasHoje | number) }}</div>
-      <div *ngIf="summary" class="trend" [class.positive]="variationSale !== null && variationSale > 0" [class.negative]="variationSale !== null && variationSale < 0">
-        <strong>{{ variationSale === null ? 'Sem base de comparação' : ((variationSale > 0 ? '+' : '') + variationSale + '%') }}</strong>
-        <span>vs ontem até à mesma hora</span>
-      </div>
-    </article>
-    <article class="counter-card">
-      <span class="card-title">Vendas do mês <i class="fa-solid fa-chart-line" aria-hidden="true"></i></span>
-      <div class="card-value">{{ totalVendasMes === null ? '—' : (totalVendasMes | number) }}</div>
-      <div *ngIf="summary" class="trend" [class.positive]="variationSaleMonth !== null && variationSaleMonth > 0" [class.negative]="variationSaleMonth !== null && variationSaleMonth < 0">
-        <strong>{{ variationSaleMonth === null ? 'Sem base de comparação' : ((variationSaleMonth > 0 ? '+' : '') + variationSaleMonth + '%') }}</strong>
-        <span>vs 1–{{ summary.previousPeriodEnd | date:'dd/MM' }}, até {{ summary.previousPeriodEnd | date:'HH:mm' }}</span>
-      </div>
-    </article>
+    <article class="counter-card featured"><span class="card-title">Faturação do período <i class="fa-solid fa-wallet" aria-hidden="true"></i></span><div class="card-value">{{overview.totals.revenue | currency:'MZN ':'symbol':'1.2-2'}}</div><span class="card-note">Vendas concluídas</span></article>
+    <article class="counter-card"><span class="card-title">Vendas concluídas <i class="fa-solid fa-receipt" aria-hidden="true"></i></span><div class="card-value">{{overview.totals.sales | number}}</div><span class="card-note">{{variation(overview.totals.sales, overview.previous.sales)}} vs período anterior</span></article>
+    <article class="counter-card"><span class="card-title">Valor médio por venda <i class="fa-solid fa-chart-line" aria-hidden="true"></i></span><div class="card-value">{{overview.averageSale | currency:'MZN ':'symbol':'1.2-2'}}</div><span class="card-note">Faturação / vendas concluídas</span></article>
+    <article class="counter-card"><span class="card-title">Variação da faturação <i class="fa-solid fa-calendar-days" aria-hidden="true"></i></span><div class="card-value">{{variation(overview.totals.revenue, overview.previous.revenue)}}</div><span class="card-note">{{overview.totals.revenue-overview.previous.revenue | currency:'MZN ':'symbol':'1.2-2'}} vs período anterior</span></article>
   </div>
-
-  <section class="attention-panel" aria-labelledby="attention-title">
-    <div class="section-heading"><h3 id="attention-title">Precisa de atenção</h3><span>Próximos passos</span></div>
+  <p class="comparison-note">Comparação com {{overview.previousFrom | date:'dd/MM/yyyy'}}–{{overview.previousTo | date:'dd/MM/yyyy'}} (dias completos). Se incluir hoje, o período atual ainda está em curso.</p>
+  <section class="attention-panel" aria-labelledby="attention-title"><div class="section-heading"><h3 id="attention-title">Precisa de atenção</h3><span>Situação atual · independente do período</span></div>
     <div class="attention-grid">
-      <a routerLink="/sales/orderHistory" class="attention-item" [class.warning]="totalOrders !== null && totalOrders > 0">
-        <i class="fa-solid fa-inbox" aria-hidden="true"></i>
-        <div><strong>{{ totalOrders === null ? '—' : (totalOrders | number) }} pedidos pendentes</strong><span>{{ totalOrders === null ? 'Contagem indisponível · Consultar pedidos' : (totalOrders ? 'Consultar encomendas por concluir' : 'Não há pedidos por concluir') }}</span></div>
-        <i class="fa-solid fa-arrow-right" aria-hidden="true"></i>
-      </a>
-      <a routerLink="/stock" class="attention-item" [class.warning]="summary && summary.lowStockProducts > 0">
-        <i class="fa-solid fa-boxes-stacked" aria-hidden="true"></i>
-        <div><strong>{{ summary ? (summary.lowStockProducts | number) : '—' }} produtos com stock baixo</strong><span *ngIf="summary">Stock até {{ summary.lowStockThreshold }}, na unidade de cada produto, incluindo produtos sem stock · Consultar stock</span><span *ngIf="!summary">Contagem indisponível · Consultar stock</span></div>
-        <i class="fa-solid fa-arrow-right" aria-hidden="true"></i>
-      </a>
+      <a routerLink="/sales/orderHistory" class="attention-item" [class.warning]="overview.pending.count > 0"><i class="fa-solid fa-inbox" aria-hidden="true"></i><div><strong>{{overview.pending.count | number}} pedidos pendentes</strong><span>Valor pendente: {{overview.pending.value | currency:'MZN ':'symbol':'1.2-2'}}</span><span *ngIf="overview.pending.oldestDays !== null">Mais antigo: {{overview.pending.oldestDays === 0 ? 'registado hoje' : overview.pending.oldestDays + ' dias'}}</span><span *ngIf="!overview.pending.count">Não há pedidos por concluir.</span></div><i class="fa-solid fa-arrow-right" aria-hidden="true"></i></a>
+      <div class="restock-list"><div class="section-heading"><strong>{{overview.restockCount | number}} produtos a repor</strong><a routerLink="/stock">Consultar stock →</a></div><p class="card-note">Até 5 na unidade de cada produto, incluindo produtos sem stock.</p><p *ngIf="!overview.restock.length" class="empty-state">Não há produtos a repor.</p><a routerLink="/stock" [queryParams]="{search: product.name}" class="restock-item" *ngFor="let product of overview.restock"><span>{{product.name}}</span><strong>{{product.quantity | number:'1.0-3'}} {{product.unit}}<small *ngIf="product.quantity === 0"> · Esgotado</small></strong></a><p class="card-note" *ngIf="overview.restockCount > overview.restock.length">A mostrar os 5 produtos com menor stock.</p></div>
     </div>
   </section>
-
-  <div class="dashboard-row">
-    <section class="panel">
-      <div class="section-heading"><h3>Vendas da semana</h3><span>Número de vendas concluídas</span></div>
-      <p *ngIf="weekUnavailable" class="empty-state">Não foi possível carregar as vendas da semana.</p>
-      <div *ngIf="!weekUnavailable" class="chart-area">
-        <ngx-charts-bar-vertical [results]="salesByDay" [xAxis]="true" [yAxis]="true" [showDataLabel]="true"
-          [yAxisTicks]="yAxisTicks" [yAxisTickFormatting]="formatYAxisTicks" [roundEdges]="false">
-        </ngx-charts-bar-vertical>
-      </div>
-    </section>
-    <section class="panel">
-      <div class="section-heading"><h3>Produtos mais vendidos</h3><span>Quantidade e valor de vendas</span></div>
-      <p *ngIf="!topUnavailable && topProducts.length === 0" class="empty-state">Os produtos mais vendidos aparecerão aqui após as primeiras vendas.</p>
-      <p *ngIf="topUnavailable" class="empty-state">Não foi possível carregar os produtos mais vendidos.</p>
-      <div class="product-item" *ngFor="let p of topProducts; let i = index">
-        <span class="rank">{{ i + 1 }}</span>
-        <img [src]="getImage(p.image)" class="avatar" alt="" />
-        <div class="product-info"><strong>{{ p.name }}</strong><span>{{ p.quantity | number:'1.0-3' }} vendidos</span></div>
-        <strong class="product-total">{{ p.totalValue | currency:'MZN ':'symbol':'1.2-2' }}</strong>
-      </div>
-    </section>
-  </div>
-  <footer class="overview-footer">
-    <div><a routerLink="/client">{{ totalClientes === null ? '—' : (totalClientes | number) }} clientes</a><span aria-hidden="true"> · </span><a routerLink="/product">{{ totalProdutos === null ? '—' : (totalProdutos | number) }} produtos registados</a></div>
-    <span><span *ngIf="summary">Atualizado às {{ summary.updatedAt | date:'HH:mm' }}</span> <button class="refresh-button" (click)="loadTotalVendasHoje()">Atualizar</button></span>
-  </footer>
+  <div class="dashboard-row"><section class="panel"><div class="section-heading"><h3>Vendas no período</h3><span>Número de vendas concluídas</span></div><p *ngIf="!overview.totals.sales" class="empty-state">Não há vendas concluídas neste período.</p><div *ngIf="overview.totals.sales" class="chart-area"><ngx-charts-bar-vertical [results]="overview.dailySales" [scheme]="chartColors" [xAxis]="true" [yAxis]="true" [showDataLabel]="overview.dailySales.length <= 14" [yAxisTicks]="yAxisTicks" [yAxisTickFormatting]="formatYAxisTicks" [xAxisTickFormatting]="formatDay" [roundEdges]="false"></ngx-charts-bar-vertical></div></section>
+    <section class="panel"><div class="section-heading"><h3>Produtos mais vendidos</h3><span>No período selecionado · quantidade</span></div><p *ngIf="!overview.topProducts.length" class="empty-state">Não há produtos vendidos neste período.</p><div class="product-item" *ngFor="let product of overview.topProducts; let i=index"><span class="rank">{{i+1}}</span><div class="product-info"><strong>{{product.name}}</strong></div><strong class="product-total">{{product.quantity | number:'1.0-3'}} {{product.unit}}</strong></div></section></div>
+  <footer class="overview-footer"><a routerLink="/reports" [queryParams]="{type:'sales',from:overview.from,to:overview.to}">Ver relatório de vendas →</a><button class="refresh-button" (click)="load()">Atualizar</button></footer>
 </ng-container>

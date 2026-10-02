@@ -15,7 +15,7 @@
   border-collapse: separate;
   border-spacing: 0;
 
-  .mat-header-row { min-height: 52px; height: 52px; background: #f3f7fa; }
+  .mat-header-row { min-height: 52px; height: auto; background: #f3f7fa; }
   .mat-row { min-height: 56px; }
   .mat-header-cell, .mat-cell {
     box-sizing: border-box;
@@ -26,14 +26,31 @@
     overflow-wrap: anywhere;
     line-height: 1.5;
   }
-  .mat-header-cell { color: #586b7c; font-size: 13px; font-weight: 600; background: #f3f7fa; }
+  .mat-header-cell { overflow-wrap: normal; word-break: normal; color: #586b7c; font-size: 13px; font-weight: 600; background: #f3f7fa; }
   .mat-cell { color: #18334c; font-size: 14px; }
   .mat-row:hover { background: #f8fafc; }
   .mat-row:last-child .mat-cell { border-bottom: 0; }
   mat-header-cell, mat-cell { min-width: 0; flex: 1 1 0; align-self: stretch; align-items: center; }
   mat-header-row, mat-row { border-bottom: 0; }
-  .mat-column-image { flex: 0 0 88px; width: 88px; justify-content: center; text-align: center; }
-  .mat-column-image img { display: block; width: 44px; height: 44px; object-fit: contain; border-radius: 6px; }
+  .mat-column-image {
+    flex: 0 0 112px;
+    width: 112px;
+    min-width: 112px;
+    justify-content: center;
+    text-align: center;
+    white-space: nowrap;
+    overflow-wrap: normal;
+    word-break: normal;
+  }
+  .mat-column-image img {
+    display: block;
+    flex: 0 0 48px;
+    width: 48px;
+    height: 48px;
+    max-width: none;
+    object-fit: contain;
+    border-radius: 6px;
+  }
   .mat-column-action { flex: 0 0 192px; width: 192px; justify-content: center; text-align: center; white-space: nowrap; gap: 2px; }
   .mat-column-action .mat-icon-button { width: 36px; height: 36px; line-height: 36px; flex-shrink: 0; }
   .mat-column-action .mat-sort-header-container, .mat-column-image .mat-sort-header-container { justify-content: center; }
