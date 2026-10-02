@@ -32,6 +32,6 @@ export interface DashboardOverview {
   pending: { count: number; value: number; oldestDays: number | null };
   restockCount: number;
   restock: { id: number; name: string; unit: string; quantity: number }[];
-  dailySales: { name: string; value: number }[];
+  dailySales: { name: string; value: number; revenue: number }[];
   topProducts: { name: string; unit: string; quantity: number }[];
 }

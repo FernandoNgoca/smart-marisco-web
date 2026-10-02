@@ -1,7 +1,7 @@
 import { ActivatedRoute } from '@angular/router';
 import { AfterViewInit, Component, OnInit, ViewChild } from '@angular/core';
 import { MatDialog } from '@angular/material/dialog';
-import { MatPaginator } from '@angular/material/paginator';
+import { MatPaginator, MatPaginatorIntl } from '@angular/material/paginator';
 import { MatSort } from '@angular/material/sort';
 import { SnackbarService } from '@app/services/snackbar.service';
 import { StockService } from '@app/services/stock.service';
@@ -10,7 +10,17 @@ import { AddStockComponent } from '@app/shared/dialog/stock/add-stock/add-stock.
 import { StockDialogComponent } from '@app/shared/dialog/stock/stock-dialog/stock-dialog.component';
 import { Stock } from '@app/shared/models/stock';
 
+function stockPaginator(): MatPaginatorIntl {
+  const labels = new MatPaginatorIntl();
+  labels.itemsPerPageLabel = 'Linhas por página:';
+  labels.nextPageLabel = 'Página seguinte'; labels.previousPageLabel = 'Página anterior';
+  labels.firstPageLabel = 'Primeira página'; labels.lastPageLabel = 'Última página';
+  labels.getRangeLabel = (page, size, total) => total === 0 || size === 0 ? `0 de ${total}` : `${page * size + 1}–${Math.min((page + 1) * size, total)} de ${total}`;
+  return labels;
+}
+
 @Component({
+  providers: [{ provide: MatPaginatorIntl, useFactory: stockPaginator }],
   selector: 'app-stock-list',
   templateUrl: './stock-list.component.html',
   styleUrls: ['./stock-list.component.scss']
@@ -21,6 +31,7 @@ export class StockListComponent implements OnInit, AfterViewInit {
     'product',
     'quantity',
     'unit',
+    'state',
     'action'
   ];
 
@@ -28,6 +39,7 @@ export class StockListComponent implements OnInit, AfterViewInit {
   totalElements = 0;
   pageSize = 5;
   pageIndex = 0;
+  formatQuantity(value: number): string { return new Intl.NumberFormat('pt-PT', {maximumFractionDigits: 3}).format(value); }
   filterValue = '';
 
   @ViewChild(MatPaginator) paginator!: MatPaginator;

@@ -13,7 +13,7 @@ import { Sale } from '@app/shared/models/sale';
 })
 export class SalesHistoryComponent implements OnInit, AfterViewInit, OnDestroy {
 
-  displayedColumns: string[] = ['id', 'client', 'totalValue', 'saleStatus', 'createdDate'];
+  displayedColumns: string[] = ['id', 'client', 'totalValue', 'saleStatus', 'createdDate', 'action'];
   dataSource: Sale[] = [];
   isLoading = false;
   loadError = false;

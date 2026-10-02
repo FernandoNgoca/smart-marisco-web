@@ -28,6 +28,7 @@
       <th mat-header-cell *matHeaderCellDef mat-sort-header>Data</th>
       <td mat-cell *matCellDef="let sale">{{ sale.createdDate | date:'dd/MM/yyyy HH:mm' }}</td>
     </ng-container>
+    <ng-container matColumnDef="action"><th mat-header-cell *matHeaderCellDef>Recibo</th><td mat-cell *matCellDef="let sale"><a *ngIf="sale.saleStatus === 'COMPLETED'" mat-button [routerLink]="['/sales/receipt',sale.id]">Ver recibo</a><span *ngIf="sale.saleStatus !== 'COMPLETED'">—</span></td></ng-container>
     <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
     <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
     <tr *matNoDataRow><td [attr.colspan]="displayedColumns.length">{{ loadError ? 'Dados indisponíveis.' : isLoading ? 'A carregar...' : 'Nenhuma venda encontrada.' }}</td></tr>

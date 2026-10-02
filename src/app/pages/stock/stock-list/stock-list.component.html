@@ -15,40 +15,42 @@
 
 <div class="app-table-panel">
   <div class="app-table-scroll">
-  <mat-table class="app-data-table" style="--table-min-width: 580px" mat-table [dataSource]="dataSource" matSort>
+  <mat-table class="app-data-table stock-table" style="--table-min-width: 760px" mat-table [dataSource]="dataSource" matSort>
     <!-- name -->
     <ng-container matColumnDef="product">
-      <mat-header-cell *matHeaderCellDef mat-sort-header>Nome</mat-header-cell>
-      <mat-cell *matCellDef="let stock">{{ stock.product.name }}</mat-cell>
+      <mat-header-cell *matHeaderCellDef mat-sort-header>Produto</mat-header-cell>
+      <mat-cell *matCellDef="let stock">{{ stock.product?.name }}</mat-cell>
     </ng-container>
 
     <!-- quantity -->
     <ng-container matColumnDef="quantity">
-      <mat-header-cell *matHeaderCellDef mat-sort-header
-        >Estoque Atual</mat-header-cell
+      <mat-header-cell *matHeaderCellDef mat-sort-header arrowPosition="before"
+        >Quantidade</mat-header-cell
       >
       <mat-cell *matCellDef="let stock">
-        <span [class]="(stock.quantity | stockStatus: stock.quantity).class">
-          {{ (stock.quantity | stockStatus: stock.quantity).value }}
-        </span>
+        <strong class="stock-quantity">{{ formatQuantity(stock.quantity) }}</strong>
       </mat-cell>
     </ng-container>
 
     <!-- unit -->
     <ng-container matColumnDef="unit">
-      <mat-header-cell *matHeaderCellDef mat-sort-header>Unidade de medida</mat-header-cell>
-      <mat-cell *matCellDef="let stock">{{ stock.product.unit.symbol }}</mat-cell>
+      <mat-header-cell *matHeaderCellDef >Unidade</mat-header-cell>
+      <mat-cell *matCellDef="let stock">{{ stock.product?.unit?.symbol }}</mat-cell>
     </ng-container>
 
+    <ng-container matColumnDef="state">
+      <mat-header-cell *matHeaderCellDef>Estado</mat-header-cell>
+      <mat-cell *matCellDef="let stock"><span class="stock-badge" [class.empty]="stock.quantity <= 0" [class.low]="stock.quantity > 0 && stock.quantity <= 5">{{stock.quantity <= 0 ? 'Esgotado' : stock.quantity <= 5 ? 'Stock baixo' : 'Disponível'}}</span></mat-cell>
+    </ng-container>
     <ng-container matColumnDef="action">
-      <mat-header-cell *matHeaderCellDef mat-sort-header>Ação</mat-header-cell>
+      <mat-header-cell *matHeaderCellDef >Ações</mat-header-cell>
       <mat-cell *matCellDef="let stock">
         <!-- Ícone de editar -->
         <button
           mat-icon-button
           color="primary"
           (click)="abrirContadoresDialog(stock)"
-          matTooltip="Visualizar movimentos de estoque."
+          matTooltip="Ver movimentos de stock" aria-label="Ver movimentos de stock"
         >
           <i class="fa-solid fa-arrow-right-arrow-left"></i>
         </button>
@@ -62,7 +64,7 @@
           mat-icon-button
           color="warn"
           (click)="desativarStock(stock)"
-          matTooltip="Desativar stock"
+          matTooltip="Desativar stock" aria-label="Desativar stock"
         >
           <i class="fa-solid fa-trash-can"></i>
         </button>
@@ -76,7 +78,7 @@
     <!-- Sem dados -->
     <!-- Sem dados -->
     <tr class="mat-row" *matNoDataRow>
-      <td class="mat-cell" [attr.colspan]="displayedColumns.length">Não há movimentações para exibir.</td>
+      <td class="mat-cell" [attr.colspan]="displayedColumns.length">Não há produtos em stock para esta pesquisa.</td>
     </tr>
   </mat-table>
   </div>

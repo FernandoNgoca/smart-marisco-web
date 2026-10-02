@@ -9,6 +9,8 @@ export class DashboardListComponent implements OnInit, OnDestroy {
   isLoading = false;
   loadError = false;
   data: DashboardOverview | null = null;
+  chartMode = 'sales';
+  revenueSeries: { name: string; series: { name: string; value: number }[] }[] = [];
   preset = 'month';
   from = '';
   to = '';
@@ -39,6 +41,7 @@ export class DashboardListComponent implements OnInit, OnDestroy {
     this.dashboardService.overview(this.from,this.to).pipe(timeout(15000),takeUntil(this.cancel),takeUntil(this.destroyed)).subscribe({
       next:data=>{
         this.data=data; this.isLoading=false;
+        this.revenueSeries=[{name:'Faturação (MZN)',series:data.dailySales.map(day=>({name:day.name,value:day.revenue}))}];
         const max=Math.max(...data.dailySales.map(d=>d.value),1), step=Math.max(1,Math.ceil(max/5));
         this.yAxisTicks=Array.from({length:Math.ceil(max/step)+1},(_,i)=>i*step);
       },
@@ -47,6 +50,7 @@ export class DashboardListComponent implements OnInit, OnDestroy {
   }
   hasDashboardPermission(): boolean { return !this.auth.hasAnyRole(['ROLE_ADMIN']) && this.auth.hasAnyRole(['ROLE_MANAGER']); }
   formatYAxisTicks(value:number):string {return Math.floor(value).toString();}
+  formatRevenue(value:number):string {return new Intl.NumberFormat('pt-PT',{maximumFractionDigits:2}).format(value)+' MZN';}
   formatDay(value:string):string {return value.slice(8,10)+'/'+value.slice(5,7);}
   calculateVariation(current:number,previous:number):number|null {return previous===0 ? (current===0 ? 0 : null) : Number(((current-previous)/previous*100).toFixed(1));}
   variation(current:number,previous:number):string {const value=this.calculateVariation(current,previous);return value===null ? 'Sem base de comparação' : `${value>0?'+':''}${value}%`;}

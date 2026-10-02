@@ -68,7 +68,7 @@
 
     <!-- Cliente -->
     <mat-form-field appearance="fill" class="full">
-      <mat-label>Cliente</mat-label>
+      <mat-label>Cliente (opcional)</mat-label>
       <input
         type="text"
         matInput
@@ -76,10 +76,11 @@
         [readonly]="isSaving || isAdding"
         [matAutocomplete]="autoClient"
         [matAutocompleteDisabled]="isSaving || isAdding"
-        placeholder="Digite o nome do cliente"
-        aria-label="Cliente"
+        placeholder="Deixe vazio para consumidor final"
+        aria-label="Cliente (opcional)"
       />
 
+      <mat-hint>Sem seleção, a venda fica como consumidor final.</mat-hint>
       <mat-autocomplete
         #autoClient="matAutocomplete"
         [displayWith]="displayClient"

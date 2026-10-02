@@ -1,3 +1,4 @@
+import { Router } from '@angular/router';
 import { QUANTITY_MESSAGE, quantityValidator } from '@app/shared/validators/quantity.validator';
 import { Subject, of, timer, switchMap, catchError, finalize, takeUntil, map, distinctUntilChanged, startWith } from 'rxjs';
 import { ChangeDetectorRef, Component, OnDestroy, OnInit } from '@angular/core';
@@ -58,7 +59,8 @@ export class SaleComponent implements OnInit, OnDestroy {
     private snackbar: SnackbarService,
     private saleService: SaleService,
     private stockService: StockService,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    private router: Router
   ) {
     this.form = this.fb.group({
       productId: [null,],
@@ -311,7 +313,7 @@ export class SaleComponent implements OnInit, OnDestroy {
     this.saleService.create(this.saleRequest, this.operationKey).pipe(
       finalize(() => { this.isSaving = false; })
     ).subscribe({
-      next: () => {
+      next: (saved) => {
         this.operationKey = null;
         this.operationPayload = '';
         this.snackbar.success('Venda registada com sucesso!');
@@ -323,6 +325,7 @@ export class SaleComponent implements OnInit, OnDestroy {
         this.form.get('clientId')?.enable();
         this.valueSale = 0;
         this.countSalas();
+        if (saved?.id) void this.router.navigate(['/sales/receipt', saved.id]);
       },
       error: (err) => {
         this.snackbar.error(

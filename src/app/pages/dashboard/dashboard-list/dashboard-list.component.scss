@@ -58,3 +58,6 @@ a:focus-visible, button:focus-visible { outline: 3px solid #2680b4; outline-offs
 .restock-item { display:flex; justify-content:space-between; align-items:center; gap:12px; padding:12px 0; border-bottom:1px solid var(--app-border); }
 .restock-item span { overflow-wrap:anywhere; }.restock-item strong { text-align:right; flex-shrink:0; }
 @media(max-width:600px) { .period-filter label { flex:1 1 100%; } }
+
+.chart-selector { display:flex; align-items:center; gap:8px; font-size:13px; color:var(--app-muted); }
+.chart-selector select { min-height:40px; padding:8px; max-width:100%; border:1px solid var(--app-border); border-radius:8px; background:white; color:var(--app-text); }
