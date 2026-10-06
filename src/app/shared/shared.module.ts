@@ -1,3 +1,4 @@
+import { ProductPhotoComponent, ProductPhotoDialogComponent } from './components/product-photo/product-photo.component';
 import { NgModule } from '@angular/core';
 import { ToolbarTitleComponent } from './components/toolbar-title/toolbar-title.component';
 import { MatToolbarModule } from '@angular/material/toolbar';
@@ -59,6 +60,7 @@ import { MtzCurrencyPipe } from './components/mask/mtz-currency.pipe';
     MtzCurrencyPipe
   ],
   declarations: [
+    ProductPhotoComponent, ProductPhotoDialogComponent,
     ToolbarTitleComponent,
     MainLayoutComponent,
     ToolbarMenuComponent,
@@ -75,6 +77,7 @@ import { MtzCurrencyPipe } from './components/mask/mtz-currency.pipe';
     ViewOrderComponent,
   ],
   exports: [
+    ProductPhotoComponent,
     CommonModule,
     RouterModule,
     ToolbarTitleComponent,

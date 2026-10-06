@@ -1,210 +1,27 @@
-<div class="counters-grid">
-  <div
-    *ngIf="hasAdminPermission()"
-    class="counter-card blue"
-    matTooltip="Quantidade total de vendas realizadas hoje no sistema"
-    matTooltipPosition="above"
-    matTooltipClass="tooltip-custom"
-  >
-    <div class="card-header red">
-      <span class="card-title">
-        Total de Vendas Hoje
-        <i
-          class="fa-solid fa-circle-info info-icon"
-          matTooltip="Número total de vendas registadas hoje"
-          matTooltipPosition="above"
-          matTooltipClass="tooltip-custom"
-        ></i>
-      </span>
-      <i class="fa-solid fa-calendar-day"></i>
-    </div>
-    <div class="card-value">{{ this.totalVendasHoje }}</div>
-    <div
-        class="trend"
-        [ngClass]="{
-          positive: variationSale >= 0,
-          negative: variationSale < 0
-        }"
-      >
-        <div class="badge">
-          <i
-            class="fa-solid"
-            [class.fa-arrow-up]="variationSale > 0"
-            [class.fa-arrow-down]="variationSale < 0"
-          ></i>
-
-          <span>{{ variationSale }}%</span>
-        </div>
-
-        <span class="text">vs ontem</span>
-      </div>
-
-  </div>
-
-  <div
-    *ngIf="hasAdminPermission()"
-    class="counter-card red"
-    matTooltip="Quantidade total de vendas realizadas no mês corrente"
-    matTooltipPosition="above"
-    matTooltipClass="tooltip-custom"
-  >
-    <div class="card-header">
-      <span class="card-title">
-        Total de Vendas do Mês
-        <i
-          class="fa-solid fa-circle-info info-icon"
-          matTooltip="Número total de vendas registadas no mês corrente"
-          matTooltipPosition="above"
-          matTooltipClass="tooltip-custom"
-        ></i>
-      </span>
-      <i class="fa-solid fa-calendar-days"></i>
-    </div>
-
-    <div class="card-value">{{ this.totalVendasMes }}</div>
-
-    <div
-        class="trend"
-        [ngClass]="{
-          positive: variationSaleMonth >= 0,
-          negative: variationSaleMonth < 0
-        }"
-      >
-        <div class="badge">
-          <i
-            class="fa-solid"
-            [class.fa-arrow-up]="variationSaleMonth >= 0"
-            [class.fa-arrow-down]="variationSaleMonth < 0"
-          ></i>
-
-          <span>{{ variationSaleMonth }}%</span>
-        </div>
-
-        <span class="text">vs mês passado.</span>
-      </div>
-  </div>
-
-  <div
-    *ngIf="hasAdminPermission()"
-    class="counter-card green"
-    matTooltip="Quantidade total de clientes cadastrados no sistema"
-    matTooltipPosition="above"
-    matTooltipClass="tooltip-custom"
-  >
-    <div class="card-header">
-      <span class="card-title">
-        Total de Clientes Cadastrados
-        <i
-          class="fa-solid fa-circle-info info-icon"
-          matTooltip="Número total de clientes registados no sistema"
-          matTooltipPosition="above"
-          matTooltipClass="tooltip-custom"
-        ></i>
-      </span>
-      <i class="fa-solid fa-users"></i>
-    </div>
-
-    <div class="card-value">{{ this.totalClientes }}</div>
-  </div>
-
-  <div
-    *ngIf="hasAdminPermission()"
-    class="counter-card teal"
-    matTooltip="Quantidade total de produtos disponíveis em estoque"
-    matTooltipPosition="above"
-    matTooltipClass="tooltip-custom"
-  >
-    <div class="card-header">
-      <span class="card-title">
-        Total de Produtos em Estoque
-        <i
-          class="fa-solid fa-circle-info info-icon"
-          matTooltip="Número total de produtos atualmente disponíveis em estoque"
-          matTooltipPosition="above"
-          matTooltipClass="tooltip-custom"
-        ></i>
-      </span>
-      <i class="fa-solid fa-boxes-stacked"></i>
-    </div>
-
-    <div class="card-value">{{ this.totalProdutos }}</div>
-
-      <div
-        class="trend"
-        [ngClass]="{
-          positive: variationSale >= 0,
-          negative: variationSale < 0
-        }"
-      >
-        <div class="badge">
-          <i
-            class="fa-solid"
-            [class.fa-arrow-up]="variationSale >= 0"
-            [class.fa-arrow-down]="variationSale < 0"
-          ></i>
-
-          <span>{{ variationSale }}%</span>
-        </div>
-
-        <span class="text">vs ontem</span>
-      </div>
-  </div>
-
-  <div
-    *ngIf="hasAdminPermission()"
-    class="counter-card teal"
-    matTooltip="Número total de encomendas."
-    matTooltipPosition="above"
-    matTooltipClass="tooltip-custom"
-  >
-    <div class="card-header">
-      <span class="card-title">
-        Total de Pedidos
-        <i
-          class="fa-solid fa-circle-info info-icon"
-          matTooltip="Número total de encomendas."
-          matTooltipPosition="above"
-          matTooltipClass="tooltip-custom"
-        ></i>
-      </span>
-      <i class="fa-solid fa-inbox"></i>
-    </div>
-
-    <div class="card-value">{{ totalOrders }}</div>
-  </div>
+<header class="overview-header"><div><h2>Visão geral</h2><p>Acompanhe as vendas e as prioridades do negócio.</p></div><a class="primary-action" routerLink="/sales/sale"><i class="fa-solid fa-plus" aria-hidden="true"></i> Registar venda</a></header>
+<div class="period-filter" *ngIf="hasDashboardPermission()">
+  <label>Período<select #period [value]="preset" (change)="selectPeriod(period.value)"><option value="today">Hoje</option><option value="week">Últimos 7 dias</option><option value="month">Mês atual</option><option value="custom">Personalizado</option></select></label>
+  <ng-container *ngIf="preset === 'custom'"><label>Desde<input #start type="date" [value]="from" [max]="to || maxDate" (change)="from=start.value"></label><label>Até<input #end type="date" [value]="to" [min]="from" [max]="maxDate" (change)="to=end.value"></label><button mat-flat-button class="app-button btn-add" [disabled]="invalidPeriod || isLoading" (click)="load()">Aplicar</button></ng-container>
 </div>
-
-<div class="dashboard-row" *ngIf="hasAdminPermission()">
-  <div class="chart-container">
-    <h3 class="chart-title">Vendas da Semana</h3>
-    <ngx-charts-bar-vertical
-      [results]="salesByDay"
-      [xAxis]="true"
-      [yAxis]="true"
-      [showDataLabel]="true"
-      [view]="[320, 250]"
-      [yAxisTicks]="yAxisTicks"
-      [yAxisTickFormatting]="formatYAxisTicks"
-    >
-      >
-    </ngx-charts-bar-vertical>
+<p *ngIf="invalidPeriod" class="status-message error" role="alert">Escolha um período de até 366 dias, sem datas futuras.</p>
+<p *ngIf="isLoading" class="status-message" role="status">A carregar o resumo...</p>
+<div *ngIf="loadError" class="status-message error" role="alert"><p>Não foi possível carregar o dashboard.</p><button mat-button class="app-button" (click)="load()">Tentar novamente</button></div>
+<ng-container *ngIf="data as overview">
+  <p class="period-caption">Vendas de {{overview.from | date:'dd/MM/yyyy'}} a {{overview.to | date:'dd/MM/yyyy'}} · Atualizado às {{overview.updatedAt | date:'HH:mm'}}</p>
+  <div class="counters-grid">
+    <article class="counter-card featured"><span class="card-title">Faturação do período <i class="fa-solid fa-wallet" aria-hidden="true"></i></span><div class="card-value">{{overview.totals.revenue | currency:'MZN ':'symbol':'1.2-2'}}</div><span class="card-note">Vendas concluídas</span></article>
+    <article class="counter-card"><span class="card-title">Vendas concluídas <i class="fa-solid fa-receipt" aria-hidden="true"></i></span><div class="card-value">{{overview.totals.sales | number}}</div><span class="card-note">{{variation(overview.totals.sales, overview.previous.sales)}} vs período anterior</span></article>
+    <article class="counter-card"><span class="card-title">Valor médio por venda <i class="fa-solid fa-chart-line" aria-hidden="true"></i></span><div class="card-value">{{overview.averageSale | currency:'MZN ':'symbol':'1.2-2'}}</div><span class="card-note">Faturação / vendas concluídas</span></article>
+    <article class="counter-card"><span class="card-title">Variação da faturação <i class="fa-solid fa-calendar-days" aria-hidden="true"></i></span><div class="card-value">{{variation(overview.totals.revenue, overview.previous.revenue)}}</div><span class="card-note">{{overview.totals.revenue-overview.previous.revenue | currency:'MZN ':'symbol':'1.2-2'}} vs período anterior</span></article>
   </div>
-
-  <div class="top-products-card">
-    <div class="header">
-      <h3 class="chart-title">Top Produtos</h3>
+  <p class="comparison-note">Comparação com {{overview.previousFrom | date:'dd/MM/yyyy'}}–{{overview.previousTo | date:'dd/MM/yyyy'}} (dias completos). Se incluir hoje, o período atual ainda está em curso.</p>
+  <section class="attention-panel" aria-labelledby="attention-title"><div class="section-heading"><h3 id="attention-title">Precisa de atenção</h3><span>Situação atual · independente do período</span></div>
+    <div class="attention-grid">
+      <a routerLink="/sales/orderHistory" class="attention-item" [class.warning]="overview.pending.count > 0"><i class="fa-solid fa-inbox" aria-hidden="true"></i><div><strong>{{overview.pending.count | number}} pedidos pendentes</strong><span>Valor pendente: {{overview.pending.value | currency:'MZN ':'symbol':'1.2-2'}}</span><span *ngIf="overview.pending.oldestDays !== null">Mais antigo: {{overview.pending.oldestDays === 0 ? 'registado hoje' : overview.pending.oldestDays + ' dias'}}</span><span *ngIf="!overview.pending.count">Não há pedidos por concluir.</span></div><i class="fa-solid fa-arrow-right" aria-hidden="true"></i></a>
+      <div class="restock-list"><div class="section-heading"><strong>{{overview.restockCount | number}} produtos a repor</strong><a routerLink="/stock">Consultar stock →</a></div><p class="card-note">Até 5 na unidade de cada produto, incluindo produtos sem stock.</p><p *ngIf="!overview.restock.length" class="empty-state">Não há produtos a repor.</p><a routerLink="/stock" [queryParams]="{search: product.name}" class="restock-item" *ngFor="let product of overview.restock"><span>{{product.name}}</span><strong>{{product.quantity | number:'1.0-3'}} {{product.unit}}<small *ngIf="product.quantity === 0"> · Esgotado</small></strong></a><p class="card-note" *ngIf="overview.restockCount > overview.restock.length">A mostrar os 5 produtos com menor stock.</p></div>
     </div>
-
-    <div class="product-item" *ngFor="let p of topProducts">
-      <img [src]="getImage(p.image)" class="avatar" alt="Imagem do Produto" />
-
-      <div class="name">{{ p.name }}</div>
-
-      <div class="qty">{{ p.quantity }} vendidos</div>
-
-      <div class="total">{{ p.totalValue | currency: "MZN " }}</div>
-
-      <button class="btn-action">Ver</button>
-    </div>
-  </div>
-</div>
+  </section>
+  <div class="dashboard-row"><section class="panel"><div class="section-heading"><h3>{{chartMode === 'sales' ? 'Vendas no período' : 'Faturação no período'}}</h3><label class="chart-selector">Mostrar<select #chartType [value]="chartMode" (change)="chartMode=chartType.value"><option value="sales">Quantidade de vendas</option><option value="revenue">Faturação</option></select></label></div><p *ngIf="!overview.totals.sales" class="empty-state">Não há vendas concluídas neste período.</p><div *ngIf="overview.totals.sales" class="chart-area"><ngx-charts-bar-vertical *ngIf="chartMode === 'sales'" [results]="overview.dailySales" [scheme]="chartColors" [xAxis]="true" [yAxis]="true" [showDataLabel]="overview.dailySales.length <= 14" [yAxisTicks]="yAxisTicks" [yAxisTickFormatting]="formatYAxisTicks" [xAxisTickFormatting]="formatDay" [roundEdges]="false"></ngx-charts-bar-vertical><ngx-charts-line-chart *ngIf="chartMode === 'revenue'" [results]="revenueSeries" [scheme]="chartColors" [xAxis]="true" [yAxis]="true" [showYAxisLabel]="true" yAxisLabel="Faturação (MZN)" [yScaleMin]="0" [autoScale]="false" [showRefLines]="overview.dailySales.length === 1" [showRefLabels]="true" [referenceLines]="overview.dailySales.length === 1 ? [{name: 'Faturação do dia', value: overview.totals.revenue}] : []" [yAxisTickFormatting]="formatRevenue" [xAxisTickFormatting]="formatDay" [legend]="false"><ng-template #tooltipTemplate let-model="model"><strong>{{model.name | date:'dd/MM/yyyy'}}</strong><br>{{model.value | currency:'MZN ':'symbol':'1.2-2'}}</ng-template><ng-template #seriesTooltipTemplate let-model="model"><div *ngFor="let point of model"><strong>{{point.name | date:'dd/MM/yyyy'}}</strong><br>{{point.value | currency:'MZN ':'symbol':'1.2-2'}}</div></ng-template></ngx-charts-line-chart></div></section>
+    <section class="panel"><div class="section-heading"><h3>Produtos mais vendidos</h3><span>No período selecionado · quantidade</span></div><p *ngIf="!overview.topProducts.length" class="empty-state">Não há produtos vendidos neste período.</p><div class="product-item" *ngFor="let product of overview.topProducts; let i=index"><span class="rank">{{i+1}}</span><div class="product-info"><strong>{{product.name}}</strong></div><strong class="product-total">{{product.quantity | number:'1.0-3'}} {{product.unit}}</strong></div></section></div>
+  <footer class="overview-footer"><a routerLink="/reports" [queryParams]="{type:'sales',from:overview.from,to:overview.to}">Ver relatório de vendas →</a><button class="refresh-button" (click)="load()">Atualizar</button></footer>
+</ng-container>

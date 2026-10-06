@@ -1,6 +1,6 @@
 import { HttpClient, HttpParams } from "@angular/common/http";
 import { Injectable } from "@angular/core";
-import { PagedStockMovement, StockMovement } from "@app/shared/models/stockMovement";
+import { PagedStockMovement, StockMovement, StockHistory } from "@app/shared/models/stockMovement";
 import { map, Observable } from "rxjs";
 import { environment } from "src/environments/environment";
 
@@ -68,6 +68,14 @@ export class StockMovementService {
           return res._embedded?.StockMovement ?? [];
         })
       );
+  }
+
+  history(productId: number, page: number, size: number, type = '', from = '', to = ''): Observable<StockHistory> {
+    let params = new HttpParams().set('page', page).set('size', size);
+    if (type) params = params.set('type', type);
+    if (from) params = params.set('from', from);
+    if (to) params = params.set('to', to);
+    return this.http.get<StockHistory>(`${this.baseURL}/product/${productId}/history`, { params });
   }
 
   create(stockMovement: StockMovement): Observable<StockMovement> {

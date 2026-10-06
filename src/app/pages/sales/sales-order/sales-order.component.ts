@@ -1,5 +1,8 @@
+import { ActivatedRoute, Router } from '@angular/router';
+import { QUANTITY_MESSAGE, quantityValidator } from '@app/shared/validators/quantity.validator';
+import { Subject, of, timer, switchMap, catchError, finalize, takeUntil, map, distinctUntilChanged, startWith } from 'rxjs';
 import { Client } from './../../../shared/models/client';
-import { Component, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup } from '@angular/forms';
 import { MatTableDataSource } from '@angular/material/table';
 import { ClientService } from '@app/services/client.service';
@@ -15,7 +18,7 @@ import { Sale, SaleItem, SaleRequest, SaleStatus } from '@app/shared/models/sale
   templateUrl: './sales-order.component.html',
   styleUrls: ['./sales-order.component.scss']
 })
-export class SalesOrderComponent implements OnInit {
+export class SalesOrderComponent implements OnInit, OnDestroy {
 
   displayedColumns: string[] = [
     'image',
@@ -38,6 +41,20 @@ export class SalesOrderComponent implements OnInit {
   sale: Sale = {} as Sale;
   saleRequest = {} as SaleRequest;
   form: FormGroup;
+  isSaving = false;
+  orderId: number | null = null;
+  loadingOrder = false;
+  orderLoadError = false;
+  legacyPrices = false;
+  agreedPrices = new Map<number, number>();
+  isAdding = false;
+  clientsLoading = false;
+  clientsError = false;
+  private destroy$ = new Subject<void>();
+  private operationKey: string | null = null;
+  private operationPayload = '';
+
+  ngOnDestroy(): void { this.destroy$.next(); this.destroy$.complete(); }
   totalOrdersForToday: number = 0;
 
   constructor(
@@ -46,11 +63,13 @@ export class SalesOrderComponent implements OnInit {
     private clientService: ClientService,
     private snackbar: SnackbarService,
     private saleService: SaleService,
-    private stockService: StockService
+    private stockService: StockService,
+    private route: ActivatedRoute,
+    private router: Router
   ) {
     this.form = this.fb.group({
       productId: [null,],
-      quantity: [null,],
+      quantity: [null, quantityValidator],
       clientId: [null,]
     });
   }
@@ -64,10 +83,6 @@ export class SalesOrderComponent implements OnInit {
       this.filterProducts();
     });
 
-    // Cliente
-    this.form.get('clientId')?.valueChanges.subscribe(() => {
-      this.filterClients();
-    });
 
     this.form.get('clientId')?.valueChanges.subscribe((client: Client) => {
       if (client?.id) {
@@ -78,6 +93,40 @@ export class SalesOrderComponent implements OnInit {
     });
 
 this.countOrders();
+    const id = this.route?.snapshot.queryParamMap.get('orderId');
+    if (id) {
+      this.orderId = Number(id);
+      this.loadOrder();
+    }
+  }
+
+  loadOrder(): void {
+    if (!this.orderId) return;
+    this.loadingOrder = true;
+    this.orderLoadError = false;
+    this.saleService.findOrder(this.orderId).pipe(takeUntil(this.destroy$), finalize(() => { this.loadingOrder = false; })).subscribe({
+      next: request => {
+        if (request.sale.saleStatus !== SaleStatus.ORDERS) {
+          this.snackbar.error('Só é possível editar pedidos pendentes.');
+          this.orderLoadError = true;
+          return;
+        }
+        this.sale = request.sale;
+        this.legacyPrices = request.items.some(item => item.unitPrice == null);
+        this.agreedPrices.clear();
+        this.saleItems = request.items.map(item => {
+          const price = item.unitPrice ?? item.product.salePrice;
+          this.agreedPrices.set(item.productId, price);
+          return { ...item, unitPrice: price };
+        });
+        this.dataSource.data = this.saleItems;
+        this.selectedClient = request.sale.client ?? null;
+        this.form.get('clientId')?.setValue(this.selectedClient);
+        this.form.get('clientId')?.disable();
+        this.calculateTotal();
+      },
+      error: err => { this.orderLoadError = true; this.snackbar.error(err.error?.detail || err.error?.message || 'Não foi possível carregar o pedido.'); }
+    });
   }
 
   countOrders() {
@@ -89,7 +138,7 @@ this.countOrders();
   }
 
   loadingProducts() {
-    this.productService.findAvailableProducts().subscribe({
+    this.productService.findOrderProducts().subscribe({
       next: (data) => {
         this.products = data;
         this.filteredProducts = data;
@@ -99,12 +148,24 @@ this.countOrders();
   }
 
   loadingClients() {
-    this.clientService.findAll(0, 100, '', 'asc').subscribe({
-      next: (data) => {
-        this.clients = data._embedded.client;
-        this.filteredClients = data._embedded.clients;
-      },
-      error: (err) => console.error('Erro ao carregar clientes:', err)
+    this.form.get('clientId')!.valueChanges.pipe(
+      startWith(''),
+      map(value => typeof value === 'string' ? value.trim() : null),
+      distinctUntilChanged(),
+      switchMap(search => {
+        if (search === null) return of(null);
+        this.clientsLoading = true;
+        this.clientsError = false;
+        return timer(300).pipe(
+          switchMap(() => this.clientService.findAll(0, 20, 'firstName', 'asc', search)),
+          catchError(() => { this.clientsError = true; return of(null); }),
+          finalize(() => { this.clientsLoading = false; })
+        );
+      }),
+      takeUntil(this.destroy$)
+    ).subscribe(data => {
+      this.clients = data?._embedded?.clients ?? [];
+      this.filteredClients = this.clients;
     });
   }
 
@@ -126,19 +187,6 @@ this.countOrders();
     }
   }
 
-  // Filtro clientes
-  filterClients() {
-    const value = this.form.get('clientId')?.value;
-
-    if (typeof value === 'string') {
-      this.filteredClients = this.clients.filter(c =>
-        c.firstName.toLowerCase().includes(value.toLowerCase())
-      );
-    } else {
-      this.filteredClients = this.clients;
-    }
-  }
-
   displayClient(client: any): string {
     const first = client?.firstName || '';
     const last = client?.lastName || '';
@@ -147,7 +195,7 @@ this.countOrders();
 
   calculateTotal() {
     const total = this.saleItems.reduce((sum, item) => {
-      const price = item.product?.salePrice || 0;
+      const price = item.unitPrice ?? item.product?.salePrice ?? 0;
       return sum + (item.quantity * price);
     }, 0);
 
@@ -165,6 +213,7 @@ this.countOrders();
       productId: product.id!,
       product: product,
       quantity: quantity,
+      unitPrice: this.agreedPrices.get(product.id!) ?? product.salePrice,
     };
 
     // Adicionar à lista e atualizar tabela
@@ -186,18 +235,19 @@ this.countOrders();
   }
 
   addItem() {
+    if (this.isSaving || this.isAdding || this.loadingOrder || this.orderLoadError) return;
     // Verificar se os campos obrigatórios estão preenchidos
     const product: Product = this.form.value.productId;
     const quantity: number = this.form.value.quantity;
     const client = this.selectedClient;
 
-    if (!product) {
+    if (!product?.id) {
       this.snackbar.error('Selecione um produto para adicionar ao pedido.');
       return;
     }
 
-    if (!quantity || quantity <= 0) {
-      this.snackbar.error('Informe uma quantidade válida.');
+    if (this.form.get('quantity')?.invalid) {
+      this.snackbar.error(QUANTITY_MESSAGE);
       return;
     }
 
@@ -214,26 +264,11 @@ this.countOrders();
       return;
     }
 
-    this.stockService.findByProductId(product.id!).subscribe({
-      next: (stock) => {
-        if (stock.quantity < quantity) {
-          this.snackbar.error(
-            `Estoque insuficiente. Disponível: ${stock.quantity} unidade(s).`
-          );
-          return;
-        } else {
-          this.addItemToSale(product, quantity);
-        }
-      },
-      error: (err) => {
-        this.snackbar.error(
-          'Não foi possível verificar o estoque do produto.'
-        );
-      }
-    });
+    this.addItemToSale(product, quantity);
   }
 
   removeItem(item: SaleItem) {
+    if (this.isSaving || this.isAdding || this.loadingOrder || this.orderLoadError) return;
     this.saleItems = this.saleItems.filter(i => i !== item);
     this.dataSource.data = [...this.saleItems];
 
@@ -248,17 +283,21 @@ this.countOrders();
   }
 
   editItem(item: SaleItem) {
+    if (this.isSaving || this.isAdding || this.loadingOrder || this.orderLoadError) return;
     // Preencher formulário
     this.form.patchValue({
       productId: item.product,
       quantity: item.quantity
     });
 
-    // Remover temporariamente para não duplicar
-    this.removeItem(item);
+    // Retirar o artigo para edição sem limpar o cliente selecionado.
+    this.saleItems = this.saleItems.filter(i => i !== item);
+    this.dataSource.data = [...this.saleItems];
+    this.calculateTotal();
   }
 
   processSale() {
+    if (this.isSaving || this.isAdding || this.loadingOrder || this.orderLoadError) return;
     if (this.saleItems.length === 0) {
       this.snackbar.error(
         'Adicione pelo menos um produto antes de finalizar o pedido.'
@@ -266,18 +305,37 @@ this.countOrders();
       return;
     }
 
+    if (!this.selectedClient?.id) {
+      this.snackbar.error('Selecione um cliente para continuar.');
+      return;
+    }
     this.saleRequest = {
       sale: {
-        clientId: this.selectedClient?.id,
+        clientId: this.selectedClient.id,
+        version: this.sale.version,
         totalValue: this.sale.totalValue,
         saleStatus: SaleStatus.ORDERS
       },
       items: this.saleItems
     };
 
-    this.saleService.create(this.saleRequest).subscribe({
+    const fingerprint = JSON.stringify(this.saleRequest);
+    if (!this.operationKey || fingerprint !== this.operationPayload) {
+      this.operationKey = Array.from(crypto.getRandomValues(new Uint8Array(16)), byte => byte.toString(16).padStart(2, '0')).join('');
+      this.operationPayload = fingerprint;
+    }
+    this.isSaving = true;
+    const operation = this.orderId
+      ? this.saleService.updateOrder(this.orderId, this.saleRequest)
+      : this.saleService.create(this.saleRequest, this.operationKey);
+    operation.pipe(
+      finalize(() => { this.isSaving = false; })
+    ).subscribe({
       next: () => {
-        this.snackbar.success('Pedido registado com sucesso!');
+        this.operationKey = null;
+        this.operationPayload = '';
+        this.snackbar.success(this.orderId ? 'Pedido atualizado!' : 'Pedido registado sem reservar stock.');
+        if (this.orderId) { void this.router.navigate(['/sales/orderHistory']); return; }
         // Resetar tudo
         this.saleItems = [];
         this.dataSource.data = [];
@@ -289,7 +347,7 @@ this.countOrders();
       },
       error: (err) => {
         this.snackbar.error(
-          err.error?.message ||
+          err.error?.detail || err.error?.message ||
           'Não foi possível concluir o pedido. Tente novamente.'
         );
       }

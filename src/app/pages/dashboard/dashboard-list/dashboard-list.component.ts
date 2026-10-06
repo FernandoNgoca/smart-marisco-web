@@ -1,165 +1,57 @@
-import { Component, OnInit } from '@angular/core';
+import { DashboardService, DashboardOverview } from '@app/services/dashboard.service';
+import { Subject, takeUntil, timeout } from 'rxjs';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { AuthService } from '@app/services/auth.service';
-import { ClientService } from '@app/services/client.service';
-import { ProductService } from '@app/services/product.service';
-import { SaleService } from '@app/services/sale.service';
-import { SaleItemService } from '@app/services/saleItem.service';
+import { ScaleType } from '@swimlane/ngx-charts';
 
-@Component({
-  selector: 'app-dashboard-list',
-  templateUrl: './dashboard-list.component.html',
-  styleUrls: ['./dashboard-list.component.scss']
-})
-export class DashboardListComponent implements OnInit {
-
-  salesByDay: { name: string; value: number }[] = [];
-
-  topProducts: any[] = [];
-
-  totalVendasHoje: number = 0;
-  totalVendasMes: number = 0;
-  totalClientes: number = 0;
-  totalProdutos: number = 0;
-  totalOrders: number = 0;
-  variationSale: number = 0;
-  yesterday: number = 0;
-  salesPreviousMonth: number = 0;
-  variationSaleMonth: number = 0;
-
-  yAxisTicks: number[] = [0, 1];
-
-  private weekTemplate = [
-    { name: 'SEG', value: 0 },
-    { name: 'TER', value: 0 },
-    { name: 'QUA', value: 0 },
-    { name: 'QUI', value: 0 },
-    { name: 'SEX', value: 0 },
-    { name: 'SAB', value: 0 },
-    { name: 'DOM', value: 0 }
-  ];
-
-  constructor(
-    private saleService: SaleService,
-    private clientService: ClientService,
-    private productService: ProductService,
-    private auth: AuthService,
-    private saleItemService: SaleItemService
-  ) { }
-
-  ngOnInit(): void {
-    this.loadTotalVendasHoje();
+@Component({selector:'app-dashboard-list',templateUrl:'./dashboard-list.component.html',styleUrls:['./dashboard-list.component.scss']})
+export class DashboardListComponent implements OnInit, OnDestroy {
+  isLoading = false;
+  loadError = false;
+  data: DashboardOverview | null = null;
+  chartMode = 'sales';
+  revenueSeries: { name: string; series: { name: string; value: number }[] }[] = [];
+  preset = 'month';
+  from = '';
+  to = '';
+  maxDate = this.localDate(new Date());
+  yAxisTicks = [0,1];
+  readonly chartColors = {name:'marisco',selectable:true,group:ScaleType.Ordinal,domain:['#0f5265']};
+  private cancel = new Subject<void>();
+  private destroyed = new Subject<void>();
+  constructor(private dashboardService: DashboardService, private auth: AuthService) {}
+  ngOnInit(): void { this.selectPeriod('month'); }
+  ngOnDestroy(): void { this.destroyed.next(); this.destroyed.complete(); this.cancel.next(); this.cancel.complete(); }
+  private localDate(date: Date): string { return `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')}`; }
+  selectPeriod(preset: string): void {
+    this.preset = preset;
+    if (preset === 'custom') return;
+    const start = new Date(); this.to = this.localDate(start); this.maxDate = this.to;
+    if (preset === 'month') start.setDate(1);
+    if (preset === 'week') start.setDate(start.getDate()-6);
+    this.from = this.localDate(start); this.load();
   }
-
-  public loadTotalVendasHoje(): void {
-    this.saleService.countByCreatedDateBetweenAndSaleStatusAndStatus().subscribe(today => {
-
-  this.totalVendasHoje = today;
-
-  this.saleService.countYesterdaySales().subscribe(yesterday => {
-
-    this.yesterday = yesterday;
-
-    this.variationSale = this.calculateVariation(
-      this.totalVendasHoje,
-      this.yesterday
-    );
-  });
-
-});
-
-  this.saleService.countSalesCurrentMonth().subscribe((count) => {
-  this.totalVendasMes = count;
-
-  this.saleService.countSalesPreviousMonth().subscribe((count) => {
-    this.salesPreviousMonth = count;
-
-    this.variationSaleMonth = this.calculateVariation(
-      this.totalVendasMes,
-      this.salesPreviousMonth
-    );
-
-    console.log("Mês atual:", this.totalVendasMes);
-    console.log("Mês anterior:", this.salesPreviousMonth);
-    console.log("Variação:", this.variationSaleMonth);
-  });
-});
-
-    this.clientService.countClients().subscribe(
-      (count) => {
-        this.totalClientes = count;
-      }
-    );
-
-    this.productService.countProducts().subscribe(
-      (count) => {
-        this.totalProdutos = count;
-      }
-    );
-
-    this.saleService.countByStatusAndSaleStatus().subscribe(
-      (count) => {
-        this.totalOrders = count;
-      }
-    );
-
-    this.saleService.getSalesWeek().subscribe({
-      next: (data) => {
-
-        const merged = this.weekTemplate.map(day => {
-          const found = data.find(d => d.name === day.name);
-          return {
-            name: day.name,
-            value: found ? found.value : 0
-          };
-        });
-
-        this.salesByDay = merged;
-
-        const maxSales = Math.max(...merged.map(d => d.value), 1);
-        this.yAxisTicks = [];
-        for (let i = 0; i <= maxSales + 1; i++) {
-          this.yAxisTicks.push(i);
-        }
-
+  get invalidPeriod(): boolean {
+    const start = Date.parse(this.from), end = Date.parse(this.to);
+    return !Number.isFinite(start) || !Number.isFinite(end) || start > end || (end-start)/86400000 > 365 || this.to > this.maxDate;
+  }
+  load(): void {
+    if (!this.hasDashboardPermission() || this.invalidPeriod) return;
+    this.cancel.next(); this.isLoading=true; this.loadError=false; this.data=null;
+    this.dashboardService.overview(this.from,this.to).pipe(timeout(15000),takeUntil(this.cancel),takeUntil(this.destroyed)).subscribe({
+      next:data=>{
+        this.data=data; this.isLoading=false;
+        this.revenueSeries=[{name:'Faturação (MZN)',series:data.dailySales.map(day=>({name:day.name,value:day.revenue}))}];
+        const max=Math.max(...data.dailySales.map(d=>d.value),1), step=Math.max(1,Math.ceil(max/5));
+        this.yAxisTicks=Array.from({length:Math.ceil(max/step)+1},(_,i)=>i*step);
       },
-      error: () => {
-        this.salesByDay = [...this.weekTemplate];
-        this.yAxisTicks = [0, 1];
-      }
-    });
-    this.saleItemService.getTopProducts().subscribe(data => {
-      this.topProducts = data;
+      error:()=>{this.isLoading=false;this.loadError=true;}
     });
   }
-
-  getImage(image: string | undefined): string {
-    if (!image) return 'assets/No_Image.svg.png';
-    return image.startsWith('data:')
-      ? image
-      : 'data:image/jpeg;base64,' + image;
-  }
-
-  public formatYAxisTicks(val: number): string {
-    return Math.floor(val).toString();
-  }
-
-  // Verificar permissão de admin
-  public hasAdminPermission(): boolean {
-    const user = this.auth.getUser();
-    return user?.roles?.includes('ROLE_MANAGER') || false;
-  }
-
-  calculateVariation(current: number, previous: number): number {
-
-    if (previous === 0) {
-
-      if (current === 0) {
-        return 0;
-      }
-
-      return 100; // ou null, ou Infinity, conforme a regra de negócio
-    }
-
-    return Number((((current - previous) / previous) * 100).toFixed(1));
-  }
+  hasDashboardPermission(): boolean { return !this.auth.hasAnyRole(['ROLE_ADMIN']) && this.auth.hasAnyRole(['ROLE_MANAGER']); }
+  formatYAxisTicks(value:number):string {return Math.floor(value).toString();}
+  formatRevenue(value:number):string {return new Intl.NumberFormat('pt-PT',{maximumFractionDigits:2}).format(value)+' MZN';}
+  formatDay(value:string):string {return value.slice(8,10)+'/'+value.slice(5,7);}
+  calculateVariation(current:number,previous:number):number|null {return previous===0 ? (current===0 ? 0 : null) : Number(((current-previous)/previous*100).toFixed(1));}
+  variation(current:number,previous:number):string {const value=this.calculateVariation(current,previous);return value===null ? 'Sem base de comparação' : `${value>0?'+':''}${value}%`;}
 }

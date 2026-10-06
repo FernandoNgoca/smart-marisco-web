@@ -1,3 +1,4 @@
+import { UserDetailsComponent } from './user-details/user-details.component';
 import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { UsersRoutingModule } from './users-routing.module';
@@ -24,6 +25,7 @@ import { MatTableModule } from '@angular/material/table';
 
 @NgModule({
   declarations: [
+    UserDetailsComponent,
     UsersComponent,
     MyProfileComponent,
     AllUsersComponent,

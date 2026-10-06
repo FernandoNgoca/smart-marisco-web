@@ -1,1 +1,37 @@
-<p>sales-history works!</p>
+<mat-form-field appearance="outline">
+  <mat-label>Pesquisar cliente</mat-label>
+  <input matInput (input)="applyFilter($event)" placeholder="Nome ou apelido" />
+</mat-form-field>
+<p *ngIf="isLoading" role="status">A carregar vendas...</p>
+<div *ngIf="loadError" role="alert">Não foi possível carregar as vendas.
+  <button class="app-button" mat-button (click)="loadSales()">Tentar novamente</button>
+</div>
+<div class="table-scroll app-table-scroll">
+  <table class="app-data-table" style="--table-min-width: 725px" mat-table [dataSource]="dataSource" matSort matSortActive="createdDate" matSortDirection="desc" matSortDisableClear>
+    <ng-container matColumnDef="id">
+      <th mat-header-cell *matHeaderCellDef mat-sort-header>Venda</th>
+      <td mat-cell *matCellDef="let sale">#{{ sale.id }}</td>
+    </ng-container>
+    <ng-container matColumnDef="client">
+      <th mat-header-cell *matHeaderCellDef mat-sort-header="client.firstName">Cliente</th>
+      <td mat-cell *matCellDef="let sale">{{ sale.client ? sale.client.firstName + ' ' + sale.client.lastName : 'Consumidor final' }}</td>
+    </ng-container>
+    <ng-container matColumnDef="totalValue">
+      <th mat-header-cell *matHeaderCellDef mat-sort-header>Total</th>
+      <td mat-cell *matCellDef="let sale">{{ sale.totalValue | currency:'MZN ':'symbol':'1.2-2' }}</td>
+    </ng-container>
+    <ng-container matColumnDef="saleStatus">
+      <th mat-header-cell *matHeaderCellDef mat-sort-header>Estado</th>
+      <td mat-cell *matCellDef="let sale">{{ sale.saleStatus === 'COMPLETED' ? 'Concluída' : sale.saleStatus === 'ORDERS' ? 'Pedido' : sale.saleStatus }}</td>
+    </ng-container>
+    <ng-container matColumnDef="createdDate">
+      <th mat-header-cell *matHeaderCellDef mat-sort-header>Data</th>
+      <td mat-cell *matCellDef="let sale">{{ sale.createdDate | date:'dd/MM/yyyy HH:mm' }}</td>
+    </ng-container>
+    <ng-container matColumnDef="action"><th mat-header-cell *matHeaderCellDef>Recibo</th><td mat-cell *matCellDef="let sale"><a *ngIf="sale.saleStatus === 'COMPLETED'" mat-button [routerLink]="['/sales/receipt',sale.id]">Ver recibo</a><span *ngIf="sale.saleStatus !== 'COMPLETED'">—</span></td></ng-container>
+    <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+    <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
+    <tr *matNoDataRow><td [attr.colspan]="displayedColumns.length">{{ loadError ? 'Dados indisponíveis.' : isLoading ? 'A carregar...' : 'Nenhuma venda encontrada.' }}</td></tr>
+  </table>
+</div>
+<mat-paginator class="app-table-paginator" [length]="totalElements" [pageSize]="pageSize" [pageIndex]="pageIndex" [pageSizeOptions]="[5, 10, 20]" showFirstLastButtons></mat-paginator>

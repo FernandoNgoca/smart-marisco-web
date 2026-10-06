@@ -2,15 +2,18 @@
   <i
     class="fa-solid"
     [class.fa-plus]="!isEditMode"
-    [class.fa-user-pen]="isEditMode"
+    [class.fa-pen]="isEditMode"
   >
   </i>
   {{ isEditMode ? "Editar Estoque" : "Novo Estoque" }}
 </h2>
 
 <mat-dialog-content [formGroup]="form">
+  <p *ngIf="loadingProducts" role="status">A carregar produtos...</p>
+  <p *ngIf="productsError" role="alert" class="field-error">Não foi possível carregar produtos. <button class="app-button" mat-button (click)="isEditMode ? loadProductsEdicao() : loadProducts()">Tentar novamente</button></p>
+  <p *ngIf="!loadingProducts && !productsError && !products.length">Não existem produtos disponíveis para adicionar ao stock.</p>
   <div class="row">
-    <mat-form-field appearance="fill" class="full">
+    <mat-form-field appearance="outline" class="full">
       <mat-label>Produto</mat-label>
 
       <mat-select formControlName="productId" >
@@ -24,26 +27,28 @@
       </mat-error>
     </mat-form-field>
 
-    <mat-form-field appearance="fill">
-      <mat-label>Quantidade a entrar</mat-label>
+    <mat-form-field appearance="outline">
+      <mat-label>{{ isEditMode ? 'Quantidade total em stock' : 'Quantidade inicial' }}</mat-label>
       <input
         matInput
         type="number"
         formControlName="quantity"
+        min="0.001" [max]="maxQuantity" step="0.001"
         placeholder="Ex: 10"
       />
       <mat-error *ngIf="form.get('quantity')?.hasError('required')">
         Entrada é obrigatória
       </mat-error>
-      <mat-error *ngIf="form.get('quantity')?.hasError('min')">
-        A quantidade deve ser maior que 0
+      <mat-error *ngIf="form.get('quantity')?.hasError('quantity')">
+        {{ quantityMessage }}
       </mat-error>
     </mat-form-field>
   </div>
+  <p *ngIf="saveError" class="field-error" role="alert">{{ saveError }}</p>
 </mat-dialog-content>
 
-<mat-dialog-actions align="end">
-  <button mat-button (click)="cancelar()" type="button" class="btn-cancel">
+<mat-dialog-actions class="app-action-row" align="end">
+  <button mat-button (click)="cancelar()" type="button" class="app-button btn-cancel" [disabled]="isLoading">
     <i class="fa-regular fa-circle-xmark"></i>
     Cancelar
   </button>
@@ -51,16 +56,15 @@
   <button
     mat-raised-button
     (click)="salvar()"
-    [disabled]="form.invalid || isLoading"
-    type="submit"
-    class="btn-save"
-    (selectionChange)="onProductChange($event)"
+    [disabled]="form.invalid || isLoading || loadingProducts || productsError"
+    type="button"
+    class="app-button btn-save"
   >
 
     <!-- Ícone quando não está carregando -->
     <i *ngIf="!isLoading" class="fa-regular fa-floppy-disk"></i>
 
     <!-- Texto dinâmico -->
-    {{ isLoading ? "Salvando..." : "Salvar" }}
+    {{ isLoading ? "A guardar..." : "Guardar" }}
   </button>
 </mat-dialog-actions>

@@ -30,6 +30,8 @@ export class ClientListComponent implements OnInit, AfterViewInit {
   pageSize = 5;
   pageIndex = 0;
   filterValue = '';
+  loadError = false;
+  isLoading = false;
   clientTypeLabel = ClientTypeLabel;
 
   @ViewChild(MatPaginator) paginator!: MatPaginator;
@@ -70,8 +72,10 @@ export class ClientListComponent implements OnInit, AfterViewInit {
   }
 
   loadClients(): void {
+    this.loadError = false;
+    this.isLoading = true;
     const direction = this.sort?.direction || 'asc';
-    const sortField = this.sort?.active || '';
+    const sortField = this.sort?.active || 'firstName';
 
     this.clientService.findAll(
       this.pageIndex,
@@ -82,10 +86,13 @@ export class ClientListComponent implements OnInit, AfterViewInit {
     )
       .subscribe({
         next: (response) => {
+          this.isLoading = false;
           this.dataSource = response._embedded?.clients ?? [];
           this.totalElements = response.page?.totalElements ?? 0;
         },
         error: (err) => {
+          this.isLoading = false;
+          this.loadError = true;
           console.error('Erro ao carregar clientes:', err);
 
           this.dataSource = [];
@@ -123,7 +130,12 @@ export class ClientListComponent implements OnInit, AfterViewInit {
     });
   }
 
+  canManage(): boolean {
+    return this.auth.hasAnyRole(['ROLE_ADMIN', 'ROLE_MANAGER']);
+  }
+
   editarCliente(client: Client): void {
+    if (!this.canManage()) return;
     const dialogRef = this.dialog.open(AddClientComponent, {
       width: '600px',
       data: { client }
@@ -137,6 +149,7 @@ export class ClientListComponent implements OnInit, AfterViewInit {
   }
 
   desativarCliente(client: Client): void {
+    if (!this.canManage()) return;
     // Confirmar ação com o usuário
     const confirmDialog = this.dialog.open(ConfirmDialogComponent, {
       width: '400px',

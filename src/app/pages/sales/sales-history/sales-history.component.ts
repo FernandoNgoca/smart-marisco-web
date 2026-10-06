@@ -1,5 +1,5 @@
-import { AfterViewInit, Component, OnInit, ViewChild } from '@angular/core';
-import { MatDialog } from '@angular/material/dialog';
+import { AfterViewInit, Component, OnInit, OnDestroy, ViewChild } from '@angular/core';
+import { Subject, finalize, takeUntil } from 'rxjs';
 import { MatPaginator } from '@angular/material/paginator';
 import { MatSort } from '@angular/material/sort';
 import { SaleService } from '@app/services/sale.service';
@@ -11,10 +11,14 @@ import { Sale } from '@app/shared/models/sale';
   templateUrl: './sales-history.component.html',
   styleUrls: ['./sales-history.component.scss']
 })
-export class SalesHistoryComponent implements OnInit, AfterViewInit {
+export class SalesHistoryComponent implements OnInit, AfterViewInit, OnDestroy {
 
-  displayedColumns: string[] = ['name', 'description', 'action'];
+  displayedColumns: string[] = ['id', 'client', 'totalValue', 'saleStatus', 'createdDate', 'action'];
   dataSource: Sale[] = [];
+  isLoading = false;
+  loadError = false;
+  private destroyed = new Subject<void>();
+  private reload = new Subject<void>();
   totalElements = 0;
   pageSize = 5;
   pageIndex = 0;
@@ -26,7 +30,6 @@ export class SalesHistoryComponent implements OnInit, AfterViewInit {
   constructor(
     private saleService: SaleService,
     private snackbar: SnackbarService,
-    private dialog: MatDialog,
   ) { }
 
   ngOnInit(): void {
@@ -34,36 +37,48 @@ export class SalesHistoryComponent implements OnInit, AfterViewInit {
   }
 
   ngAfterViewInit(): void {
-    this.paginator.page.subscribe(() => {
+    this.paginator.page.pipe(takeUntil(this.destroyed)).subscribe(() => {
       this.pageIndex = this.paginator.pageIndex;
       this.pageSize = this.paginator.pageSize;
       this.loadSales();
     });
 
-    this.sort.sortChange.subscribe(() => {
+    this.sort.sortChange.pipe(takeUntil(this.destroyed)).subscribe(() => {
       this.pageIndex = 0;
       this.loadSales();
     });
   }
 
   loadSales(): void {
-    const direction = this.sort?.direction || 'asc';
-    const sortField = this.sort?.active || 'name';
+    this.reload.next();
+    this.isLoading = true;
+    this.loadError = false;
+    const direction = this.sort?.direction || 'desc';
+    const sortField = this.sort?.active || 'createdDate';
     this.saleService.findAll(
       this.pageIndex,
       this.pageSize,
       sortField,
       direction,
       this.filterValue
-    ).subscribe({
+    ).pipe(takeUntil(this.reload), takeUntil(this.destroyed), finalize(() => { this.isLoading = false; })).subscribe({
       next: (response) => {
         this.dataSource = response._embedded?.sales ?? [];
         this.totalElements = response.page?.totalElements ?? 0; // Ajuste para total de elementos
       },
-      error: (err) => {
+      error: () => {
+        this.loadError = true;
+        this.dataSource = [];
+        this.totalElements = 0;
         this.snackbar.error('Erro ao carregar as vendas.');
       }
     });
+  }
+
+  ngOnDestroy(): void {
+    this.destroyed.next();
+    this.destroyed.complete();
+    this.reload.complete();
   }
 
   applyFilter(event: Event) {

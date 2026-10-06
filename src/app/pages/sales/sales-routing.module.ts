@@ -1,3 +1,4 @@
+import { ReceiptComponent } from './receipt/receipt.component';
 import { SalesHistoryComponent } from './sales-history/sales-history.component';
 import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
@@ -13,6 +14,7 @@ const routes: Routes =
       component: SalesComponent,
       pathMatch: 'prefix',
       children: [
+        { path: 'receipt/:id', component: ReceiptComponent },
         {
           path: '',
           pathMatch: 'full',

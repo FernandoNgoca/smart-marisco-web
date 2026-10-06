@@ -1,4 +1,8 @@
-<div class="toolbar">
+<div *ngIf="loadError" role="alert">Não foi possível carregar os dados.
+  <button class="app-button" mat-button (click)="loadClients()">Tentar novamente</button>
+</div>
+<p *ngIf="isLoading" role="status">A carregar...</p>
+<div class="toolbar app-list-toolbar">
   <mat-form-field appearance="outline" class="filter-field">
     <mat-label>Pesquisar</mat-label>
     <input
@@ -11,14 +15,15 @@
     </button>
   </mat-form-field>
 
-  <button mat-raised-button class="btn-add" (click)="abrirDialog()">
+  <button mat-raised-button class="app-button btn-add" (click)="abrirDialog()">
     <i class="fa-solid fa-user-plus"></i>
     Adicionar
   </button>
 </div>
 
-<div class="mat-elevation-z4">
-  <mat-table [dataSource]="dataSource" matSort>
+<div class="app-table-panel">
+  <div class="app-table-scroll">
+  <mat-table class="app-data-table" style="--table-min-width: 1015px" [dataSource]="dataSource" matSort>
     <!-- firstName -->
     <ng-container matColumnDef="firstName">
       <mat-header-cell *matHeaderCellDef mat-sort-header>Nome</mat-header-cell>
@@ -71,7 +76,7 @@
       <mat-header-cell *matHeaderCellDef mat-sort-header>Ação</mat-header-cell>
       <mat-cell *matCellDef="let client">
         <!-- Ícone de editar -->
-        <button mat-icon-button color="primary" (click)="editarCliente(client)"  matTooltip="Editar dados do cliente">
+        <button *ngIf="canManage()" mat-icon-button color="primary" (click)="editarCliente(client)"  matTooltip="Editar dados do cliente">
           <i class="fa-solid fa-user-pen"></i>
         </button>
 
@@ -79,6 +84,7 @@
         <button
           mat-icon-button
           color="warn"
+          *ngIf="canManage()"
           (click)="desativarCliente(client)"
           matTooltip="Desativar cliente"
         >
@@ -93,13 +99,14 @@
 
     <!-- Sem dados -->
     <tr class="mat-row" *matNoDataRow>
-      <td class="mat-cell" colspan="5">
-        Não há dados para o filtro "{{ filterValue }}"
+      <td class="mat-cell" [attr.colspan]="displayedColumns.length">
+        {{ loadError ? 'Dados indisponíveis. Tente novamente.' : isLoading ? 'A carregar...' : 'Nenhum resultado encontrado.' }}
       </td>
     </tr>
   </mat-table>
+  </div>
 
-  <mat-paginator
+  <mat-paginator class="app-table-paginator"
     [length]="totalElements"
     [pageSize]="pageSize"
     [pageIndex]="pageIndex"

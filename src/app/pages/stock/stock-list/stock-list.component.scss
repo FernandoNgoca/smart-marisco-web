@@ -18,7 +18,7 @@
   gap: 8px;
   height: 56px;
   padding: 0 24px;
-  background: linear-gradient(135deg, #0F3A68 0%, #1E5F9B 100%);
+  background: var(--app-header);
   color: #ffffff;
   font-size: 14px;
   font-weight: 500;
@@ -140,3 +140,15 @@ mat-header-row, mat-row {
   color: #16a34a !important; /* Verde */
   font-weight: 600;
 }
+
+.app-data-table.stock-table {
+  .mat-column-product { flex: 1 1 260px; min-width: 180px; }
+  .mat-column-quantity { flex: 0 0 160px; width: 160px; }
+  .mat-column-unit { flex: 0 0 100px; width: 100px; }
+  .mat-column-state { flex: 0 0 150px; width: 150px; }
+  .mat-column-action { flex: 0 0 112px; width: 112px; }
+}
+.stock-quantity { color: var(--app-text); font-weight: 600; font-variant-numeric: tabular-nums; }
+.stock-badge { padding: 5px 10px; border-radius: 6px; background: #eaf6ee; color: var(--app-success); font-size: 12px; font-weight: 600; white-space: nowrap; }
+.stock-badge.low { background: #fff7e8; color: var(--app-warning); }
+.stock-badge.empty { background: #fff0ee; color: var(--app-danger); }

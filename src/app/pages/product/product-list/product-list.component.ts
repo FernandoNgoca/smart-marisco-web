@@ -21,9 +21,8 @@ export class ProductListComponent implements OnInit, AfterViewInit {
   pageSize = 5;
   pageIndex = 0;
   filterValue = '';
-  previewImage: string | null = null;
-  previewX = 0;
-  previewY = 0;
+  loadError = false;
+  isLoading = false;
 
   @ViewChild(MatPaginator) paginator!: MatPaginator;
   @ViewChild(MatSort) sort!: MatSort;
@@ -52,6 +51,8 @@ export class ProductListComponent implements OnInit, AfterViewInit {
   }
 
   loadProducts(): void {
+    this.loadError = false;
+    this.isLoading = true;
     const direction = this.sort?.direction || 'asc';
     const sortField = this.sort?.active || 'code';
 
@@ -65,10 +66,13 @@ export class ProductListComponent implements OnInit, AfterViewInit {
       )
       .subscribe({
         next: (resp) => {
+          this.isLoading = false;
           this.dataSource = resp._embedded?.products ?? [];
           this.totalElements = resp.page?.totalElements ?? 0;
         },
         error: (err) => {
+          this.isLoading = false;
+          this.loadError = true;
           this.dataSource = [];
           this.totalElements = 0;
           this.snackbar.error('Erro ao carregar os produtos.', err);
@@ -126,44 +130,6 @@ export class ProductListComponent implements OnInit, AfterViewInit {
         });
       }
     });
-  }
-
-  getImage(image: string | undefined): string {
-    if (!image) return 'assets/No_Image.svg.png';
-    return image.startsWith('data:')
-      ? image
-      : 'data:image/jpeg;base64,' + image;
-  }
-
-  showPreview(event: MouseEvent, image: string | undefined) {
-    if (!image) return;
-    this.previewImage = image;
-    this.previewX = event.clientX + 15;
-    this.previewY = event.clientY + 15;
-  }
-
-  movePreview(event: MouseEvent): void {
-    const previewWidth = 320;
-    const previewHeight = 320;
-    const offset = 15;
-
-    let x = event.clientX + offset;
-    let y = event.clientY + offset;
-
-    if (x + previewWidth > window.innerWidth) {
-      x = event.clientX - previewWidth - offset;
-    }
-
-    if (y + previewHeight > window.innerHeight) {
-      y = event.clientY - previewHeight - offset;
-    }
-
-    this.previewX = x;
-    this.previewY = y;
-  }
-
-  hidePreview() {
-    this.previewImage = null;
   }
 
   visualizarProduto(product: Product): void {
