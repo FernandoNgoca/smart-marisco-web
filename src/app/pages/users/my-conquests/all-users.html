@@ -4,19 +4,21 @@
     <input
       matInput
       (keyup)="applyFilter($event)"
-      placeholder="Ex: Nome, Categoria..."
+      placeholder="Nome ou utilizador"
     />
     <button mat-icon-button matSuffix aria-label="Pesquisar">
       <i class="fa-solid fa-magnifying-glass"></i>
     </button>
   </mat-form-field>
 
-  <button mat-raised-button class="app-button btn-add" >
+  <button mat-raised-button class="app-button btn-add" routerLink="/users/addUser">
     <i class="fa-solid fa-plus"></i>
     Adicionar
   </button>
 </div>
 
+<p *ngIf="loading" role="status">A carregar utilizadores...</p>
+<div *ngIf="loadError" role="alert">Não foi possível carregar os utilizadores. <button mat-button (click)="loadUsers()">Tentar novamente</button></div>
 <div class="app-table-panel">
   <div class="app-table-scroll">
   <mat-table class="app-data-table" style="--table-min-width: 560px" [dataSource]="dataSource" matSort>
@@ -33,31 +35,33 @@
       <mat-cell *matCellDef="let user">{{ user.fullName }}</mat-cell>
     </ng-container>
 
+    <ng-container matColumnDef="enabled"><mat-header-cell *matHeaderCellDef>Estado</mat-header-cell><mat-cell *matCellDef="let user">{{user.enabled === false ? 'Desativado' : 'Ativo'}}</mat-cell></ng-container>
     <ng-container matColumnDef="action">
       <mat-header-cell *matHeaderCellDef>Ação</mat-header-cell>
       <mat-cell *matCellDef="let user">
         <button
           mat-icon-button
           color="primary"
-          aria-label="Editar Produto"
+          aria-label="Editar utilizador" matTooltip="Editar utilizador" (click)="details(user,false)" [disabled]="actionBusy"
         >
           <i class="fa-solid fa-user-pen"></i>
         </button>
         <button
           mat-icon-button
           color=""
-          matTooltip="Visualizar Produto"
-          aria-label="Visualizar Produto"
+          matTooltip="Visualizar utilizador" (click)="details(user,true)" [disabled]="actionBusy"
+          aria-label="Visualizar utilizador"
         >
           <i class="fa-solid fa-eye"></i>
         </button>
         <button
           mat-icon-button
           color="warn"
-          matTooltip="Desativar Produto"
-          aria-label="Desativar Produto"
+          [matTooltip]="isSelf(user) ? 'Não pode desativar a própria conta' : user.enabled === false ? 'Reativar utilizador' : 'Desativar utilizador'"
+          [attr.aria-label]="user.enabled === false ? 'Reativar utilizador' : 'Desativar utilizador'"
+          (click)="toggleEnabled(user)" [disabled]="actionBusy || isSelf(user)"
         >
-          <i class="fa-solid fa-trash-can"></i>
+          <i class="fa-solid" [class.fa-user-slash]="user.enabled !== false" [class.fa-user-check]="user.enabled === false"></i>
         </button>
       </mat-cell>
     </ng-container>
@@ -67,7 +71,7 @@
 
     <tr class="mat-row" *matNoDataRow>
       <td class="mat-cell" [attr.colspan]="displayedColumns.length">
-        Não há dados para o filtro "{{ filterValue }}"
+        {{ loading ? 'A carregar...' : loadError ? 'Dados indisponíveis.' : 'Nenhum utilizador encontrado.' }}
       </td>
     </tr>
   </mat-table>

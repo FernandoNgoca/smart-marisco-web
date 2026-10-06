@@ -15,7 +15,11 @@
 
 <div class="app-table-panel">
   <div class="app-table-scroll">
-  <mat-table class="app-data-table stock-table" style="--table-min-width: 760px" mat-table [dataSource]="dataSource" matSort>
+  <mat-table class="app-data-table stock-table" style="--table-min-width: 872px" mat-table [dataSource]="dataSource" matSort>
+    <ng-container matColumnDef="image">
+      <mat-header-cell *matHeaderCellDef>Imagem</mat-header-cell>
+      <mat-cell *matCellDef="let stock"><app-product-photo [image]="stock.product?.image" [name]="stock.product?.name || 'Produto'"></app-product-photo></mat-cell>
+    </ng-container>
     <!-- name -->
     <ng-container matColumnDef="product">
       <mat-header-cell *matHeaderCellDef mat-sort-header>Produto</mat-header-cell>

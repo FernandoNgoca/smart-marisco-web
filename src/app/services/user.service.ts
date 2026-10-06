@@ -21,15 +21,15 @@ export class UserService {
   }
 
   getUserById(id: string): Observable<any> {
-    return this.http.get(`${this.baseURL}/${id}`);
+    return this.http.get(`${this.baseURL}/users/${id}`);
   }
 
   updateUser(id: number, userData: any): Observable<any> {
-    return this.http.put(`${this.baseURL}/${id}`, userData);
+    return this.http.put(`${this.baseURL}/users/${id}`, userData);
   }
 
-  deleteUser(id: string): Observable<any> {
-    return this.http.delete(`${this.baseURL}/${id}`);
+  setEnabled(id: number, enabled: boolean): Observable<any> {
+    return this.http.patch(`${this.baseURL}/users/${id}/enabled`, {enabled});
   }
 
   findAll(

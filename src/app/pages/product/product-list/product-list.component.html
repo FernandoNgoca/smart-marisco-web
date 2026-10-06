@@ -25,22 +25,12 @@
   <div class="app-table-scroll">
   <mat-table class="app-data-table" style="--table-min-width: 1015px" [dataSource]="dataSource" matSort>
     <ng-container matColumnDef="image">
-      <mat-header-cell *matHeaderCellDef mat-sort-header>
+      <mat-header-cell *matHeaderCellDef>
         Imagem
       </mat-header-cell>
 
       <mat-cell *matCellDef="let element">
-        <img
-          class="imagem"
-          [src]="getImage(element.image)"
-          alt="Produto"
-          width="50"
-          height="50"
-          (mouseenter)="showPreview($event, element.image)"
-          (mousemove)="movePreview($event)"
-          (mouseleave)="hidePreview()"
-          aria-label="Visualizar Imagem"
-        />
+        <app-product-photo [image]="element.image" [name]="element.name"></app-product-photo>
       </mat-cell>
     </ng-container>
     <ng-container matColumnDef="code">
@@ -129,11 +119,4 @@
   >
   </mat-paginator>
 
-  <div
-    class="image-preview"
-    *ngIf="previewImage"
-    [ngStyle]="{ top: previewY + 'px', left: previewX + 'px' }"
-  >
-    <img [src]="getImage(previewImage)" alt="Visualização da Imagem" />
-  </div>
 </div>

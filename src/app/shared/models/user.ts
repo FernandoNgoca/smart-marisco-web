@@ -11,6 +11,7 @@ export interface TokenDTO {
 
 
 export interface User extends Auditable {
+  enabled?: boolean;
   userName: string;
   fullName: string;
   image?: string;

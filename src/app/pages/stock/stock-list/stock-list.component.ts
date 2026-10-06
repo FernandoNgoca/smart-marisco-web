@@ -28,6 +28,7 @@ function stockPaginator(): MatPaginatorIntl {
 export class StockListComponent implements OnInit, AfterViewInit {
 
   displayedColumns: string[] = [
+    'image',
     'product',
     'quantity',
     'unit',

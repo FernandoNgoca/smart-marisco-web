@@ -23,9 +23,6 @@ export class ProductListComponent implements OnInit, AfterViewInit {
   filterValue = '';
   loadError = false;
   isLoading = false;
-  previewImage: string | null = null;
-  previewX = 0;
-  previewY = 0;
 
   @ViewChild(MatPaginator) paginator!: MatPaginator;
   @ViewChild(MatSort) sort!: MatSort;
@@ -133,44 +130,6 @@ export class ProductListComponent implements OnInit, AfterViewInit {
         });
       }
     });
-  }
-
-  getImage(image: string | undefined): string {
-    if (!image) return 'assets/No_Image.svg.png';
-    return image.startsWith('data:')
-      ? image
-      : 'data:image/jpeg;base64,' + image;
-  }
-
-  showPreview(event: MouseEvent, image: string | undefined) {
-    if (!image) return;
-    this.previewImage = image;
-    this.previewX = event.clientX + 15;
-    this.previewY = event.clientY + 15;
-  }
-
-  movePreview(event: MouseEvent): void {
-    const previewWidth = 320;
-    const previewHeight = 320;
-    const offset = 15;
-
-    let x = event.clientX + offset;
-    let y = event.clientY + offset;
-
-    if (x + previewWidth > window.innerWidth) {
-      x = event.clientX - previewWidth - offset;
-    }
-
-    if (y + previewHeight > window.innerHeight) {
-      y = event.clientY - previewHeight - offset;
-    }
-
-    this.previewX = x;
-    this.previewY = y;
-  }
-
-  hidePreview() {
-    this.previewImage = null;
   }
 
   visualizarProduto(product: Product): void {
