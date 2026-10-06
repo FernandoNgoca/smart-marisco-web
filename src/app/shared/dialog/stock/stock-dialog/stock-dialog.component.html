@@ -37,7 +37,7 @@
       <!-- Total de Lançamentos -->
       <div
         class="counter-card blue"
-        matTooltip="Quantidade total de registros de estoque cadastrados no sistema"
+        matTooltip="Número total de lançamentos."
         matTooltipPosition="above"
         matTooltipClass="tooltip-custom"
       >
@@ -46,7 +46,7 @@
             Total de Lançamentos
             <i
               class="fa-solid fa-circle-info info-icon"
-              matTooltip="Quantidade total de registros de estoque cadastrados no sistema"
+              matTooltip="Número total de lançamentos."
               matTooltipPosition="above"
               matTooltipClass="tooltip-custom"
             ></i>
@@ -103,7 +103,7 @@
       <!-- Estoque Atual -->
       <div
         class="counter-card teal"
-        matTooltip="Quantidade atual disponível em estoque (Entradas - Saídas)"
+        matTooltip="Quantidade atual disponível em estoque."
         matTooltipPosition="above"
         matTooltipClass="tooltip-custom"
       >
@@ -112,7 +112,7 @@
             Estoque Atual
             <i
               class="fa-solid fa-circle-info info-icon"
-              matTooltip="Quantidade atual disponível em estoque (Entradas - Saídas)"
+              matTooltip="Quantidade atual disponível em estoque."
               matTooltipPosition="above"
               matTooltipClass="tooltip-custom"
             ></i>
@@ -144,7 +144,7 @@
 
       <button mat-raised-button class="btn-add" (click)="abrirDialog(stockSelecionado)">
         <i class="fa-solid fa-arrow-right-arrow-left"></i>
-        Registrar Movimentação
+        Adicionar Estoque
       </button>
     </div>
 
@@ -234,6 +234,14 @@
           </td>
         </tr>
       </mat-table>
+      <mat-paginator
+        [length]="totalElements"
+        [pageSize]="pageSize"
+        [pageIndex]="pageIndex"
+        [pageSizeOptions]="[5, 10, 20]"
+        showFirstLastButtons
+      >
+      </mat-paginator>
     </div>
   </mat-dialog-content>
 

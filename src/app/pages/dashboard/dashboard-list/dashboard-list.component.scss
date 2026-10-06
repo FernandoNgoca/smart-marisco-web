@@ -234,7 +234,7 @@
 
 /* Lista ocupa resto */
 .top-products-card {
-  flex: 1; // 🔥 ocupa todo espaço restante
+  flex: 1; 
 }
 
 .product-item {
@@ -293,5 +293,45 @@
     &:hover {
       background: #ffb300;
     }
+  }
+}
+
+.trend {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+  font-size: 13px;
+
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 8px;
+    border-radius: 999px;
+    font-weight: 600;
+  }
+
+  .text {
+    color: #94a3b8; // cinza
+    font-weight: 500;
+  }
+
+  &.positive {
+    .badge {
+      background: #dcfce7;
+      color: #16a34a;
+    }
+  }
+
+  &.negative {
+    .badge {
+      background: #fee2e2;
+      color: #dc2626;
+    }
+  }
+
+  i {
+    font-size: 11px;
   }
 }

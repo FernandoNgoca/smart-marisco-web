@@ -4,8 +4,8 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { MatSidenavModule } from '@angular/material/sidenav';
 import { MatListModule } from '@angular/material/list';
-import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatMenuModule } from '@angular/material/menu';
+import { MatTooltipModule } from '@angular/material/tooltip';
 
 @NgModule({
   exports: [
@@ -14,8 +14,8 @@ import { MatMenuModule } from '@angular/material/menu';
     MatButtonModule,
     MatSidenavModule,
     MatListModule,
-    MatTooltipModule,
-    MatMenuModule
+    MatMenuModule,
+    MatTooltipModule
   ],
   declarations: [],
   providers: []

@@ -3,7 +3,7 @@
     <div class="sale-counter">
       <h2>
         <i class="fa-brands fa-shopify"></i>
-        {{ saleCouter }}
+        {{ totalSalesForToday }}ª Venda
       </h2>
     </div>
 
@@ -30,7 +30,8 @@
         [displayWith]="displayProduct"
       >
         <mat-option *ngFor="let prod of filteredProducts" [value]="prod">
-          {{ prod.name }} - {{prod.salePrice| currency: "MZN " : "symbol" : "1.2-2"}}
+          {{ prod.name }} -
+          {{ prod.salePrice | currency: "MZN " : "symbol" : "1.2-2" }}
         </mat-option>
       </mat-autocomplete>
     </mat-form-field>
@@ -85,7 +86,7 @@
     </mat-form-field>
   </div>
   <div class="button-container">
-    <button mat-raised-button class="btn-add" (click)="addItem()">
+    <button mat-raised-button class="btn-add" (click)="addItem()" id="add">
       <i class="fa-solid fa-cart-plus"></i>
       Adicionar
     </button>
@@ -129,12 +130,14 @@
         >
         <mat-cell *matCellDef="let item">{{ item.quantity }}</mat-cell>
       </ng-container>
-      
+
       <ng-container matColumnDef="unit">
         <mat-header-cell *matHeaderCellDef mat-sort-header
           >Unidade de medida</mat-header-cell
         >
-        <mat-cell *matCellDef="let item">{{ item.product.unit.symbol }}</mat-cell>
+        <mat-cell *matCellDef="let item">{{
+          item.product.unit.symbol
+        }}</mat-cell>
       </ng-container>
 
       <ng-container matColumnDef="totalValue">

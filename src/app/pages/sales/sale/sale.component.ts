@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup } from '@angular/forms';
 import { MatTableDataSource } from '@angular/material/table';
 import { ClientService } from '@app/services/client.service';
@@ -29,7 +29,7 @@ export class SaleComponent implements OnInit {
 
   dataSource = new MatTableDataSource<SaleItem>();
   saleItems: SaleItem[] = [];
-  saleCouter: string = 'Venda 1';
+  totalSalesForToday: number = 0;
   valueSale: number = 0;
   products: Product[] = [];
   filteredProducts: Product[] = [];
@@ -46,7 +46,8 @@ export class SaleComponent implements OnInit {
     private clientService: ClientService,
     private snackbar: SnackbarService,
     private saleService: SaleService,
-    private stockService: StockService
+    private stockService: StockService,
+    private cdr: ChangeDetectorRef
   ) {
     this.form = this.fb.group({
       productId: [null,],
@@ -93,6 +94,16 @@ export class SaleComponent implements OnInit {
         this.selectedClient = null;
       }
     });
+
+    this.countSalas();
+  }
+
+  countSalas() {
+    this.saleService.countSalesCurrentDay().subscribe(
+      (count) => {
+        this.totalSalesForToday = count + 1;
+      }
+    );
   }
 
   loadingProducts() {
@@ -163,7 +174,6 @@ export class SaleComponent implements OnInit {
   }
 
   private addItemToSale(product: Product, quantity: number) {
-
     // Calcular subtotal
     const subTotal = quantity * product.salePrice;
 
@@ -198,28 +208,39 @@ export class SaleComponent implements OnInit {
     const quantity: number = this.form.value.quantity;
 
     if (!product) {
-      this.snackbar.error('Selecione um produto.');
+      this.snackbar.error('Selecione um produto para adicionar à venda.');
       return;
     }
 
     if (!quantity || quantity <= 0) {
-      this.snackbar.error('Digite uma quantidade válida.');
+      this.snackbar.error('Informe uma quantidade válida.');
+      return;
+    }
+
+    const productAlreadyAdded = this.saleItems.some(
+      item => item.productId === product.id
+    );
+
+    if (productAlreadyAdded) {
+      this.snackbar.warning('Este produto já foi adicionado à venda.');
       return;
     }
 
     this.stockService.findByProductId(product.id!).subscribe({
       next: (stock) => {
-        console.log('Verificando estoque para produto:', stock);
         if (stock.quantity < quantity) {
-          this.snackbar.error('Quantidade em estoque insuficiente.');
+          this.snackbar.error(
+            `Estoque insuficiente. Disponível: ${stock.quantity} unidade(s).`
+          );
           return;
         } else {
           this.addItemToSale(product, quantity);
         }
       },
       error: (err) => {
-        console.error('Erro ao verificar estoque:', err);
-        this.snackbar.error('Erro ao verificar estoque. Tente novamente.');
+        this.snackbar.error(
+          'Não foi possível verificar o estoque do produto. Tente novamente.', err
+        );
       }
     });
   }
@@ -227,6 +248,8 @@ export class SaleComponent implements OnInit {
   removeItem(item: SaleItem) {
     this.saleItems = this.saleItems.filter(i => i !== item);
     this.dataSource.data = [...this.saleItems];
+
+    this.snackbar.success('Produto removido da venda.');
 
     if (this.saleItems.length === 0) {
       this.form.get('clientId')?.enable();
@@ -249,7 +272,9 @@ export class SaleComponent implements OnInit {
 
   processSale() {
     if (this.saleItems.length === 0) {
-      this.snackbar.error('Adicione pelo menos um item para finalizar a venda.');
+      this.snackbar.error(
+        'Adicione pelo menos um produto antes de finalizar a venda.'
+      );
       return;
     }
 
@@ -264,7 +289,7 @@ export class SaleComponent implements OnInit {
 
     this.saleService.create(this.saleRequest).subscribe({
       next: () => {
-        this.snackbar.success('Venda processada com sucesso!');
+        this.snackbar.success('Venda registada com sucesso!');
         // Resetar tudo
         this.saleItems = [];
         this.dataSource.data = [];
@@ -272,10 +297,12 @@ export class SaleComponent implements OnInit {
         this.form.reset();
         this.form.get('clientId')?.enable();
         this.valueSale = 0;
+        this.countSalas();
       },
       error: (err) => {
-        console.error('Erro ao processar venda:', err);
-        this.snackbar.error(err.error || 'Erro ao processar venda. Tente novamente.');
+        this.snackbar.error(
+          err.error?.message || 'Não foi possível concluir a venda.'
+        );
       }
     });
   }
