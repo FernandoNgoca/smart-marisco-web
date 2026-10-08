@@ -1,10 +1,43 @@
-<div class="content mat-elevation-z4">
-  <app-toolbar-title title="Suporte" icon="fa-headset">
-    <button mat-icon-button>
-      <mat-icon>share</mat-icon>
-    </button>
-  </app-toolbar-title>
-  <div class="container">
-    <router-outlet></router-outlet>
-  </div>
+<div class="content">
+  <app-toolbar-title title="Suporte" icon="fa-headset"></app-toolbar-title>
+  <section class="support-intro">
+    <div><h1>Como podemos ajudar?</h1><p>Encontre orientações para as tarefas do dia a dia.</p></div>
+    <label class="search-label" for="support-search">Pesquisar ajuda
+      <input id="support-search" type="search" placeholder="Ex.: pedido, stock, recibo…" #search
+        [value]="query" (input)="query=search.value">
+    </label>
+  </section>
+
+  <section aria-labelledby="guides-title">
+    <h2 id="guides-title">Ajuda rápida</h2>
+    <div class="guide-grid">
+      <article class="guide-card" *ngFor="let topic of visibleTopics">
+        <div class="guide-heading"><span class="guide-icon"><i class="fa-solid" [ngClass]="topic.icon" aria-hidden="true"></i></span><h3>{{topic.title}}</h3></div>
+        <ol><li *ngFor="let step of topic.steps">{{step}}</li></ol>
+        <a [routerLink]="topic.route">Abrir {{topic.title.toLowerCase()}} <span aria-hidden="true">→</span></a>
+      </article>
+    </div>
+    <p class="empty" *ngIf="!visibleTopics.length">Nenhum guia encontrado. Experimente outra palavra.</p>
+  </section>
+
+  <section class="faq-section" aria-labelledby="faq-title">
+    <h2 id="faq-title">Perguntas frequentes</h2>
+    <details *ngFor="let question of visibleQuestions">
+      <summary>{{question.title}}</summary>
+      <p>{{question.answer}}</p>
+    </details>
+    <p class="empty" *ngIf="!visibleQuestions.length">Nenhuma pergunta encontrada para esta pesquisa.</p>
+  </section>
+
+  <section class="contact-panel" aria-labelledby="contact-title">
+    <div><h2 id="contact-title">Ainda precisa de ajuda?</h2>
+      <p>Ao contactar o suporte, indique a tela, os passos realizados e a mensagem de erro. Pode juntar uma captura de ecrã.</p>
+      <p *ngIf="!contact.email && !contact.whatsapp">Os contactos de suporte ainda não estão disponíveis. Contacte o responsável pelo sistema na sua organização.</p>
+      <p *ngIf="contact.hours"><strong>Atendimento:</strong> {{contact.hours}}</p>
+    </div>
+    <div class="contact-actions" *ngIf="contact.email || contact.whatsapp">
+      <a *ngIf="contact.email" [href]="emailLink"><i class="fa-regular fa-envelope" aria-hidden="true"></i> Enviar email</a>
+      <a *ngIf="contact.whatsapp" [href]="whatsappLink" target="_blank" rel="noopener noreferrer"><i class="fa-brands fa-whatsapp" aria-hidden="true"></i> WhatsApp <span class="sr-only">(abre num novo separador)</span></a>
+    </div>
+  </section>
 </div>
