@@ -16,9 +16,11 @@ body {
 
 .content {
   padding: 20px;
-  border-radius: 5px;
+  border-radius: var(--app-radius);
+  border: 1px solid var(--app-border);
+  box-shadow: var(--app-shadow);
   margin: -30px 34px 35px;
-  background-color: white;
+  background-color: var(--app-surface);
 }
 
 /* ===== SNACKBAR GLOBAL ===== */
@@ -95,4 +97,30 @@ body {
 
 .global-loader mat-spinner circle {
   stroke: var(--app-primary);
+}
+
+
+// Shared finishing touches without changing Material component density.
+.content.mat-elevation-z8, .content.mat-elevation-z4,
+.content.mat-elevation-z2 { box-shadow: var(--app-shadow); }
+
+.mat-dialog-container {
+  border-radius: var(--app-radius);
+  box-shadow: 0 18px 60px rgba(24, 51, 76, .18);
+}
+.mat-menu-panel { border-radius: 12px; }
+.mat-form-field-appearance-outline .mat-form-field-outline { color: #ccd8e2; }
+.mat-form-field-appearance-fill .mat-form-field-flex { background: #f5f8fa; }
+.mat-tab-label { font-weight: 500; }
+.mat-tab-label-active { color: var(--app-primary); opacity: 1; }
+
+button:focus-visible, a:focus-visible, select:focus-visible, input:focus-visible {
+  outline: 3px solid #2680b4;
+  outline-offset: 3px;
+}
+@media (max-width: 600px) {
+  .content { margin: -30px 12px 24px; padding: 16px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { scroll-behavior: auto !important; transition: none !important; animation: none !important; }
 }

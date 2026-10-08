@@ -26,6 +26,8 @@ $theme: mat.define-light-theme((color: (
   --app-danger: #b42318;
   --app-warning: #805311;
   --app-disabled: #e1e8ef;
+  --app-shadow: 0 4px 20px rgba(24, 51, 76, .06);
+  --app-radius: 14px;
 }
 body { color: var(--app-text); background: var(--app-background); }
 button.app-button.mat-button-base {

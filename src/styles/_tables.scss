@@ -28,7 +28,8 @@
   }
   .mat-header-cell { overflow-wrap: normal; word-break: normal; color: #586b7c; font-size: 13px; font-weight: 600; background: #f3f7fa; }
   .mat-cell { color: #18334c; font-size: 14px; }
-  .mat-row:hover { background: #f8fafc; }
+  .mat-row:hover { background: #f0f6f8; }
+  .mat-row { transition: background-color 150ms ease; }
   .mat-row:last-child .mat-cell { border-bottom: 0; }
   mat-header-cell, mat-cell { min-width: 0; flex: 1 1 0; align-self: stretch; align-items: center; }
   mat-header-row, mat-row { border-bottom: 0; }

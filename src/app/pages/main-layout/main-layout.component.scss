@@ -37,6 +37,8 @@ mat-toolbar-row {
 
 .sidenav {
   width: 250px;
+  border-right: 1px solid var(--app-border);
+  box-shadow: none;
   margin-top: 64px; //top menu
 
   .mat-icon {
@@ -63,17 +65,19 @@ mat-toolbar-row {
     width: 100px;
     height: 100px;
     border-radius: 50%;
+    border: 3px solid var(--app-surface);
+    box-shadow: 0 2px 12px rgba(24, 51, 76, .12);
   }
 
   .name {
     margin-top: 8px;
-    font-weight: normal;
+    font-weight: 500;
   }
 
   .designation {
     margin-top: 2px;
     font-size: 0.8rem;
-    color: gray;
+    color: var(--app-muted);
   }
 
   mat-nav-list {
@@ -118,3 +122,7 @@ mat-toolbar-row {
 }
 .sidenav mat-nav-list .active { color: var(--app-primary); font-weight: 600; }
 .sidenav mat-nav-list .active .mat-icon { color: var(--app-primary); }
+
+.sidenav mat-nav-list .active { box-shadow: inset 3px 0 0 var(--app-primary); }
+.toolbar-submenu-title { font-weight: 600; letter-spacing: -.4px; }
+.example-icon:focus-visible { outline: 3px solid white !important; outline-offset: -3px; }

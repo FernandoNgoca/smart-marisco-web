@@ -5,7 +5,8 @@ button.app-button.mat-button-base {
   min-width: 104px;
   padding: 0 18px;
   line-height: 1.4;
-  border-radius: 8px;
+  border-radius: 10px;
+  transition: background-color 150ms ease, border-color 150ms ease;
   box-sizing: border-box;
   vertical-align: middle;
   white-space: normal;

@@ -9,7 +9,7 @@ a { color: inherit; text-decoration: none; }
 a:focus-visible, button:focus-visible { outline: 3px solid #2680b4; outline-offset: 4px; }
 .primary-action { display: inline-flex; align-items: center; gap: 9px; background: var(--app-primary); color: white; padding: 12px 18px; border-radius: 8px; font-weight: 600; }
 .counters-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; }
-.counter-card, .panel, .attention-panel { background: #fff; border: 1px solid var(--app-border); border-radius: 12px; padding: 20px; min-width: 0; }
+.counter-card, .panel, .attention-panel { background: #fff; border: 1px solid var(--app-border); border-radius: var(--app-radius); box-shadow: var(--app-shadow); padding: 20px; min-width: 0; }
 .card-title { display: flex; justify-content: space-between; gap: 8px; font-size: 13px; color: var(--app-muted); font-weight: 500; }
 .card-value { margin: 18px 0 12px; font-size: clamp(22px, 2.1vw, 32px); font-weight: 700; line-height: 1.2; overflow-wrap: anywhere; font-variant-numeric: tabular-nums; }
 .featured { background: var(--app-primary); border-color: var(--app-primary); color: white; }
@@ -61,3 +61,20 @@ a:focus-visible, button:focus-visible { outline: 3px solid #2680b4; outline-offs
 
 .chart-selector { display:flex; align-items:center; gap:8px; font-size:13px; color:var(--app-muted); }
 .chart-selector select { min-height:40px; padding:8px; max-width:100%; border:1px solid var(--app-border); border-radius:8px; background:white; color:var(--app-text); }
+
+.decision-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; margin-top: 20px; }
+.decision-card { display: flex; align-items: flex-start; gap: 14px; padding: 20px; border: 1px solid var(--app-border); border-radius: var(--app-radius); background: #f8fbfc; }
+.decision-card > div { min-width: 0; }
+.decision-card h3 { font-size: 13px; color: var(--app-muted); margin-bottom: 10px; }
+.decision-card strong { font-size: 21px; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.decision-card small { font-size: 13px; font-weight: 400; color: var(--app-muted); }
+.decision-card p, .chart-caption { font-size: 12px; line-height: 1.6; color: var(--app-muted); margin-top: 8px; }
+.insight-icon { display: grid; place-items: center; flex: 0 0 36px; height: 36px; border-radius: 10px; background: var(--app-primary-soft); color: var(--app-primary); }
+.chart-switch { display: inline-flex; padding: 4px; gap: 4px; border: 1px solid var(--app-border); border-radius: 12px; background: var(--app-background); }
+.chart-switch button { min-height: 40px; border: 0; border-radius: 8px; padding: 8px 14px; color: var(--app-muted); background: transparent; font: inherit; font-size: 13px; cursor: pointer; }
+.chart-switch button.selected { color: var(--app-primary); font-weight: 600; background: white; box-shadow: 0 2px 6px rgba(24,51,76,.1); }
+.chart-area { height: 300px; padding-top: 18px; }
+.rank { display: grid; place-items: center; width: 24px; height: 24px; flex-shrink: 0; background: var(--app-background); border-radius: 50%; }
+.product-item app-product-photo { flex-shrink: 0; }
+@media (max-width: 1000px) { .decision-grid { grid-template-columns: 1fr; } }
+@media (max-width: 600px) { .chart-switch { width: 100%; } .chart-switch button { flex: 1; } .chart-area { height: 260px; } }
