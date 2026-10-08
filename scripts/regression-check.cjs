@@ -184,6 +184,17 @@ const rx = require('rxjs');
   assert.equal(dashboard.data.totals.sales,0);
   assert.equal(dashboard.calculateVariation(10,0),null);
   assert.equal(dashboard.calculateVariation(0,0),0);
+  assert.equal(dashboard.bestDay, null);
+  assert.equal(dashboard.dailyAverage, 0);
+  dashboard.data = {...overview, totals:{sales:3,revenue:120}, previous:{sales:2,revenue:50}, dailySales:[
+    {name:'2026-10-01',value:0,revenue:0},
+    {name:'2026-10-02',value:1,revenue:60},
+    {name:'2026-10-03',value:2,revenue:60}
+  ]};
+  assert.equal(dashboard.dailyAverage,40,'Daily average includes days without sales');
+  assert.equal(dashboard.activeDays,2);
+  assert.equal(dashboard.bestDay.name,'2026-10-02','Ties use first day');
+  assert.equal(dashboard.previousAverageSale,25);
   const older = new rx.Subject(); summaryApi.overview = () => older;
   dashboard.load();
   summaryApi.overview = () => rx.of({...overview,totals:{sales:5,revenue:50}});

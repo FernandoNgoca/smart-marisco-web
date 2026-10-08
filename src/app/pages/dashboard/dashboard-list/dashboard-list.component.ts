@@ -10,6 +10,18 @@ export class DashboardListComponent implements OnInit, OnDestroy {
   loadError = false;
   data: DashboardOverview | null = null;
   chartMode = 'sales';
+  get dailyAverage(): number {
+    return this.data?.dailySales.length ? this.data.totals.revenue / this.data.dailySales.length : 0;
+  }
+  get activeDays(): number { return this.data?.dailySales.filter(day => day.value > 0).length ?? 0; }
+  get bestDay(): DashboardOverview['dailySales'][number] | null {
+    return this.data?.dailySales.reduce<DashboardOverview['dailySales'][number] | null>(
+      (best, day) => day.value > 0 && (!best || day.revenue > best.revenue) ? day : best, null) ?? null;
+  }
+  get previousAverageSale(): number {
+    return this.data?.previous.sales ? this.data.previous.revenue / this.data.previous.sales : 0;
+  }
+
   revenueSeries: { name: string; series: { name: string; value: number }[] }[] = [];
   preset = 'month';
   from = '';

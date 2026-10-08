@@ -33,5 +33,5 @@ export interface DashboardOverview {
   restockCount: number;
   restock: { id: number; name: string; unit: string; quantity: number }[];
   dailySales: { name: string; value: number; revenue: number }[];
-  topProducts: { name: string; unit: string; quantity: number }[];
+  topProducts: { image?: string | null; name: string; unit: string; quantity: number }[];
 }

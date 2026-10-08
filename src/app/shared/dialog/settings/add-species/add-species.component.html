@@ -38,10 +38,10 @@
   </div>
   <div class="row">
     <mat-form-field appearance="outline">
-      <mat-label>Descrição</mat-label>
+      <mat-label>Descrição (opcional)</mat-label>
       <textarea matInput formControlName="description" rows="4"></textarea>
       <mat-error *ngIf="form.get('description')?.invalid">
-        Descrição é obrigatória
+        A descrição deve ter no máximo 255 caracteres.
       </mat-error>
     </mat-form-field>
   </div>
