@@ -4,10 +4,11 @@ import { Component, OnInit, OnDestroy, ViewChild } from '@angular/core';
 import { MatDialog } from '@angular/material/dialog';
 import { MatPaginator } from '@angular/material/paginator';
 import { MatSort } from '@angular/material/sort';
-import { SaleService } from '@app/services/sale.service';
+import { HistoryFilter, HistorySummary, SaleService } from '@app/services/sale.service';
 import { SnackbarService } from '@app/services/snackbar.service';
 import { ViewOrderComponent } from '@app/shared/dialog/sales/view-order/view-order.component';
 import { Sale } from '@app/shared/models/sale';
+import { StatusOption } from '../history-filters/history-filters.component';
 
 @Component({
   selector: 'app-order-history',
@@ -17,15 +18,22 @@ import { Sale } from '@app/shared/models/sale';
 export class OrderHistoryComponent implements OnInit, OnDestroy {
 
 
-  displayedColumns: string[] = ['firstName', 'lastName', 'phoneNumber', 'totalValue','date', 'state', 'action'];
+  displayedColumns: string[] = ['id', 'createdDate', 'client', 'saleStatus', 'totalValue', 'action'];
+  readonly statusOptions: StatusOption[] = [
+    { value: 'ORDERS', label: 'Pendentes' },
+    { value: 'COMPLETED', label: 'Concluídos' },
+    { value: 'CANCELED', label: 'Cancelados' }
+  ];
+  summary: HistorySummary | null = null;
+  private summaryRequest = new Subject<void>();
   dataSource: Sale[] = [];
   busyId: number | null = null;
   private destroyed = new Subject<void>();
   private reload = new Subject<void>();
   totalElements = 0;
-  pageSize = 5;
+  pageSize = 10;
   pageIndex = 0;
-  filterValue = '';
+  filter: HistoryFilter = {};
   loadError = false;
   isLoading = false;
 
@@ -40,6 +48,7 @@ export class OrderHistoryComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.loadOrders();
+    this.loadSummary();
   }
 
   ngAfterViewInit(): void {
@@ -59,14 +68,14 @@ export class OrderHistoryComponent implements OnInit, OnDestroy {
     this.reload.next();
     this.loadError = false;
     this.isLoading = true;
-    const direction = this.sort?.direction || 'asc';
-    const sortField = this.sort?.active || 'id';
+    const direction = this.sort?.direction || 'desc';
+    const sortField = this.sort?.active || 'createdDate';
     this.saleService.findAllOrders(
       this.pageIndex,
       this.pageSize,
       sortField,
       direction,
-      this.filterValue
+      this.filter
     ).pipe(takeUntil(this.reload), takeUntil(this.destroyed), finalize(() => { this.isLoading = false; })).subscribe({
       next: (response) => {
           this.isLoading = false;
@@ -83,13 +92,25 @@ export class OrderHistoryComponent implements OnInit, OnDestroy {
     });
   }
 
-  applyFilter(event: Event) {
-    const value = (event.target as HTMLInputElement).value;
-
-    this.filterValue = value.trim().toLowerCase();
+  onFilterChange(filter: HistoryFilter): void {
+    this.filter = filter;
     this.pageIndex = 0;
-
+    if (this.paginator) this.paginator.pageIndex = 0;
     this.loadOrders();
+    this.loadSummary();
+  }
+
+  // O resumo só depende dos filtros, não da página nem da ordenação.
+  private loadSummary(): void {
+    this.summaryRequest.next();
+    this.saleService.historySummary(true, this.filter).pipe(takeUntil(this.summaryRequest), takeUntil(this.destroyed)).subscribe({
+      next: summary => this.summary = summary,
+      error: () => this.summary = null
+    });
+  }
+
+  statusLabel(status: string): string {
+    return status === 'ORDERS' ? 'Pendente' : status === 'COMPLETED' ? 'Concluído' : status === 'CANCELED' ? 'Cancelado' : status;
   }
 
   visualizarProduto(sale: Sale): void {
@@ -113,11 +134,11 @@ export class OrderHistoryComponent implements OnInit, OnDestroy {
       if (!confirmed) { this.busyId = null; return; }
       const request = complete ? this.saleService.completeOrder(sale.id!, sale.version!) : this.saleService.cancelOrder(sale.id!, sale.version!);
       request.pipe(takeUntil(this.destroyed), finalize(() => { this.busyId = null; })).subscribe({
-        next: () => { this.snackbar.success(complete ? 'Pedido concluído.' : 'Pedido cancelado.'); this.loadOrders(); },
+        next: () => { this.snackbar.success(complete ? 'Pedido concluído.' : 'Pedido cancelado.'); this.loadOrders(); this.loadSummary(); },
         error: error => { this.snackbar.error(error.error?.detail || error.error?.message || 'Não foi possível atualizar o pedido.'); this.loadOrders(); }
       });
     });
   }
 
-  ngOnDestroy(): void { this.destroyed.next(); this.destroyed.complete(); this.reload.complete(); }
+  ngOnDestroy(): void { this.destroyed.next(); this.destroyed.complete(); this.reload.complete(); this.summaryRequest.complete(); }
 }

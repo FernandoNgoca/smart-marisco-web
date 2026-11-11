@@ -2,9 +2,10 @@ import { AfterViewInit, Component, OnInit, OnDestroy, ViewChild } from '@angular
 import { Subject, finalize, takeUntil } from 'rxjs';
 import { MatPaginator } from '@angular/material/paginator';
 import { MatSort } from '@angular/material/sort';
-import { SaleService } from '@app/services/sale.service';
+import { HistoryFilter, HistorySummary, SaleService } from '@app/services/sale.service';
 import { SnackbarService } from '@app/services/snackbar.service';
 import { Sale } from '@app/shared/models/sale';
+import { StatusOption } from '../history-filters/history-filters.component';
 
 @Component({
   selector: 'app-sales-history',
@@ -13,16 +14,23 @@ import { Sale } from '@app/shared/models/sale';
 })
 export class SalesHistoryComponent implements OnInit, AfterViewInit, OnDestroy {
 
-  displayedColumns: string[] = ['id', 'client', 'totalValue', 'saleStatus', 'createdDate', 'action'];
+  displayedColumns: string[] = ['id', 'createdDate', 'client', 'saleStatus', 'totalValue', 'action'];
+  readonly statusOptions: StatusOption[] = [
+    { value: 'COMPLETED', label: 'Concluídas' },
+    { value: 'ORDERS', label: 'Pedidos' },
+    { value: 'CANCELED', label: 'Canceladas' }
+  ];
+  summary: HistorySummary | null = null;
   dataSource: Sale[] = [];
   isLoading = false;
   loadError = false;
   private destroyed = new Subject<void>();
   private reload = new Subject<void>();
+  private summaryRequest = new Subject<void>();
   totalElements = 0;
-  pageSize = 5;
+  pageSize = 10;
   pageIndex = 0;
-  filterValue = '';
+  filter: HistoryFilter = {};
 
   @ViewChild(MatPaginator) paginator!: MatPaginator;
   @ViewChild(MatSort) sort!: MatSort;
@@ -34,6 +42,7 @@ export class SalesHistoryComponent implements OnInit, AfterViewInit, OnDestroy {
 
   ngOnInit(): void {
     this.loadSales();
+    this.loadSummary();
   }
 
   ngAfterViewInit(): void {
@@ -60,11 +69,11 @@ export class SalesHistoryComponent implements OnInit, AfterViewInit, OnDestroy {
       this.pageSize,
       sortField,
       direction,
-      this.filterValue
+      this.filter
     ).pipe(takeUntil(this.reload), takeUntil(this.destroyed), finalize(() => { this.isLoading = false; })).subscribe({
       next: (response) => {
         this.dataSource = response._embedded?.sales ?? [];
-        this.totalElements = response.page?.totalElements ?? 0; // Ajuste para total de elementos
+        this.totalElements = response.page?.totalElements ?? 0;
       },
       error: () => {
         this.loadError = true;
@@ -75,18 +84,31 @@ export class SalesHistoryComponent implements OnInit, AfterViewInit, OnDestroy {
     });
   }
 
+  // O resumo só depende dos filtros, não da página nem da ordenação.
+  private loadSummary(): void {
+    this.summaryRequest.next();
+    this.saleService.historySummary(false, this.filter).pipe(takeUntil(this.summaryRequest), takeUntil(this.destroyed)).subscribe({
+      next: summary => this.summary = summary,
+      error: () => this.summary = null
+    });
+  }
+
   ngOnDestroy(): void {
     this.destroyed.next();
     this.destroyed.complete();
     this.reload.complete();
+    this.summaryRequest.complete();
   }
 
-  applyFilter(event: Event) {
-    const value = (event.target as HTMLInputElement).value;
-
-    this.filterValue = value.trim().toLowerCase();
+  onFilterChange(filter: HistoryFilter): void {
+    this.filter = filter;
     this.pageIndex = 0;
-
+    if (this.paginator) this.paginator.pageIndex = 0;
     this.loadSales();
+    this.loadSummary();
+  }
+
+  statusLabel(status: string): string {
+    return status === 'COMPLETED' ? 'Concluída' : status === 'ORDERS' ? 'Pedido' : status === 'CANCELED' ? 'Cancelada' : status;
   }
 }
