@@ -1,8 +1,8 @@
 import { Router } from '@angular/router';
 import { QUANTITY_MESSAGE, quantityValidator } from '@app/shared/validators/quantity.validator';
 import { Subject, of, timer, switchMap, catchError, finalize, takeUntil, map, distinctUntilChanged, startWith } from 'rxjs';
-import { ChangeDetectorRef, Component, OnDestroy, OnInit } from '@angular/core';
-import { FormBuilder, FormGroup } from '@angular/forms';
+import { ChangeDetectorRef, Component, ElementRef, OnDestroy, OnInit, ViewChild } from '@angular/core';
+import { FormBuilder, FormControl, FormGroup } from '@angular/forms';
 import { MatTableDataSource } from '@angular/material/table';
 import { ClientService } from '@app/services/client.service';
 import { ProductService } from '@app/services/product.service';
@@ -20,20 +20,12 @@ import { Sale, SaleItem, SaleRequest, SaleStatus } from '@app/shared/models/sale
 })
 export class SaleComponent implements OnInit, OnDestroy {
 
-  displayedColumns: string[] = [
-    'image',
-    'productName',
-    'unitaryValue',
-    'quantity',
-    'unit',
-    'totalValue',
-    'action'
-  ];
+  @ViewChild('quantityInput') quantityInput?: ElementRef<HTMLInputElement>;
 
   dataSource = new MatTableDataSource<SaleItem>();
   saleItems: SaleItem[] = [];
-  totalSalesForToday: number = 0;
   valueSale: number = 0;
+  search = new FormControl('', { nonNullable: true });
   products: Product[] = [];
   filteredProducts: Product[] = [];
   clients: Client[] = [];
@@ -73,28 +65,7 @@ export class SaleComponent implements OnInit, OnDestroy {
     this.loadingProducts();
     this.loadingClients();
 
-    // Produto
-    this.form.get('productId')?.valueChanges.subscribe(() => {
-      this.filterProducts();
-    });
-
-
-    // Ao selecionar um produto
-    this.form.get('productId')?.valueChanges.subscribe((product: Product) => {
-      // Limpar campos dependentes
-      this.form.patchValue({
-        unitId: null,
-        quantity: null,
-      });
-    });
-
-    // Ao selecionar uma unidade
-    this.form.get('unitId')?.valueChanges.subscribe((unitId: number) => {
-      // Limpar quantidade sempre que mudar a unidade
-      this.form.patchValue({
-        quantity: null
-      });
-    });
+    this.search.valueChanges.pipe(takeUntil(this.destroy$)).subscribe(() => this.filterProducts());
 
     this.form.get('clientId')?.valueChanges.subscribe((client: Client) => {
       if (client?.id) {
@@ -103,23 +74,13 @@ export class SaleComponent implements OnInit, OnDestroy {
         this.selectedClient = null;
       }
     });
-
-    this.countSalas();
-  }
-
-  countSalas() {
-    this.saleService.countSalesCurrentDay().subscribe(
-      (count) => {
-        this.totalSalesForToday = count + 1;
-      }
-    );
   }
 
   loadingProducts() {
     this.productService.findAvailableProducts().subscribe({
       next: (data) => {
         this.products = data;
-        this.filteredProducts = data;
+        this.filterProducts();
       },
       error: (err) => console.error('Erro ao carregar produtos:', err)
     });
@@ -147,22 +108,31 @@ export class SaleComponent implements OnInit, OnDestroy {
     });
   }
 
-  // Mostrar nome no input
-  displayProduct(prod: Product): string {
-    return prod?.name || '';
+  get selectedProduct(): Product | null {
+    return this.form.get('productId')?.value ?? null;
+  }
+
+  // Escolher um produto na grelha e passar o foco para a quantidade.
+  selectProduct(product: Product) {
+    if (this.isSaving || this.isAdding) return;
+    this.form.patchValue({ productId: product, quantity: null });
+    setTimeout(() => this.quantityInput?.nativeElement.focus());
+  }
+
+  clearSelection() {
+    this.form.patchValue({ productId: null, quantity: null });
+  }
+
+  quantityInCart(product: Product): number {
+    return this.saleItems.find(item => item.productId === product.id)?.quantity ?? 0;
   }
 
   // Filtro produtos
   filterProducts() {
-    const value = this.form.get('productId')?.value;
-
-    if (typeof value === 'string') {
-      this.filteredProducts = this.products.filter(p =>
-        p.name.toLowerCase().includes(value.toLowerCase())
-      );
-    } else {
-      this.filteredProducts = this.products;
-    }
+    const value = this.search.value.trim().toLowerCase();
+    this.filteredProducts = value
+      ? this.products.filter(p => p.name.toLowerCase().includes(value) || (p.code ?? '').toLowerCase().includes(value))
+      : this.products;
   }
 
   displayClient(client: any): string {
@@ -182,19 +152,14 @@ export class SaleComponent implements OnInit, OnDestroy {
   }
 
   private addItemToSale(product: Product, quantity: number) {
-    // Calcular subtotal
-    const subTotal = quantity * product.salePrice;
-
-    // Montar item da venda
-    const item: SaleItem = {
-      productId: product.id!,
-      product: product,
-      quantity: quantity,
-    };
-
-    // Adicionar à lista e atualizar tabela
-    this.saleItems.push(item);
-    this.dataSource.data = this.saleItems;
+    // Produto já no carrinho: soma a quantidade em vez de criar outra linha.
+    const existing = this.saleItems.find(item => item.productId === product.id);
+    if (existing) {
+      existing.quantity = roundQuantity(existing.quantity + quantity);
+    } else {
+      this.saleItems.push({ productId: product.id!, product, quantity });
+    }
+    this.dataSource.data = [...this.saleItems];
 
     if (this.saleItems.length >= 1 && this.selectedClient) {
       this.form.get('clientId')?.disable();
@@ -214,7 +179,7 @@ export class SaleComponent implements OnInit, OnDestroy {
     if (this.isSaving || this.isAdding) return;
     // Verificar se os campos obrigatórios estão preenchidos
     const product: Product = this.form.value.productId;
-    const quantity: number = this.form.value.quantity;
+    const quantity = Number(this.form.value.quantity);
 
     if (!product?.id) {
       this.snackbar.error('Selecione um produto para adicionar à venda.');
@@ -226,23 +191,17 @@ export class SaleComponent implements OnInit, OnDestroy {
       return;
     }
 
-    const productAlreadyAdded = this.saleItems.some(
-      item => item.productId === product.id
-    );
-
-    if (productAlreadyAdded) {
-      this.snackbar.warning('Este produto já foi adicionado à venda.');
-      return;
-    }
+    const wanted = roundQuantity(this.quantityInCart(product) + quantity);
 
     this.isAdding = true;
     this.stockService.findByProductId(product.id!).pipe(
       finalize(() => { this.isAdding = false; })
     ).subscribe({
       next: (stock) => {
-        if (stock.quantity < quantity) {
+        product.stockQuantity = stock.quantity;
+        if (stock.quantity < wanted) {
           this.snackbar.error(
-            `Estoque insuficiente. Disponível: ${stock.quantity} unidade(s).`
+            `Estoque insuficiente. Disponível: ${stock.quantity} ${product.unit?.symbol ?? 'unidade(s)'}.`
           );
           return;
         } else {
@@ -272,18 +231,21 @@ export class SaleComponent implements OnInit, OnDestroy {
     this.calculateTotal();
   }
 
-  editItem(item: SaleItem) {
+  // Alterar a quantidade diretamente na linha do carrinho.
+  updateQuantity(item: SaleItem, input: HTMLInputElement) {
     if (this.isSaving || this.isAdding) return;
-    // Preencher formulário
-    this.form.patchValue({
-      productId: item.product,
-      quantity: item.quantity
-    });
-
-    // Retirar o artigo para edição sem limpar o cliente selecionado.
-    this.saleItems = this.saleItems.filter(i => i !== item);
-    this.dataSource.data = [...this.saleItems];
-    this.calculateTotal();
+    const quantity = Number(input.value);
+    const available = item.product.stockQuantity;
+    if (quantityValidator(new FormControl(input.value))) {
+      this.snackbar.error(QUANTITY_MESSAGE);
+    } else if (available != null && quantity > available) {
+      this.snackbar.error(`Estoque insuficiente. Disponível: ${available} ${item.product.unit?.symbol ?? 'unidade(s)'}.`);
+    } else {
+      item.quantity = quantity;
+      this.calculateTotal();
+      return;
+    }
+    input.value = String(item.quantity);
   }
 
   processSale() {
@@ -324,7 +286,7 @@ export class SaleComponent implements OnInit, OnDestroy {
         this.form.reset();
         this.form.get('clientId')?.enable();
         this.valueSale = 0;
-        this.countSalas();
+        this.loadingProducts();
         if (saved?.id) void this.router.navigate(['/sales/receipt', saved.id]);
       },
       error: (err) => {
@@ -341,4 +303,9 @@ export class SaleComponent implements OnInit, OnDestroy {
       ? image
       : 'data:image/jpeg;base64,' + image;
   }
+}
+
+// Quantidades têm no máximo 3 casas decimais; evita 0.30000000000000004 ao somar.
+function roundQuantity(value: number): number {
+  return Math.round(value * 1000) / 1000;
 }

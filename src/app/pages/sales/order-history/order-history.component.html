@@ -45,7 +45,7 @@
     <!-- totalValue -->
     <ng-container matColumnDef="totalValue">
       <mat-header-cell *matHeaderCellDef mat-sort-header>Valor Total</mat-header-cell>
-      <mat-cell *matCellDef="let sales">{{ sales.totalValue | currency: "MZN " : "symbol" : "1.2-2"}}</mat-cell>
+      <mat-cell *matCellDef="let sales">{{ sales.totalValue | mtzCurrency}}</mat-cell>
     </ng-container>
 
     <!-- totalValue -->

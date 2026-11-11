@@ -80,6 +80,7 @@ import { MtzCurrencyPipe } from './components/mask/mtz-currency.pipe';
   ],
   exports: [
     ResponsiveTableDirective,
+    MtzCurrencyPipe,
     ProductPhotoComponent,
     CommonModule,
     RouterModule,

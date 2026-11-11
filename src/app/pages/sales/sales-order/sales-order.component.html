@@ -10,7 +10,7 @@
     </div>
 
     <div class="sale-value">
-      <h2>{{ valueSale | currency: "MZN " : "symbol" : "1.2-2" }}</h2>
+      <h2>{{ valueSale | mtzCurrency }}</h2>
     </div>
   </div>
 
@@ -34,7 +34,7 @@
         [displayWith]="displayProduct"
       >
         <mat-option *ngFor="let prod of filteredProducts" [value]="prod">
-          {{ prod.name }} - {{prod.salePrice| currency: "MZN " : "symbol" : "1.2-2"}}
+          {{ prod.name }} - {{prod.salePrice| mtzCurrency}}
         </mat-option>
       </mat-autocomplete>
     </mat-form-field>
@@ -130,7 +130,7 @@
           >Preço</mat-header-cell
         >
         <mat-cell *matCellDef="let item">{{
-          (item.unitPrice ?? item.product.salePrice) | currency: "MZN " : "symbol" : "1.2-2"
+          (item.unitPrice ?? item.product.salePrice) | mtzCurrency
         }}</mat-cell>
       </ng-container>
 
@@ -155,7 +155,7 @@
         <mat-cell *matCellDef="let item">
           {{
             item.quantity * (item.unitPrice ?? item.product.salePrice)
-              | currency: "MZN " : "symbol" : "1.2-2"
+              | mtzCurrency
           }}
         </mat-cell>
       </ng-container>
