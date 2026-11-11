@@ -31,7 +31,7 @@ export class SupportComponent {
     {title:'Consultar e movimentar stock', icon:'fa-warehouse', route:'/stock', audience:'business',
       steps:['Localize o produto na lista de stock e abra as movimentações.', 'Confira o saldo, as entradas e as saídas.', 'Para registar uma movimentação, escolha o tipo e a quantidade e confira os dados antes de guardar.']},
     {title:'Consultar um recibo', icon:'fa-receipt', route:'/sales/salesHistory', audience:'business',
-      steps:['Abra o histórico de vendas e localize uma venda concluída.', 'Use a ação de ver recibo.', 'No recibo, escolha imprimir e selecione a impressora ou guardar como PDF.']},
+      steps:['Em Vendas, abra o separador Histórico e localize uma venda concluída.', 'Use a ação de ver recibo.', 'No recibo, escolha imprimir e selecione a impressora ou guardar como PDF.']},
     {title:'Analisar os resultados', icon:'fa-chart-line', route:'/dashboard', audience:'manager',
       steps:['Escolha o período no dashboard.', 'Compare a faturação, o número de vendas e o valor médio por venda com o período anterior.', 'Consulte os pedidos pendentes e os produtos a repor. Use os relatórios para ver os detalhes.']},
     {title:'Gerir utilizadores', icon:'fa-users', route:'/users/allUser', audience:'admin',
