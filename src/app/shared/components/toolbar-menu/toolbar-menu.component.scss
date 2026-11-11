@@ -2,8 +2,8 @@
   display: inline-flex;
   align-items: center; // Alinha verticalmente
   text-decoration: none;
-  color: white;
-  gap: 12px;
+  color: var(--app-text);
+  gap: 10px;
   padding: 0;
   min-width: 0;
   flex-shrink: 1;
@@ -11,17 +11,18 @@
   // A imagem
   .logo-img {
     display: inline-block;
-    width: 56px;
-    height: 56px;
+    width: 44px;
+    height: 44px;
     object-fit: contain;
     vertical-align: middle;
     flex-shrink: 0;
-    filter: drop-shadow(0 2px 6px rgba(0, 0, 0, .25));
   }
 
   // O texto
   .title {
-    font-size: 20px;
+    font-size: 18px;
+    font-weight: 700;
+    letter-spacing: -.3px;
     line-height: 1; // Remove altura extra
     display: inline-block;
     vertical-align: middle;
@@ -29,7 +30,6 @@
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-    font-family: 'Trebuchet MS', Helvetica, Arial, sans-serif;
   }
 }
 
@@ -44,12 +44,13 @@
   position: fixed;
   font-size: 1rem;
   top: 0;
-  color: white;
+  color: var(--app-text);
   z-index: 1000;
   height: 64px;
-  background: var(--app-header);
+  background: rgba(255, 255, 255, .92);
+  backdrop-filter: saturate(180%) blur(8px);
 
-  border-bottom: 1px solid rgba(255, 255, 255, .12);
+  border-bottom: 1px solid var(--app-border);
   text-shadow: none;
 }
 
@@ -66,26 +67,24 @@
   align-items: center;
   justify-content: center;
   gap: 10px;
-  height: 42px;
-  padding: 0 28px;
-  background: rgba(255, 255, 255, .10);
-  color: #ffffff;
+  height: 40px;
+  padding: 0 14px;
+  background: transparent;
+  color: var(--app-text);
   font-size: 14px;
-  font-weight: 600;
+  font-weight: 500;
   font-family: inherit;
   text-transform: none;
-  letter-spacing: 0.3px;
-  border: 1px solid rgba(255, 255, 255, .18);
-  border-radius: 12px;
+  letter-spacing: 0;
+  border: 1px solid var(--app-border);
+  border-radius: 10px;
   cursor: pointer;
   transition: background-color 150ms ease, border-color 150ms ease;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
 
   &:hover {
-    background: rgba(255, 255, 255, .18);
-    border-color: rgba(255, 255, 255, .25);
+    background: var(--app-background);
+    border-color: #d3dbe4;
     transform: none;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   }
 
   &:active {
@@ -96,12 +95,7 @@
     font-size: 20px;
     width: 20px;
     height: 20px;
-    transition: transform 0.2s ease;
-  }
-
-  // Ícone gira no hover (opcional)
-  &:hover .mat-icon {
-    transform: scale(1.1);
+    color: var(--app-muted);
   }
 }
 
@@ -113,7 +107,7 @@
 // Preserve the mark's proportions within the fixed-height toolbar.
 @media (max-width: 600px) {
   .logo { gap: 6px; }
-  .logo .logo-img { width: 44px; height: 44px; }
+  .logo .logo-img { width: 36px; height: 36px; }
   .logo .title { font-size: 15px; max-width: 24vw; }
   .btn { padding: 0 10px; gap: 6px; }
   .content-center { gap: 6px; flex-shrink: 0; }

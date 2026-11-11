@@ -10,23 +10,19 @@ mat-toolbar-row {
   padding: 0;
 }
 
-.toolbar-submenu {
-  height: 205px;
-  font-size: 2rem;
-  margin-top: 0px;
-  padding: 60px 0 0 0;
+.page-header {
   display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  background: var(--app-header);
+  align-items: center;
+  gap: 12px;
+  padding: 76px 32px 12px; // 64px da barra fixa + respiro
+}
 
-  &-top {
-    height: 40px;
-  }
-
-  &-title {
-    padding: 52px 30px;
-  }
+.page-title {
+  margin: 0;
+  font-size: 26px;
+  font-weight: 700;
+  letter-spacing: -.5px;
+  color: var(--app-text);
 }
 
 // - - - - sidebar - - - - //
@@ -47,12 +43,30 @@ mat-toolbar-row {
     color: var(--app-muted);
   }
 
-  mat-toolbar {
+  .profile {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 16px 12px 8px;
+    padding: 12px;
+    border: 1px solid var(--app-border);
+    border-radius: 12px;
+    background: var(--app-background);
+  }
+
+  .profile-text {
     display: flex;
     flex-direction: column;
-    text-align: center;
-    height: 200px;
-    background-color: white;
+    min-width: 0;
+  }
+
+  .nav-label {
+    margin: 16px 24px 4px;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: .6px;
+    text-transform: uppercase;
+    color: var(--app-muted);
   }
 
   a {
@@ -61,27 +75,30 @@ mat-toolbar-row {
   }
 
   .avatar {
-    margin-top: 16px;
-    width: 100px;
-    height: 100px;
+    width: 44px;
+    height: 44px;
+    flex-shrink: 0;
+    object-fit: cover;
     border-radius: 50%;
-    border: 3px solid var(--app-surface);
-    box-shadow: 0 2px 12px rgba(24, 51, 76, .12);
+    border: 2px solid var(--app-surface);
+    box-shadow: 0 0 0 1px var(--app-border);
   }
 
   .name {
-    margin-top: 8px;
-    font-weight: 500;
+    font-weight: 600;
+    font-size: 14px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   .designation {
-    margin-top: 2px;
-    font-size: 0.8rem;
+    font-size: 12px;
     color: var(--app-muted);
   }
 
   mat-nav-list {
-    padding: 8px;
+    padding: 0 12px;
 
     a {
       border-radius: 10px;
@@ -106,7 +123,7 @@ mat-toolbar-row {
 
 // Botão sem bordas
 .example-icon {
-  color: white;
+  color: var(--app-muted);
   background-color: transparent;
   border: none !important;
   outline: none !important;
@@ -123,6 +140,8 @@ mat-toolbar-row {
 .sidenav mat-nav-list .active { color: var(--app-primary); font-weight: 600; }
 .sidenav mat-nav-list .active .mat-icon { color: var(--app-primary); }
 
-.sidenav mat-nav-list .active { box-shadow: inset 3px 0 0 var(--app-primary); }
-.toolbar-submenu-title { font-weight: 600; letter-spacing: -.4px; }
-.example-icon:focus-visible { outline: 3px solid white !important; outline-offset: -3px; }
+.example-icon:focus-visible { outline: 3px solid var(--app-primary) !important; outline-offset: -3px; }
+@media (max-width: 600px) {
+  .page-header { padding: 80px 12px 12px; }
+  .page-title { font-size: 22px; }
+}
