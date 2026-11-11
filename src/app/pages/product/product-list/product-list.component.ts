@@ -124,8 +124,8 @@ export class ProductListComponent implements OnInit, AfterViewInit {
             this.loadProducts();
             this.snackbar.success('Produto desativado com sucesso!');
           },
-          error: () => {
-            this.snackbar.error('Erro ao desativar o produto.');
+          error: (error) => {
+            this.snackbar.error(error.error?.detail || error.error?.message || 'Erro ao desativar o produto.');
           }
         });
       }
