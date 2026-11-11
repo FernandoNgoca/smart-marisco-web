@@ -1,5 +1,6 @@
 import { ProductPhotoComponent, ProductPhotoDialogComponent } from './components/product-photo/product-photo.component';
 import { NgModule } from '@angular/core';
+import { ResponsiveTableDirective } from './directives/responsive-table.directive';
 import { ToolbarTitleComponent } from './components/toolbar-title/toolbar-title.component';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatIconModule } from '@angular/material/icon';
@@ -38,6 +39,7 @@ import { MtzCurrencyPipe } from './components/mask/mtz-currency.pipe';
 
 @NgModule({
   imports: [
+    ResponsiveTableDirective,
     CommonModule,
     RouterModule,
     MatToolbarModule,
@@ -77,6 +79,7 @@ import { MtzCurrencyPipe } from './components/mask/mtz-currency.pipe';
     ViewOrderComponent,
   ],
   exports: [
+    ResponsiveTableDirective,
     ProductPhotoComponent,
     CommonModule,
     RouterModule,

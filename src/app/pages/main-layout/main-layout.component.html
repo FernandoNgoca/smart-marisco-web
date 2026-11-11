@@ -3,6 +3,8 @@
   [popText]="popText"
   [shadow]="applyShadow"
   [items_menu]="items_menu"
+  [menuOpened]="sidenav.opened"
+  (toggleMenu)="sidenav.toggle()"
   >
 </app-toolbar-menu>
 <mat-sidenav-container>
@@ -31,19 +33,7 @@
   </mat-sidenav>
 
   <mat-sidenav-content>
-    <div class="page-header">
-      <button
-        matTooltip="{{sidenav.opened ? 'Fechar menu' : 'Abrir menu'}}"
-        matTooltipPosition="right"
-        mat-icon-button
-        class="example-icon"
-        [attr.aria-label]="sidenav.opened ? 'Fechar menu' : 'Abrir menu'"
-        (click)="sidenav.toggle()"
-      >
-        <mat-icon>{{sidenav.opened ? 'menu_open' : 'menu'}}</mat-icon>
-      </button>
-      <h1 class="page-title" *ngIf="!popText">{{menuName}}</h1>
-    </div>
+    <div class="page-spacer"></div>
 
     <router-outlet></router-outlet>
 

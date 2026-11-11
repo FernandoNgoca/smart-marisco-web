@@ -67,7 +67,7 @@
     color: #333;
 
     i {
-      color: var(--app-primary);
+      color: var(--app-link);
       font-size: 16px;
       min-width: 20px;
     }
@@ -98,7 +98,7 @@
 
     i {
       font-size: 22px;
-      color: var(--app-primary);
+      color: var(--app-link);
     }
 
     h3 {
@@ -131,7 +131,7 @@
 
     i {
       font-size: 22px;
-      color: var(--app-primary);
+      color: var(--app-link);
     }
 
     h3 {
@@ -209,7 +209,7 @@
   mat-checkbox {
     i {
       margin-right: 8px;
-      color: var(--app-primary);
+      color: var(--app-link);
     }
   }
 }
@@ -297,11 +297,11 @@
   }
 
   .mat-form-field-appearance-outline.mat-focused .mat-form-field-outline-thick {
-    color: var(--app-primary);
+    color: var(--app-link);
   }
 
   .mat-form-field.mat-focused .mat-form-field-label {
-    color: var(--app-primary);
+    color: var(--app-link);
   }
   
   .mat-checkbox-checked.mat-accent .mat-checkbox-background {

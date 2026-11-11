@@ -28,7 +28,7 @@ export class DashboardListComponent implements OnInit, OnDestroy {
   to = '';
   maxDate = this.localDate(new Date());
   yAxisTicks = [0,1];
-  readonly chartColors = {name:'marisco',selectable:true,group:ScaleType.Ordinal,domain:['#0f5265']};
+  readonly chartColors = {name:'marisco',selectable:true,group:ScaleType.Ordinal,domain:['#0077b6']};
   private cancel = new Subject<void>();
   private destroyed = new Subject<void>();
   constructor(private dashboardService: DashboardService, private auth: AuthService) {}

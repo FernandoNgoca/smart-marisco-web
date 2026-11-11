@@ -1,11 +1,29 @@
 <mat-toolbar class="toolbar-menu" [class.mat-elevation-z4]="shadow">
   <mat-toolbar-row>
+    <button
+      mat-icon-button
+      class="menu-toggle"
+      [matTooltip]="menuOpened ? 'Fechar menu' : 'Abrir menu'"
+      [attr.aria-label]="menuOpened ? 'Fechar menu' : 'Abrir menu'"
+      (click)="toggleMenu.emit()"
+    >
+      <mat-icon>{{ menuOpened ? 'menu_open' : 'menu' }}</mat-icon>
+    </button>
     <a routerLink="/" mat-button class="logo">
       <img src="assets/log.png" class="logo-img" width="56" height="56" alt="" />
-      <span class="title" *ngIf="!popText">Mariscos do Índico</span>
-      <span class="title" *ngIf="popText">Mariscos do Índico - {{menuTitle}}</span>
+      <span class="title" *ngIf="!popText || !menuTitle">Mariscos do Índico</span>
+      <span class="title" *ngIf="popText && menuTitle">Mariscos do Índico - {{menuTitle}}</span>
     </a>
     <div class="content-center">
+      <button
+        mat-icon-button
+        class="theme-toggle"
+        [matTooltip]="themeService.theme === 'dark' ? 'Modo claro' : 'Modo escuro'"
+        [attr.aria-label]="themeService.theme === 'dark' ? 'Ativar modo claro' : 'Ativar modo escuro'"
+        (click)="themeService.toggle()"
+      >
+        <mat-icon>{{ themeService.theme === 'dark' ? 'light_mode' : 'dark_mode' }}</mat-icon>
+      </button>
       <button mat-button [matMenuTriggerFor]="beforeMenu" class="btn">
         <span>Menu</span>
         <mat-icon>more_vert</mat-icon>

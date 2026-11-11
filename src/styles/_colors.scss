@@ -1,7 +1,7 @@
 @use '@angular/material' as mat;
 @use 'sass:map';
 
-$brand: map.merge(mat.$teal-palette, (500: #0f5265, 600: #0c4555, 700: #093744,
+$brand: map.merge(mat.$teal-palette, (500: #0077b6, 600: #00669d, 700: #005584,
   contrast: map.merge(map.get(mat.$teal-palette, contrast), (500: white, 600: white, 700: white))));
 $theme: mat.define-light-theme((color: (
   primary: mat.define-palette($brand),
@@ -11,12 +11,24 @@ $theme: mat.define-light-theme((color: (
 // Keep the existing Material typography and density; replace its indigo/pink colors.
 @include mat.all-component-colors($theme);
 
+$brand-dark: map.merge(mat.$light-blue-palette, (300: #5bb8ea, 500: #1a7fc0, 700: #146aa3,
+  contrast: map.merge(map.get(mat.$light-blue-palette, contrast), (300: #0b1620, 500: white, 700: white))));
+$dark-theme: mat.define-dark-theme((color: (
+  primary: mat.define-palette($brand-dark, 500, 300, 700),
+  accent: mat.define-palette($brand-dark, 500, 300, 700),
+  warn: mat.define-palette(mat.$red-palette, 300)
+)));
+// Ativado por ThemeService em <html data-theme="dark">.
+html[data-theme="dark"] {
+  @include mat.all-component-colors($dark-theme);
+}
+
 :root {
-  --app-primary: #0f5265;
-  --app-primary-hover: #0c4555;
-  --app-primary-active: #093744;
-  --app-primary-soft: #e6f2f5;
-  --app-header: #ffffff;
+  --app-primary: #0077b6;
+  --app-primary-hover: #00669d;
+  --app-primary-active: #005584;
+  --app-primary-soft: #e3f2fb;
+  --app-header: linear-gradient(135deg, #005f92, #0077b6); // botões e cabeçalhos de diálogos
   --app-text: #0f2537;
   --app-muted: #5b6b7a;
   --app-border: #e4e9ef;
@@ -29,6 +41,40 @@ $theme: mat.define-light-theme((color: (
   --app-disabled: #e1e8ef;
   --app-shadow: 0 1px 2px rgba(15, 37, 55, .04), 0 1px 3px rgba(15, 37, 55, .06);
   --app-radius: 16px;
+  --app-row-hover: #f8fafc;
+  --app-topbar: rgba(255, 255, 255, .92);
+  --app-input-outline: #ccd8e2;
+  --app-input-fill: #f5f8fa;
+  --app-focus: #2680b4;
+  --app-warning-soft: #fff7e8;
+  --app-link: var(--app-primary);
+  color-scheme: light;
+}
+
+html[data-theme="dark"] {
+  --app-primary: #1a7fc0;
+  --app-primary-hover: #2b8fd0;
+  --app-primary-active: #146aa3;
+  --app-primary-soft: rgba(91, 184, 234, .14);
+  --app-warning-soft: rgba(251, 191, 36, .12);
+  --app-link: #7cc8f0;
+  --app-header: linear-gradient(135deg, #146aa3, #1a7fc0);
+  --app-text: #e6edf3;
+  --app-muted: #93a4b5;
+  --app-border: #253241;
+  --app-surface: #151f2b;
+  --app-background: #0d141c;
+  --app-success: #4ade80;
+  --app-danger: #f87171;
+  --app-warning: #fbbf24;
+  --app-disabled: #253241;
+  --app-shadow: 0 1px 2px rgba(0, 0, 0, .3);
+  --app-row-hover: #1a2633;
+  --app-topbar: rgba(17, 26, 36, .9);
+  --app-input-outline: #33465a;
+  --app-input-fill: #1a2633;
+  --app-focus: #7cc8f0;
+  color-scheme: dark;
 }
 body { color: var(--app-text); background: var(--app-background); }
 button.app-button.mat-button-base {

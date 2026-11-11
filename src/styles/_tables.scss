@@ -2,7 +2,7 @@
 .app-table-panel {
   border: 1px solid var(--app-border);
   border-radius: 12px;
-  background: #fff;
+  background: var(--app-surface);
   min-width: 0;
   overflow: hidden;
 }
@@ -10,7 +10,7 @@
 .app-data-table.mat-table {
   width: 100%;
   min-width: var(--table-min-width, 640px);
-  background: #fff;
+  background: var(--app-surface);
   overflow: visible;
   border-collapse: separate;
   border-spacing: 0;
@@ -27,8 +27,8 @@
     line-height: 1.5;
   }
   .mat-header-cell { overflow-wrap: normal; word-break: normal; color: var(--app-muted); font-size: 13px; font-weight: 600; background: var(--app-background); }
-  .mat-cell { color: #18334c; font-size: 14px; }
-  .mat-row:hover { background: #f8fafc; }
+  .mat-cell { color: var(--app-text); font-size: 14px; }
+  .mat-row:hover { background: var(--app-row-hover); }
   .mat-row { transition: background-color 150ms ease; }
   .mat-row:last-child .mat-cell { border-bottom: 0; }
   mat-header-cell, mat-cell { min-width: 0; flex: 1 1 0; align-self: stretch; align-items: center; }
@@ -67,16 +67,55 @@
   }
   .mat-column-date, .mat-column-createdDate { flex: 0 0 172px; width: 172px; white-space: nowrap; }
   .mat-column-email, .mat-column-address, .mat-column-description { overflow-wrap: anywhere; }
-  tr.mat-row td[colspan] { padding: 24px 16px; text-align: center; color: #586b7c; white-space: normal; }
+  tr.mat-row td[colspan] { padding: 24px 16px; text-align: center; color: var(--app-muted); white-space: normal; }
 }
 .app-table-paginator.mat-paginator {
-  background: #fff;
-  color: #586b7c;
-  border-top: 1px solid #e1e8ef;
+  background: var(--app-surface);
+  color: var(--app-muted);
+  border-top: 1px solid var(--app-border);
   border-radius: 0 0 12px 12px;
   .mat-paginator-container { min-height: 56px; padding: 8px 16px; gap: 4px; }
 }
 @media (max-width: 600px) {
   .app-table-paginator .mat-paginator-container { justify-content: center; }
   .app-table-paginator .mat-paginator-range-label { margin: 0 12px; }
+}
+
+// Telemóvel: cada linha passa a cartão; o rótulo vem de data-label (ResponsiveTableDirective).
+@media (max-width: 600px) {
+  .app-table-scroll { overflow-x: visible; }
+  .app-data-table.mat-table {
+    display: block;
+    min-width: 0 !important;
+
+    .mat-header-row, thead { display: none; }
+    tbody, tr.mat-row { display: block; }
+    .mat-row { display: block; min-height: 0; padding: 10px 0; border-bottom: 1px solid var(--app-border); }
+    .mat-row:last-child { border-bottom: 0; }
+    .mat-row:hover { background: transparent; }
+    .mat-cell, .mat-cell[class*="mat-column-"] {
+      display: flex !important;
+      flex: none !important;
+      width: auto !important;
+      min-width: 0 !important;
+      justify-content: flex-end;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 16px;
+      border-bottom: 0;
+      text-align: right;
+      white-space: normal;
+    }
+    .mat-cell[data-label]::before {
+      content: attr(data-label);
+      flex-shrink: 0;
+      margin-right: auto;
+      text-align: left;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--app-muted);
+    }
+    .mat-cell[data-label=""]::before { content: none; }
+    tr.mat-row td[colspan] { display: block !important; text-align: center; }
+  }
 }

@@ -10,19 +10,9 @@ mat-toolbar-row {
   padding: 0;
 }
 
-.page-header {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 76px 32px 12px; // 64px da barra fixa + respiro
-}
-
-.page-title {
-  margin: 0;
-  font-size: 26px;
-  font-weight: 700;
-  letter-spacing: -.5px;
-  color: var(--app-text);
+// Espaço por baixo da barra de topo fixa (64px).
+.page-spacer {
+  height: 88px;
 }
 
 // - - - - sidebar - - - - //
@@ -121,27 +111,9 @@ mat-toolbar-row {
   }
 }
 
-// Botão sem bordas
-.example-icon {
-  color: var(--app-muted);
-  background-color: transparent;
-  border: none !important;
-  outline: none !important;
-  box-shadow: none !important;
+.sidenav mat-nav-list .active { color: var(--app-link); font-weight: 600; }
+.sidenav mat-nav-list .active .mat-icon { color: var(--app-link); }
 
-
-
-  &:focus,
-  &:active {
-    outline: none !important;
-    border: none !important;
-  }
-}
-.sidenav mat-nav-list .active { color: var(--app-primary); font-weight: 600; }
-.sidenav mat-nav-list .active .mat-icon { color: var(--app-primary); }
-
-.example-icon:focus-visible { outline: 3px solid var(--app-primary) !important; outline-offset: -3px; }
 @media (max-width: 600px) {
-  .page-header { padding: 80px 12px 12px; }
-  .page-title { font-size: 22px; }
+  .page-spacer { height: 76px; }
 }

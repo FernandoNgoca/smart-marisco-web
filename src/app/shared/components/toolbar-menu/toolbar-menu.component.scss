@@ -47,7 +47,7 @@
   color: var(--app-text);
   z-index: 1000;
   height: 64px;
-  background: rgba(255, 255, 255, .92);
+  background: var(--app-topbar);
   backdrop-filter: saturate(180%) blur(8px);
 
   border-bottom: 1px solid var(--app-border);
@@ -99,6 +99,12 @@
   }
 }
 
+.menu-toggle, .theme-toggle {
+  margin-right: 4px;
+  color: var(--app-muted);
+  flex-shrink: 0;
+}
+
 .space-right-icon {
   margin-right: 10px;
 }
@@ -108,7 +114,7 @@
 @media (max-width: 600px) {
   .logo { gap: 6px; }
   .logo .logo-img { width: 36px; height: 36px; }
-  .logo .title { font-size: 15px; max-width: 24vw; }
+  .logo .title { display: none; }
   .btn { padding: 0 10px; gap: 6px; }
   .content-center { gap: 6px; flex-shrink: 0; }
 }
