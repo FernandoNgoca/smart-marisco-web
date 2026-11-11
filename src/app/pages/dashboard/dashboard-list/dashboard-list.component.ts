@@ -24,6 +24,20 @@ export class DashboardListComponent implements OnInit, OnDestroy {
 
   revenueSeries: { name: string; series: { name: string; value: number }[] }[] = [];
   preset = 'month';
+  readonly periods = [
+    { value: 'today', label: 'Hoje' },
+    { value: 'week', label: '7 dias' },
+    { value: 'month', label: 'Mês atual' },
+    { value: 'custom', label: 'Personalizado' }
+  ];
+  readonly todayLabel = new Date().toLocaleDateString('pt-PT', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+  get greeting(): string {
+    const hour = new Date().getHours();
+    return hour < 12 ? 'Bom dia' : hour < 18 ? 'Boa tarde' : 'Boa noite';
+  }
+  get firstName(): string {
+    return (this.auth.getUser()?.fullName ?? '').trim().split(/\s+/)[0] ?? '';
+  }
   from = '';
   to = '';
   maxDate = this.localDate(new Date());
