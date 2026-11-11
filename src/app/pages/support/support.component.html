@@ -1,11 +1,17 @@
 <div class="content">
   <app-toolbar-title title="Suporte" icon="fa-headset"></app-toolbar-title>
   <section class="support-intro">
-    <div><h1>Como podemos ajudar?</h1><p>Encontre orientações para as tarefas do dia a dia.</p></div>
-    <label class="search-label" for="support-search">Pesquisar ajuda
-      <input id="support-search" type="search" placeholder="Ex.: pedido, stock, recibo…" #search
-        [value]="query" (input)="query=search.value">
-    </label>
+    <img src="assets/log.png" alt="" class="intro-logo" />
+    <div class="intro-text">
+      <h1>Como podemos ajudar?</h1>
+      <p>Guias rápidos para as tarefas do dia a dia no Mariscos do Índico.</p>
+      <label class="search" for="support-search">
+        <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
+        <span class="sr-only">Pesquisar ajuda</span>
+        <input id="support-search" type="search" placeholder="Pesquisar: pedido, stock, recibo, relatório…" #search
+          [value]="query" (input)="query=search.value">
+      </label>
+    </div>
   </section>
 
   <section aria-labelledby="guides-title">
@@ -14,7 +20,7 @@
       <article class="guide-card" *ngFor="let topic of visibleTopics">
         <div class="guide-heading"><span class="guide-icon"><i class="fa-solid" [ngClass]="topic.icon" aria-hidden="true"></i></span><h3>{{topic.title}}</h3></div>
         <ol><li *ngFor="let step of topic.steps">{{step}}</li></ol>
-        <a [routerLink]="topic.route">Abrir {{topic.title.toLowerCase()}} <span aria-hidden="true">→</span></a>
+        <a [routerLink]="topic.route">{{topic.linkLabel}} <span aria-hidden="true">→</span></a>
       </article>
     </div>
     <p class="empty" *ngIf="!visibleTopics.length">Nenhum guia encontrado. Experimente outra palavra.</p>
