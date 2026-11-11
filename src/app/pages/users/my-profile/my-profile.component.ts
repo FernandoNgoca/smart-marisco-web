@@ -5,6 +5,7 @@ import { SnackbarService } from '@app/services/snackbar.service';
 import { ChangePasswordDTO, User } from '@app/shared/models/user';
 import { Router } from '@angular/router';
 import imageCompression from 'browser-image-compression';
+import { ROLES } from '@app/shared/constants/roles';
 
 @Component({
   selector: 'app-my-profile',
@@ -49,6 +50,26 @@ export class MyProfileComponent implements OnInit {
     }
   }
 
+  get roleLabels(): string[] {
+    const roles = this.auth.getUser()?.roles ?? [];
+    return Object.entries(ROLES).filter(([, role]) => roles.includes(role)).map(([label]) => label);
+  }
+
+  // Requisitos mostrados por baixo dos campos enquanto se escreve.
+  get hasMinLength(): boolean {
+    return (this.form.get('newPassword')?.value ?? '').length >= 12;
+  }
+
+  get differsFromOld(): boolean {
+    const newPassword = this.form.get('newPassword')?.value;
+    return !!newPassword && newPassword !== this.form.get('oldPassword')?.value;
+  }
+
+  get passwordsMatch(): boolean {
+    const newPassword = this.form.get('newPassword')?.value;
+    return !!newPassword && newPassword === this.form.get('confirmPassword')?.value;
+  }
+
   // Valida se a nova senha e confirmação coincidem
   private passwordMatchValidator(group: FormGroup) {
     const newPassword = group.get('newPassword')?.value;
@@ -61,7 +82,7 @@ export class MyProfileComponent implements OnInit {
   changePassword() {
     if (this.isLoading) return;
     if (this.form.hasError('samePassword')) {
-      this.snackbar.error('A nova senha não pode ser igual à atual');
+      this.snackbar.error('A nova palavra-passe não pode ser igual à atual');
       return;
     }
     if (this.form.invalid) {
@@ -86,7 +107,7 @@ export class MyProfileComponent implements OnInit {
     this.auth.changePassword(dto).subscribe({
       next: (res: any) => {
         this.isLoading = false;
-        this.snackbar.success(res?.message || 'Senha alterada com sucesso!');
+        this.snackbar.success(res?.message || 'Palavra-passe alterada com sucesso!');
         this.form.reset();
         this.auth.logout();
         void this.router.navigateByUrl('/auth/login');
@@ -97,7 +118,7 @@ export class MyProfileComponent implements OnInit {
         const message =
           err?.error?.message ||
           err?.error ||
-          'Erro ao alterar a senha';
+          'Erro ao alterar a palavra-passe';
 
         this.snackbar.error(message);
       }
@@ -135,6 +156,12 @@ export class MyProfileComponent implements OnInit {
     }
   }
 
+  cancelImage(): void {
+    this.selectedFile = null;
+    this.imagePreview = null;
+    this.imageBase64 = null;
+  }
+
   getImage(): string | ArrayBuffer {
 
     const userImage = this.auth.getUser()?.image;
@@ -167,7 +194,7 @@ export class MyProfileComponent implements OnInit {
       });
 
     } else {
-      this.snackbar.error("Nao foi carregada nenhuma imagem");
+      this.snackbar.error("Não foi carregada nenhuma imagem");
     }
   }
 

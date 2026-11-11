@@ -1,93 +1,104 @@
-<div class="profile-container">
-  <!-- Card principal -->
-  <mat-card class="profile-card">
-    <!-- Avatar Section -->
-    <div class="avatar-section">
-      <div class="avatar-wrapper">
-        <img class="avatar" [src]="getImage()" alt="Foto do usuário" />
+<div class="account-grid">
+  <!-- Identidade e foto -->
+  <section class="account-card identity-card" aria-label="Os meus dados">
+    <input
+      type="file"
+      #fileInput
+      (change)="onFileSelected($event)"
+      accept="image/*"
+      hidden
+    />
+    <div class="avatar-picker">
+      <img class="avatar" [src]="getImage()" alt="Foto de perfil" />
+      <button
+        type="button"
+        class="camera-button"
+        matTooltip="Alterar foto"
+        aria-label="Alterar foto de perfil"
+        (click)="fileInput.click()"
+      >
+        <i class="fa-solid fa-camera"></i>
+      </button>
+    </div>
+
+    <div class="photo-actions" *ngIf="imagePreview">
+      <button mat-button type="button" class="app-button btn-cancel" (click)="cancelImage()">
+        Cancelar
+      </button>
+      <button mat-raised-button type="button" class="app-button btn-save" (click)="updateImage()">
+        <i class="fa-solid fa-check"></i>
+        Guardar foto
+      </button>
+    </div>
+    <p class="photo-hint" *ngIf="!imagePreview">Clique na câmara para mudar a foto.</p>
+
+    <div class="identity">
+      <h2>{{ auth.getUser()?.fullName }}</h2>
+      <p class="username">&#64;{{ auth.getUser()?.userName }}</p>
+      <div class="roles">
+        <span class="role-badge" *ngFor="let role of roleLabels">
+          <i class="fa-solid fa-shield-halved"></i>
+          {{ role }}
+        </span>
       </div>
-      <div class="avatar-buttons">
+    </div>
+
+    <dl class="details">
+      <div>
+        <dt>Utilizador</dt>
+        <dd>{{ auth.getUser()?.userName }}</dd>
+      </div>
+      <div>
+        <dt>Nome completo</dt>
+        <dd>{{ auth.getUser()?.fullName }}</dd>
+      </div>
+    </dl>
+  </section>
+
+  <!-- Segurança -->
+  <section class="account-card" aria-labelledby="security-title">
+    <div class="card-heading">
+      <span class="heading-icon"><i class="fa-solid fa-lock"></i></span>
+      <div>
+        <h3 id="security-title">Alterar palavra-passe</h3>
+        <p>Depois de guardar, terá de iniciar sessão novamente.</p>
+      </div>
+    </div>
+
+    <form [formGroup]="form" autocomplete="on" (ngSubmit)="changePassword()">
+      <input
+        type="text"
+        name="username"
+        [value]="auth.getUser()?.userName"
+        autocomplete="username"
+        hidden
+      />
+
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>Palavra-passe atual</mat-label>
         <input
-          type="file"
-          #fileInput
-          (change)="onFileSelected($event)"
-          accept="image/*"
-          style="display: none"
+          matInput
+          [type]="hideOld ? 'password' : 'text'"
+          formControlName="oldPassword"
+          autocomplete="current-password"
         />
-        <button class="app-button" mat-stroked-button (click)="fileInput.click()">
-          <i class="fa-solid fa-upload"></i>
-          Selecionar
-        </button>
         <button
-          mat-raised-button
-          class="app-button btn-save"
-          (click)="updateImage()"
-          [disabled]="!imagePreview"
+          mat-icon-button
+          matSuffix
+          type="button"
+          [attr.aria-label]="hideOld ? 'Mostrar palavra-passe' : 'Esconder palavra-passe'"
+          (click)="hideOld = !hideOld"
         >
-          <i class="fa-solid fa-save"></i>
-          Salvar Imagem
+          <mat-icon>{{ hideOld ? "visibility_off" : "visibility" }}</mat-icon>
         </button>
-      </div>
-    </div>
+        <mat-error *ngIf="form.get('oldPassword')?.hasError('required')">
+          A palavra-passe atual é obrigatória
+        </mat-error>
+      </mat-form-field>
 
-    <!-- User Info -->
-    <div class="user-info">
-      <div class="info-item">
-        <i class="fa-solid fa-user"></i>
-        <strong>Usuário:</strong> {{ auth.getUser()?.userName }}
-      </div>
-      <div class="info-item">
-        <i class="fa-solid fa-user-tag"></i>
-        <strong>Nome Completo:</strong> {{ auth.getUser()?.fullName }}
-      </div>
-    </div>
-
-    <mat-divider></mat-divider>
-    <br />
-
-    <!-- Alterar Senha Section -->
-    <div class="password-section">
-      <div class="section-header">
-        <i class="fa-solid fa-key"></i>
-        <h3>Alterar Senha</h3>
-      </div>
-
-      <form class="password-form" [formGroup]="form" autocomplete="on">
-        <input
-          type="text"
-          name="username"
-          [value]="auth.getUser()?.userName"
-          autocomplete="username"
-          hidden
-        />
-        <!-- Senha Atual -->
+      <div class="field-row">
         <mat-form-field appearance="outline" class="full-width">
-          <mat-label>Senha Atual</mat-label>
-          <input
-            matInput
-            [type]="hideOld ? 'password' : 'text'"
-            formControlName="oldPassword"
-            autocomplete="current-password"
-          />
-          <button
-            mat-icon-button
-            matSuffix
-            type="button"
-            (click)="hideOld = !hideOld"
-          >
-            <mat-icon>{{ hideOld ? "visibility_off" : "visibility" }}</mat-icon>
-          </button>
-          <mat-error *ngIf="form.get('oldPassword')?.hasError('required')">
-            Senha atual é obrigatória
-          </mat-error>
-          <mat-error *ngIf="form.hasError('samePassword')">
-            A nova senha não pode ser igual à senha atual
-          </mat-error>
-        </mat-form-field>
-
-        <!-- Nova Senha -->
-        <mat-form-field appearance="outline" class="full-width">
-          <mat-label>Nova Senha</mat-label>
+          <mat-label>Nova palavra-passe</mat-label>
           <input
             matInput
             [type]="hideNew ? 'password' : 'text'"
@@ -98,24 +109,21 @@
             mat-icon-button
             matSuffix
             type="button"
+            [attr.aria-label]="hideNew ? 'Mostrar palavra-passe' : 'Esconder palavra-passe'"
             (click)="hideNew = !hideNew"
           >
             <mat-icon>{{ hideNew ? "visibility_off" : "visibility" }}</mat-icon>
           </button>
-          <mat-hint>Use entre 12 e 128 caracteres, diferentes da senha atual.</mat-hint>
-          <mat-error *ngIf="form.get('newPassword')?.hasError('maxlength')">Máximo de 128 caracteres</mat-error>
-          <mat-error *ngIf="form.get('newPassword')?.hasError('pattern')">A senha não pode conter apenas espaços</mat-error>
           <mat-error *ngIf="form.get('newPassword')?.hasError('required')">
-            Nova senha é obrigatória
+            A nova palavra-passe é obrigatória
           </mat-error>
-          <mat-error *ngIf="form.get('newPassword')?.hasError('minlength')">
-            Mínimo 12 caracteres
-          </mat-error>
+          <mat-error *ngIf="form.get('newPassword')?.hasError('minlength')">Mínimo de 12 caracteres</mat-error>
+          <mat-error *ngIf="form.get('newPassword')?.hasError('maxlength')">Máximo de 128 caracteres</mat-error>
+          <mat-error *ngIf="form.get('newPassword')?.hasError('pattern')">Não pode conter apenas espaços</mat-error>
         </mat-form-field>
 
-        <!-- Confirmar Senha -->
         <mat-form-field appearance="outline" class="full-width">
-          <mat-label>Confirmar Nova Senha</mat-label>
+          <mat-label>Confirmar nova palavra-passe</mat-label>
           <input
             matInput
             [type]="hideConfirm ? 'password' : 'text'"
@@ -126,40 +134,47 @@
             mat-icon-button
             matSuffix
             type="button"
+            [attr.aria-label]="hideConfirm ? 'Mostrar palavra-passe' : 'Esconder palavra-passe'"
             (click)="hideConfirm = !hideConfirm"
           >
-            <mat-icon>{{
-              hideConfirm ? "visibility_off" : "visibility"
-            }}</mat-icon>
+            <mat-icon>{{ hideConfirm ? "visibility_off" : "visibility" }}</mat-icon>
           </button>
           <mat-error *ngIf="form.get('confirmPassword')?.hasError('required')">
-            Confirmação é obrigatória
-          </mat-error>
-          <mat-error
-            *ngIf="
-              form.hasError('passwordsMismatch') &&
-              form.get('confirmPassword')?.touched
-            "
-          >
-            As senhas não coincidem
+            A confirmação é obrigatória
           </mat-error>
         </mat-form-field>
+      </div>
 
+      <ul class="requirements" aria-label="Requisitos da palavra-passe">
+        <li [class.met]="hasMinLength">
+          <i class="fa-solid" [class.fa-circle-check]="hasMinLength" [class.fa-circle]="!hasMinLength"></i>
+          Pelo menos 12 caracteres
+        </li>
+        <li [class.met]="differsFromOld">
+          <i class="fa-solid" [class.fa-circle-check]="differsFromOld" [class.fa-circle]="!differsFromOld"></i>
+          Diferente da palavra-passe atual
+        </li>
+        <li [class.met]="passwordsMatch">
+          <i class="fa-solid" [class.fa-circle-check]="passwordsMatch" [class.fa-circle]="!passwordsMatch"></i>
+          As duas palavras-passe coincidem
+        </li>
+      </ul>
+
+      <div class="form-actions">
         <button
           mat-raised-button
-          class="app-button btn-save btn-block"
+          type="submit"
+          class="app-button btn-save"
           [disabled]="form.invalid || isLoading"
-          (click)="changePassword()"
         >
           <i
             class="fa-solid"
             [class.fa-spinner]="isLoading"
-            [class.fa-save]="!isLoading"
+            [class.fa-floppy-disk]="!isLoading"
           ></i>
-          {{ isLoading ? "Salvando..." : "Salvar" }}
+          {{ isLoading ? "A guardar..." : "Guardar palavra-passe" }}
         </button>
-        <p role="alert" *ngIf="form.hasError('samePassword') && form.get('newPassword')?.touched">A nova senha não pode ser igual à atual.</p>
-      </form>
-    </div>
-  </mat-card>
+      </div>
+    </form>
+  </section>
 </div>

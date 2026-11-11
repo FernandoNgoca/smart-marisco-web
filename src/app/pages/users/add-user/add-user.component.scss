@@ -1,316 +1,101 @@
-@use '../../../shared/dialog/form-dialog';
-.profile-container {
-  max-width: 800px;
-  margin: 0 auto;
-  padding: 24px;
+@use '../account';
 
-  @media (max-width: 768px) {
-    padding: 16px;
-  }
+.photo-card .card-heading {
+  margin-bottom: 24px;
 }
 
-.profile-card {
-  border-radius: 16px;
-  padding: 32px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-
-  @media (max-width: 768px) {
-    padding: 20px;
-  }
-}
-
-// Avatar Section
-.avatar-section {
-  text-align: center;
-  margin-bottom: 32px;
-
-  .avatar-wrapper {
-    margin-bottom: 16px;
-
-    .avatar {
-      width: 150px;
-      height: 150px;
-      border-radius: 50%;
-      object-fit: cover;
-      border: 3px solid var(--app-primary);
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-    }
-  }
-
-  .avatar-buttons {
-    display: flex;
-    gap: 12px;
-    justify-content: center;
-    flex-wrap: wrap;
-
-    button {
-      min-width: 120px;
-    }
-  }
-}
-
-// User Info
-.user-info {
+.preview {
   display: flex;
   flex-direction: column;
-  gap: 16px;
-  padding: 20px;
-  background: #f8f9fa;
-  border-radius: 12px;
-  margin-bottom: 32px;
-
-  .info-item {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    font-size: 14px;
-    color: #333;
-
-    i {
-      color: var(--app-link);
-      font-size: 16px;
-      min-width: 20px;
-    }
-
-    strong {
-      color: #666;
-      min-width: 110px;
-    }
-
-    .inline-form {
-      flex: 1;
-      margin: -18px 0;
-    }
-  }
-}
-
-// Password Section
-.password-section {
-  margin: 24px 0;
-
-  .section-header {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    margin-bottom: 24px;
-    padding-bottom: 12px;
-    border-bottom: 2px solid #f0f0f0;
-
-    i {
-      font-size: 22px;
-      color: var(--app-link);
-    }
-
-    h3 {
-      margin: 0;
-      font-size: 18px;
-      font-weight: 600;
-      color: #333;
-    }
-  }
-
-  .password-form {
-    .full-width {
-      width: 100%;
-      margin-bottom: 20px;
-    }
-  }
-}
-
-// Permissions Section (Nova seção adicionada)
-.permissions-section {
-  margin: 24px 0;
-
-  .section-header {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    margin-bottom: 24px;
-    padding-bottom: 12px;
-    border-bottom: 2px solid #f0f0f0;
-
-    i {
-      font-size: 22px;
-      color: var(--app-link);
-    }
-
-    h3 {
-      margin: 0;
-      font-size: 18px;
-      font-weight: 600;
-      color: #333;
-    }
-  }
-
-  .roles-container {
-    padding: 8px 0;
-
-    .roles-chip-list {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 12px;
-      margin-bottom: 16px;
-      padding: 8px 0;
-
-      // Estilização dos chips (mat-chip)
-      ::ng-deep .mat-chip {
-        background-color: #f0f0f0;
-        color: #666;
-        font-weight: 500;
-        transition: all 0.2s ease;
-        cursor: pointer;
-        
-        &:hover {
-          background-color: #e0e0e0;
-          transform: translateY(-1px);
-        }
-        
-        &.mat-chip-selected {
-          background-color: var(--app-primary);
-          color: white;
-          
-          &:hover {
-            background-color: var(--app-primary-hover);
-          }
-        }
-      }
-    }
-    
-    mat-error {
-      font-size: 12px;
-      margin-top: 8px;
-      color: #f44336;
-      display: block;
-    }
-  }
-}
-
-// Roles Section
-.roles-container {
-  .roles-chip-list {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 12px;
-    margin-bottom: 16px;
-  }
-  
-  mat-error {
-    font-size: 12px;
-    margin-top: 8px;
-  }
-}
-
-// Status Options
-.status-options {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  
-  mat-checkbox {
-    i {
-      margin-right: 8px;
-      color: var(--app-link);
-    }
-  }
-}
-
-// Action Buttons
-.action-buttons {
-  display: flex;
-  gap: 16px;
-  justify-content: flex-end;
-  margin-top: 32px;
-  padding-top: 24px;
-  border-top: 1px solid #f0f0f0;
-
-  button {
-    min-width: 120px;
-    
-    i {
-      margin-right: 8px;
-    }
-  }
-}
-
-.btn-cancel {
-  border: 1px solid #ddd;
-  color: #666;
-  
-  &:hover {
-    background: #f5f5f5;
-  }
-}
-
-// Buttons padrão
-.btn-save {
-  display: inline-flex;
   align-items: center;
-  justify-content: center;
-  gap: 8px;
-  background: var(--app-primary);
-  color: #FFFFFF;
-  padding: 0 24px;
-  height: 42px;
-  font-size: 14px;
-  font-weight: 500;
-  text-transform: none;
-  letter-spacing: 0;
-  border-radius: 8px;
-  transition: all 0.2s ease;
+  gap: 2px;
+  margin-top: 16px;
+  text-align: center;
+  overflow-wrap: anywhere;
+
+  strong {
+    font-size: 15px;
+    color: var(--app-text);
+  }
+
+  span {
+    font-size: 13px;
+    color: var(--app-muted);
+  }
+}
+
+// Perfis de acesso como cartões selecionáveis.
+.role-options {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 12px;
+
+  @media (max-width: 600px) {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.role-option {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px 16px;
+  border: 1px solid var(--app-border);
+  border-radius: 12px;
+  background: var(--app-surface);
+  color: var(--app-text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 150ms ease, background-color 150ms ease;
 
   &:hover:not(:disabled) {
-    background-color: var(--app-primary-hover);
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(15, 82, 101, 0.2);
+    border-color: var(--app-link);
   }
 
-  &:active:not(:disabled) {
-    transform: translateY(0);
+  &.selected {
+    border-color: var(--app-primary);
+    background: var(--app-primary-soft);
+    box-shadow: inset 0 0 0 1px var(--app-primary);
   }
 
   &:disabled {
-    background: var(--app-disabled);
-    color: var(--app-muted);
+    opacity: .6;
     cursor: not-allowed;
-    opacity: 0.6;
   }
+}
 
-  i {
+.role-check {
+  display: grid;
+  place-items: center;
+  flex: 0 0 20px;
+  height: 20px;
+  margin-top: 1px;
+  border-radius: 6px;
+  border: 2px solid var(--app-input-outline);
+  font-size: 11px;
+  color: white;
+
+  .selected & {
+    border-color: var(--app-primary);
+    background: var(--app-primary);
+  }
+}
+
+.role-text {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+
+  strong {
     font-size: 14px;
+    font-weight: 600;
+  }
+
+  small {
+    font-size: 12px;
+    line-height: 1.5;
+    color: var(--app-muted);
   }
 }
-
-// Loading animation
-@keyframes spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
-}
-
-.fa-spinner {
-  animation: spin 1s linear infinite;
-}
-
-// Material overrides
-::ng-deep {
-  .mat-form-field-appearance-outline .mat-form-field-outline {
-    color: #ddd;
-  }
-
-  .mat-form-field-appearance-outline.mat-focused .mat-form-field-outline-thick {
-    color: var(--app-link);
-  }
-
-  .mat-form-field.mat-focused .mat-form-field-label {
-    color: var(--app-link);
-  }
-  
-  .mat-checkbox-checked.mat-accent .mat-checkbox-background {
-    background-color: var(--app-primary);
-  }
-  
-  .mat-chip.mat-standard-chip.mat-chip-selected.mat-primary {
-    background-color: var(--app-primary);
-  }
-}
-.field-error { color: var(--app-danger); }
-@media (max-width: 600px) { .password-form, .user-info { display: flex; flex-direction: column; } .info-item { width: 100%; } }
