@@ -113,6 +113,11 @@ body {
 .content.mat-elevation-z8, .content.mat-elevation-z4,
 .content.mat-elevation-z2 { box-shadow: var(--app-shadow); }
 
+.cdk-overlay-dark-backdrop {
+  background: rgba(15, 37, 55, .45);
+  backdrop-filter: blur(2px);
+}
+
 .mat-dialog-container {
   border-radius: var(--app-radius);
   box-shadow: 0 18px 60px rgba(24, 51, 76, .18);

@@ -53,7 +53,7 @@ export class DashboardListComponent implements OnInit, OnDestroy {
     this.dashboardService.overview(this.from,this.to).pipe(timeout(15000),takeUntil(this.cancel),takeUntil(this.destroyed)).subscribe({
       next:data=>{
         this.data=data; this.isLoading=false;
-        this.revenueSeries=[{name:'Faturação (MZN)',series:data.dailySales.map(day=>({name:day.name,value:day.revenue}))}];
+        this.revenueSeries=[{name:'Faturação (MT)',series:data.dailySales.map(day=>({name:day.name,value:day.revenue}))}];
         const max=Math.max(...data.dailySales.map(d=>d.value),1), step=Math.max(1,Math.ceil(max/5));
         this.yAxisTicks=Array.from({length:Math.ceil(max/step)+1},(_,i)=>i*step);
       },
