@@ -104,6 +104,11 @@ export class ProductListComponent implements OnInit, AfterViewInit {
   }
 
   desativarProduto(product: Product): void {
+    if (product.hasStock) {
+      this.snackbar.warning('Não é possível desativar este produto porque ainda tem stock. O saldo deve ser zero.');
+      return;
+    }
+
     const confirmDialog = this.dialog.open(ConfirmDialogComponent, {
       width: '400px',
       data: {

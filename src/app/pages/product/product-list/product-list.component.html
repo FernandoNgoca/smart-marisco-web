@@ -90,9 +90,10 @@
         <button
           mat-icon-button
           color="warn"
-          matTooltip="Desativar Produto"
+          [class.action-blocked]="product.hasStock"
+          [matTooltip]="product.hasStock ? 'Não pode desativar: o produto ainda tem stock' : 'Desativar Produto'"
           (click)="desativarProduto(product)"
-          aria-label="Desativar Produto"
+          [attr.aria-label]="product.hasStock ? 'Desativar Produto (bloqueado: ainda tem stock)' : 'Desativar Produto'"
         >
           <i class="fa-solid fa-trash-can"></i>
         </button>

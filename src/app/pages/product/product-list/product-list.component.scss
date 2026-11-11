@@ -130,3 +130,9 @@ mat-header-row,
 mat-row {
   min-height: 48px;
 }
+
+// Produto com stock: o botão continua clicável para mostrar o motivo, mas aparece esbatido.
+.action-blocked {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
