@@ -14,6 +14,11 @@ export class ReportsComponent implements OnInit, OnDestroy {
   private date(value: Date): string { return `${value.getFullYear()}-${String(value.getMonth()+1).padStart(2,'0')}-${String(value.getDate()).padStart(2,'0')}`; }
   form = new FormGroup({ type: new FormControl('sales'), from: new FormControl(this.date(new Date(this.today.getFullYear(), this.today.getMonth(), 1))),
     to: new FormControl(this.date(this.today)), search: new FormControl(''), filter: new FormControl(''), seller: new FormControl('') });
+  readonly types = [
+    { value: 'sales', label: 'Vendas', hint: 'Vendas concluídas e faturação', icon: 'fa-receipt' },
+    { value: 'stock', label: 'Stock atual', hint: 'Quantidades e valor em armazém', icon: 'fa-boxes-stacked' },
+    { value: 'movements', label: 'Movimentos', hint: 'Entradas e saídas de stock', icon: 'fa-right-left' }
+  ];
   report: Report | null = null;
   loading = false;
   exporting = false;
@@ -34,7 +39,27 @@ export class ReportsComponent implements OnInit, OnDestroy {
   }
   ngOnDestroy(): void { if (this.exporting) this.printWindow?.close(); this.destroyed.next(); this.destroyed.complete(); this.cancel.next(); this.cancel.complete(); }
   get invalidDates(): boolean { const {type,from,to}=this.form.getRawValue(); return type !== 'stock' && (!from || !to || from > to); }
-  changeType(): void { this.form.patchValue({filter:'',search:'',seller:''}); this.apply(); }
+  selectType(type: string): void {
+    if (this.exporting || this.form.controls.type.value === type) return;
+    this.form.patchValue({ type, filter: '', search: '', seller: '' });
+    this.apply();
+  }
+  // Atalhos de período, em hora local.
+  setPeriod(period: 'month' | 'lastMonth' | 'year'): void {
+    const t = this.today;
+    const ranges = {
+      month: [new Date(t.getFullYear(), t.getMonth(), 1), t],
+      lastMonth: [new Date(t.getFullYear(), t.getMonth() - 1, 1), new Date(t.getFullYear(), t.getMonth(), 0)],
+      year: [new Date(t.getFullYear(), 0, 1), t]
+    };
+    const [from, to] = ranges[period];
+    this.form.patchValue({ from: this.date(from), to: this.date(to) });
+    this.apply();
+  }
+  // "2026-11-01 a 2026-11-11" -> "01/11/2026 a 11/11/2026"
+  period(text: string): string {
+    return text.replace(/(\d{4})-(\d{2})-(\d{2})/g, '$3/$2/$1');
+  }
   private params(): HttpParams {
     let params=new HttpParams();
     for(const [key,value] of Object.entries(this.applied)) if(key!=='type' && value && !(this.applied.type==='stock' && (key==='from'||key==='to'))) params=params.set(key,value);
@@ -49,9 +74,9 @@ export class ReportsComponent implements OnInit, OnDestroy {
   }
   page(event:PageEvent):void {this.pageIndex=event.pageIndex;this.pageSize=event.pageSize;this.load();}
   format(value:string|number,kind:string):string {
-    if(kind==='money') return new Intl.NumberFormat('pt-PT',{style:'currency',currency:'MZN'}).format(Number(value));
+    if(kind==='money') return `${new Intl.NumberFormat('pt-MZ',{minimumFractionDigits:2,maximumFractionDigits:2}).format(Number(value))} MT`;
     if(kind==='number') return new Intl.NumberFormat('pt-PT',{maximumFractionDigits:3}).format(Number(value));
-    if(kind==='date' && value) return new Date(value).toLocaleString('pt-PT');
+    if(kind==='date' && value) return new Date(value).toLocaleString('pt-PT',{dateStyle:'short',timeStyle:'short'});
     return String(value);
   }
   excel():void {
@@ -72,16 +97,44 @@ export class ReportsComponent implements OnInit, OnDestroy {
       .pipe(takeUntil(this.destroyed)).subscribe({next:report=>{this.exporting=false;if(win.closed)return;this.renderPrint(win,report);},
         error:err=>{this.exporting=false;win.close();this.exportError=err.error?.detail||'Não foi possível preparar a impressão. Reduza os filtros se houver mais de 10 000 linhas.';}});
   }
+  // Documento de impressão: cabeçalho com logótipo, indicadores, tabela e rodapé. Construído com DOM (sem innerHTML).
   private renderPrint(win:Window,report:Report):void {
     const doc=win.document;doc.title=`Relatório — ${report.title}`;doc.body.textContent='';
-    const style=doc.createElement('style');style.textContent='body{font:12px Arial;color:#18334c;padding:20px}h1{font-size:22px}table{width:100%;border-collapse:collapse}td,th{padding:8px;border-bottom:1px solid #ddd;text-align:left;overflow-wrap:anywhere}th{background:#f3f7fa}thead{display:table-header-group}tr{break-inside:avoid}.numeric{text-align:right}button{padding:10px;margin-bottom:16px}@media print{button{display:none}@page{size:landscape;margin:12mm}}';doc.head.appendChild(style);
-    const add=(tag:string,text:string,parent:HTMLElement=doc.body)=>{const el=doc.createElement(tag);el.textContent=text;parent.appendChild(el);return el;};
-    const button=add('button','Imprimir / Guardar como PDF');button.onclick=()=>win.print();
-    add('h1',`Mariscos do Índico — ${report.title}`);add('p',report.period);add('p',`Gerado em ${this.format(report.generatedAt,'date')} · ${report.totalElements} registos`);
-    add('p',report.metrics.map(m=>`${m.label}: ${this.format(m.value,m.kind)}`).join(' | '));
-    const table=add('table',''),thead=add('thead','',table),header=add('tr','',thead);
-    report.columns.forEach(c=>add('th',c.label,header));const body=add('tbody','',table);
-    report.rows.forEach(row=>{const tr=add('tr','',body);row.forEach((value,i)=>{const td=add('td',this.format(value,report.columns[i].kind),tr);if(['money','number'].includes(report.columns[i].kind))td.className='numeric';});});
-    win.focus();setTimeout(()=>{if(!win.closed)win.print();},150);
+    const style=doc.createElement('style');
+    style.textContent=`
+      *{box-sizing:border-box}
+      body{font:12px/1.45 "Inter",Arial,sans-serif;color:#0f2537;margin:0;padding:24px}
+      .toolbar{margin-bottom:16px}.toolbar button{padding:10px 16px;border:0;border-radius:8px;background:#0077b6;color:#fff;font:inherit;font-weight:600;cursor:pointer}
+      header{display:flex;align-items:center;gap:16px;padding-bottom:14px;border-bottom:3px solid #0077b6}
+      header img{width:72px;height:72px;object-fit:contain}
+      header .brand{flex:1}header .brand strong{display:block;font-size:20px;color:#0077b6}header .brand span{color:#5b6b7a}
+      header .meta{text-align:right;color:#5b6b7a}header .meta h1{margin:0 0 4px;font-size:18px;color:#0f2537}
+      .metrics{display:flex;gap:12px;margin:16px 0}
+      .metric{flex:1;padding:10px 14px;border:1px solid #e4e9ef;border-radius:8px}
+      .metric span{display:block;color:#5b6b7a;font-size:11px}.metric strong{font-size:16px}
+      table{width:100%;border-collapse:collapse}
+      th{background:#0077b6;color:#fff;text-align:left;padding:8px;font-weight:600}
+      td{padding:7px 8px;border-bottom:1px solid #e4e9ef;overflow-wrap:anywhere}
+      tbody tr:nth-child(even) td{background:#f5f7fa}
+      thead{display:table-header-group}tr{break-inside:avoid}.numeric{text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}
+      footer{margin-top:16px;padding-top:8px;border-top:1px solid #e4e9ef;color:#5b6b7a;font-size:11px;display:flex;justify-content:space-between}
+      @media print{.toolbar{display:none}body{padding:0}@page{size:landscape;margin:12mm}th,tbody tr:nth-child(even) td{-webkit-print-color-adjust:exact;print-color-adjust:exact}}`;
+    doc.head.appendChild(style);
+    const add=(tag:string,text:string,parent:HTMLElement=doc.body,className='')=>{const el=doc.createElement(tag);el.textContent=text;if(className)el.className=className;parent.appendChild(el);return el;};
+    const toolbar=add('div','',doc.body,'toolbar');const button=add('button','Imprimir / Guardar como PDF',toolbar);button.onclick=()=>win.print();
+    const header=add('header','');
+    const logo=doc.createElement('img');logo.alt='';logo.src=new URL('assets/log.png',document.baseURI).href;header.appendChild(logo);
+    const brand=add('div','',header,'brand');add('strong','Mariscos do Índico',brand);add('span','Gestão de vendas de mariscos',brand);
+    const meta=add('div','',header,'meta');add('h1',report.title,meta);add('div',this.period(report.period),meta);add('div',`Gerado em ${this.format(report.generatedAt,'date')}`,meta);
+    const metrics=add('div','',doc.body,'metrics');
+    report.metrics.forEach(m=>{const box=add('div','',metrics,'metric');add('span',m.label,box);add('strong',this.format(m.value,m.kind),box);});
+    const table=add('table',''),thead=add('thead','',table),headRow=add('tr','',thead);
+    report.columns.forEach(c=>add('th',c.label,headRow,['money','number'].includes(c.kind)?'numeric':''));
+    const body=add('tbody','',table);
+    report.rows.forEach(row=>{const tr=add('tr','',body);row.forEach((value,i)=>add('td',this.format(value,report.columns[i].kind),tr,['money','number'].includes(report.columns[i].kind)?'numeric':''));});
+    const footer=add('footer','');add('span',`Mariscos do Índico · ${report.title}`,footer);add('span',`${report.totalElements} ${report.totalElements===1?'registo':'registos'}`,footer);
+    // Imprime depois de o logótipo carregar (ou falhar), para não sair em branco.
+    let printed=false;const go=()=>{if(printed||win.closed)return;printed=true;win.focus();win.print();};
+    logo.onload=()=>setTimeout(go,100);logo.onerror=go;setTimeout(go,1500);
   }
 }
