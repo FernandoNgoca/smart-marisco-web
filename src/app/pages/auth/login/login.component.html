@@ -1,50 +1,77 @@
-<main class="login-container">
-  <section class="login-card" aria-labelledby="login-title">
-    <div class="header">
-      <img src="assets/log.png" alt="" class="logo" width="144" height="144" />
-      <h1 id="login-title">Mariscos do Índico</h1>
-      <p>Inicie sessão para continuar</p>
+<main class="login-page">
+  <!-- Painel da marca (escondido em ecrãs pequenos, onde só fica o logótipo por cima do formulário). -->
+  <aside class="brand-panel" aria-hidden="true">
+    <div class="brand-top">
+      <span class="brand-logo"><img src="assets/log.png" alt="" /></span>
+      <span class="brand-name">Mariscos do Índico</span>
     </div>
+    <div class="brand-copy">
+      <h2>Gestão de vendas e stock de mariscos</h2>
+      <ul>
+        <li><i class="fa-solid fa-cart-shopping"></i> Vendas e pedidos num só lugar</li>
+        <li><i class="fa-solid fa-boxes-stacked"></i> Stock sempre atualizado</li>
+        <li><i class="fa-solid fa-file-lines"></i> Relatórios em PDF e Excel</li>
+      </ul>
+    </div>
+    <p class="brand-footer">© {{ year }} Mariscos do Índico</p>
+  </aside>
 
-    <form [formGroup]="form" (ngSubmit)="login()" [attr.aria-busy]="isLoading">
-      <div class="input-group">
-        <label for="login-username">Utilizador</label>
-        <input id="login-username" name="username" type="text" formControlName="username"
-          placeholder="Introduza o seu utilizador" autocomplete="username"
-          autocapitalize="none" spellcheck="false" [readonly]="isLoading"
-          [attr.aria-invalid]="form.get('username')?.invalid && form.get('username')?.touched"
-          [attr.aria-describedby]="form.get('username')?.invalid && form.get('username')?.touched ? 'username-error' : null"
-          [class.invalid]="form.get('username')?.invalid && form.get('username')?.touched" />
-        <small id="username-error" *ngIf="form.get('username')?.invalid && form.get('username')?.touched">
-          Introduza um utilizador válido.
-        </small>
-      </div>
+  <section class="form-panel" aria-labelledby="login-title">
+    <div class="form-box">
+      <img src="assets/log.png" alt="" class="mobile-logo" width="72" height="72" />
+      <p class="mobile-brand">Mariscos do Índico</p>
+      <h1 id="login-title">Bem-vindo de volta</h1>
+      <p class="subtitle">Inicie sessão para continuar.</p>
 
-      <div class="input-group">
-        <label for="login-password">Palavra-passe</label>
-        <div class="password-wrapper">
-          <input id="login-password" name="password" [type]="hidePassword ? 'password' : 'text'"
-            formControlName="password" placeholder="Introduza a sua palavra-passe"
-            autocomplete="current-password" [readonly]="isLoading"
-            [attr.aria-invalid]="form.get('password')?.invalid && form.get('password')?.touched"
-            [attr.aria-describedby]="form.get('password')?.invalid && form.get('password')?.touched ? 'password-error' : null"
-            [class.invalid]="form.get('password')?.invalid && form.get('password')?.touched" />
-          <button type="button" class="password-toggle" aria-controls="login-password"
-            [attr.aria-label]="hidePassword ? 'Mostrar palavra-passe' : 'Ocultar palavra-passe'"
-            (click)="hidePassword = !hidePassword">
-            <mat-icon aria-hidden="true">{{ hidePassword ? 'visibility_off' : 'visibility' }}</mat-icon>
-          </button>
+      <form [formGroup]="form" (ngSubmit)="login()" [attr.aria-busy]="isLoading" novalidate>
+        <div class="field">
+          <label for="login-username">Utilizador</label>
+          <div class="input-wrap" [class.invalid]="form.get('username')?.invalid && form.get('username')?.touched">
+            <i class="fa-regular fa-user" aria-hidden="true"></i>
+            <input id="login-username" name="username" type="text" formControlName="username"
+              placeholder="O seu utilizador" autocomplete="username"
+              autocapitalize="none" spellcheck="false" [readonly]="isLoading"
+              [attr.aria-invalid]="form.get('username')?.invalid && form.get('username')?.touched"
+              [attr.aria-describedby]="form.get('username')?.invalid && form.get('username')?.touched ? 'username-error' : null" />
+          </div>
+          <small id="username-error" class="field-error" *ngIf="form.get('username')?.invalid && form.get('username')?.touched">
+            Introduza um utilizador válido.
+          </small>
         </div>
-        <small id="password-error" *ngIf="form.get('password')?.invalid && form.get('password')?.touched">
-          A palavra-passe é obrigatória.
-        </small>
-      </div>
 
-      <button class="submit-button" type="submit" [disabled]="form.invalid || isLoading">
-        {{ isLoading ? 'A entrar…' : 'Entrar' }}
-      </button>
-      <p class="login-status" role="status">{{ isLoading ? 'A iniciar sessão. Aguarde.' : '' }}</p>
-      <p class="error" role="alert" aria-atomic="true">{{ error }}</p>
-    </form>
+        <div class="field">
+          <label for="login-password">Palavra-passe</label>
+          <div class="input-wrap" [class.invalid]="form.get('password')?.invalid && form.get('password')?.touched">
+            <i class="fa-solid fa-lock" aria-hidden="true"></i>
+            <input id="login-password" name="password" [type]="hidePassword ? 'password' : 'text'"
+              formControlName="password" placeholder="A sua palavra-passe"
+              autocomplete="current-password" [readonly]="isLoading"
+              [attr.aria-invalid]="form.get('password')?.invalid && form.get('password')?.touched"
+              [attr.aria-describedby]="form.get('password')?.invalid && form.get('password')?.touched ? 'password-error' : null" />
+            <!-- Olho aberto = "clique para ver"; riscado = "clique para esconder". -->
+            <button type="button" class="password-toggle" aria-controls="login-password"
+              [attr.aria-label]="hidePassword ? 'Mostrar palavra-passe' : 'Ocultar palavra-passe'"
+              (click)="hidePassword = !hidePassword">
+              <i class="fa-regular" [class.fa-eye]="hidePassword" [class.fa-eye-slash]="!hidePassword" aria-hidden="true"></i>
+            </button>
+          </div>
+          <small id="password-error" class="field-error" *ngIf="form.get('password')?.invalid && form.get('password')?.touched">
+            A palavra-passe é obrigatória.
+          </small>
+        </div>
+
+        <p class="error" role="alert" aria-atomic="true" *ngIf="error">
+          <i class="fa-solid fa-circle-exclamation" aria-hidden="true"></i> {{ error }}
+        </p>
+
+        <button class="submit-button" type="submit" [disabled]="isLoading">
+          <i class="fa-solid fa-spinner" *ngIf="isLoading" aria-hidden="true"></i>
+          {{ isLoading ? 'A entrar…' : 'Entrar' }}
+        </button>
+        <p class="sr-only" role="status">{{ isLoading ? 'A iniciar sessão. Aguarde.' : '' }}</p>
+      </form>
+
+      <p class="help">Esqueceu a palavra-passe? Contacte o administrador do sistema.</p>
+    </div>
   </section>
 </main>

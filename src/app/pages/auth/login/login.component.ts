@@ -12,6 +12,7 @@ import { AuthService } from '@app/services/auth.service';
 })
 export class LoginComponent implements OnDestroy {
   hidePassword = true;
+  readonly year = new Date().getFullYear();
   form: FormGroup;
   error: string | null = null;
   isLoading = false;
