@@ -2,8 +2,8 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { QUANTITY_MESSAGE, quantityValidator } from '@app/shared/validators/quantity.validator';
 import { Subject, of, timer, switchMap, catchError, finalize, takeUntil, map, distinctUntilChanged, startWith } from 'rxjs';
 import { Client } from './../../../shared/models/client';
-import { Component, OnDestroy, OnInit } from '@angular/core';
-import { FormBuilder, FormGroup } from '@angular/forms';
+import { Component, ElementRef, OnDestroy, OnInit, ViewChild } from '@angular/core';
+import { FormBuilder, FormControl, FormGroup } from '@angular/forms';
 import { MatTableDataSource } from '@angular/material/table';
 import { ClientService } from '@app/services/client.service';
 import { ProductService } from '@app/services/product.service';
@@ -16,20 +16,13 @@ import { Sale, SaleItem, SaleRequest, SaleStatus } from '@app/shared/models/sale
 @Component({
   selector: 'app-sales-order',
   templateUrl: './sales-order.component.html',
-  styleUrls: ['./sales-order.component.scss']
+  styleUrls: ['../sale/sale.component.scss', './sales-order.component.scss']
 })
 export class SalesOrderComponent implements OnInit, OnDestroy {
 
-  displayedColumns: string[] = [
-    'image',
-    'productName',
-    'unitaryValue',
-    'quantity',
-    'unit',
-    'totalValue',
-    'action'
-  ];
+  @ViewChild('quantityInput') quantityInput?: ElementRef<HTMLInputElement>;
 
+  search = new FormControl('', { nonNullable: true });
   dataSource = new MatTableDataSource<SaleItem>();
   saleItems: SaleItem[] = [];
   valueSale: number = 0;
@@ -55,7 +48,6 @@ export class SalesOrderComponent implements OnInit, OnDestroy {
   private operationPayload = '';
 
   ngOnDestroy(): void { this.destroy$.next(); this.destroy$.complete(); }
-  totalOrdersForToday: number = 0;
 
   constructor(
     private fb: FormBuilder,
@@ -78,10 +70,7 @@ export class SalesOrderComponent implements OnInit, OnDestroy {
     this.loadingProducts();
     this.loadingClients();
 
-    // Produto
-    this.form.get('productId')?.valueChanges.subscribe(() => {
-      this.filterProducts();
-    });
+    this.search.valueChanges.pipe(takeUntil(this.destroy$)).subscribe(() => this.filterProducts());
 
 
     this.form.get('clientId')?.valueChanges.subscribe((client: Client) => {
@@ -92,7 +81,6 @@ export class SalesOrderComponent implements OnInit, OnDestroy {
       }
     });
 
-this.countOrders();
     const id = this.route?.snapshot.queryParamMap.get('orderId');
     if (id) {
       this.orderId = Number(id);
@@ -129,19 +117,11 @@ this.countOrders();
     });
   }
 
-  countOrders() {
-    this.saleService.countOrdersCurrentDay().subscribe(
-      (count) => {
-        this.totalOrdersForToday = count + 1;
-      }
-    );
-  }
-
   loadingProducts() {
     this.productService.findOrderProducts().subscribe({
       next: (data) => {
         this.products = data;
-        this.filteredProducts = data;
+        this.filterProducts();
       },
       error: (err) => console.error('Erro ao carregar produtos:', err)
     });
@@ -169,22 +149,39 @@ this.countOrders();
     });
   }
 
-  // Mostrar nome no input
-  displayProduct(prod: Product): string {
-    return prod?.name || '';
+  get blocked(): boolean {
+    return this.isSaving || this.isAdding || this.loadingOrder || this.orderLoadError;
+  }
+
+  get selectedProduct(): Product | null {
+    return this.form.get('productId')?.value ?? null;
+  }
+
+  // Preço combinado no pedido (mantido ao editar) ou o preço atual do produto.
+  priceOf(product: Product): number {
+    return this.agreedPrices.get(product.id!) ?? product.salePrice;
+  }
+
+  selectProduct(product: Product) {
+    if (this.blocked) return;
+    this.form.patchValue({ productId: product, quantity: null });
+    setTimeout(() => this.quantityInput?.nativeElement.focus());
+  }
+
+  clearSelection() {
+    this.form.patchValue({ productId: null, quantity: null });
+  }
+
+  quantityInCart(product: Product): number {
+    return this.saleItems.find(item => item.productId === product.id)?.quantity ?? 0;
   }
 
   // Filtro produtos
   filterProducts() {
-    const value = this.form.get('productId')?.value;
-
-    if (typeof value === 'string') {
-      this.filteredProducts = this.products.filter(p =>
-        p.name.toLowerCase().includes(value.toLowerCase())
-      );
-    } else {
-      this.filteredProducts = this.products;
-    }
+    const value = this.search.value.trim().toLowerCase();
+    this.filteredProducts = value
+      ? this.products.filter(p => p.name.toLowerCase().includes(value) || (p.code ?? '').toLowerCase().includes(value))
+      : this.products;
   }
 
   displayClient(client: any): string {
@@ -204,21 +201,14 @@ this.countOrders();
   }
 
   private addItemToSale(product: Product, quantity: number) {
-
-    // Calcular subtotal
-    const subTotal = quantity * product.salePrice;
-
-    // Montar item da venda
-    const item: SaleItem = {
-      productId: product.id!,
-      product: product,
-      quantity: quantity,
-      unitPrice: this.agreedPrices.get(product.id!) ?? product.salePrice,
-    };
-
-    // Adicionar à lista e atualizar tabela
-    this.saleItems.push(item);
-    this.dataSource.data = this.saleItems;
+    // Produto já no pedido: soma a quantidade em vez de criar outra linha.
+    const existing = this.saleItems.find(item => item.productId === product.id);
+    if (existing) {
+      existing.quantity = Math.round((existing.quantity + quantity) * 1000) / 1000;
+    } else {
+      this.saleItems.push({ productId: product.id!, product, quantity, unitPrice: this.priceOf(product) });
+    }
+    this.dataSource.data = [...this.saleItems];
 
     if (this.saleItems.length >= 1 && this.selectedClient) {
       this.form.get('clientId')?.disable();
@@ -235,10 +225,10 @@ this.countOrders();
   }
 
   addItem() {
-    if (this.isSaving || this.isAdding || this.loadingOrder || this.orderLoadError) return;
+    if (this.blocked) return;
     // Verificar se os campos obrigatórios estão preenchidos
     const product: Product = this.form.value.productId;
-    const quantity: number = this.form.value.quantity;
+    const quantity = Number(this.form.value.quantity);
     const client = this.selectedClient;
 
     if (!product?.id) {
@@ -255,15 +245,6 @@ this.countOrders();
       this.snackbar.error('Selecione um cliente para continuar.');
       return;
     }
-    const productAlreadyAdded = this.saleItems.some(
-      item => item.productId === product.id
-    );
-
-    if (productAlreadyAdded) {
-      this.snackbar.warning('Este produto já se encontra na lista do pedido.');
-      return;
-    }
-
     this.addItemToSale(product, quantity);
   }
 
@@ -282,17 +263,15 @@ this.countOrders();
     this.snackbar.success('Produto removido do pedido.');
   }
 
-  editItem(item: SaleItem) {
-    if (this.isSaving || this.isAdding || this.loadingOrder || this.orderLoadError) return;
-    // Preencher formulário
-    this.form.patchValue({
-      productId: item.product,
-      quantity: item.quantity
-    });
-
-    // Retirar o artigo para edição sem limpar o cliente selecionado.
-    this.saleItems = this.saleItems.filter(i => i !== item);
-    this.dataSource.data = [...this.saleItems];
+  // Alterar a quantidade diretamente na linha. Pedidos não reservam stock; a API verifica ao concluir.
+  updateQuantity(item: SaleItem, input: HTMLInputElement) {
+    if (this.blocked) return;
+    if (quantityValidator(new FormControl(input.value))) {
+      this.snackbar.error(QUANTITY_MESSAGE);
+      input.value = String(item.quantity);
+      return;
+    }
+    item.quantity = Number(input.value);
     this.calculateTotal();
   }
 
@@ -343,7 +322,6 @@ this.countOrders();
         this.form.reset();
         this.form.get('clientId')?.enable();
         this.valueSale = 0;
-        this.countOrders();
       },
       error: (err) => {
         this.snackbar.error(

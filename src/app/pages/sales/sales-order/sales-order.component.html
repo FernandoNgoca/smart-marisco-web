@@ -1,90 +1,96 @@
-<p role="status" *ngIf="loadingOrder">A carregar pedido...</p>
-<div role="alert" *ngIf="orderLoadError">Pedido indisponível. <button class="app-button" mat-button (click)="loadOrder()">Tentar novamente</button></div>
-<div class="sale-container">
-  <div class="header">
-    <div class="sale-counter">
-      <h2>
-        <i class="fa-brands fa-shopify"></i>
-        {{ totalOrdersForToday }}º Pedido
-      </h2>
-    </div>
+<p class="status-line" role="status" *ngIf="loadingOrder">A carregar pedido...</p>
+<div class="status-line error" role="alert" *ngIf="orderLoadError">
+  Pedido indisponível.
+  <button class="app-button" mat-button (click)="loadOrder()">Tentar novamente</button>
+</div>
 
-    <div class="sale-value">
-      <h2>{{ valueSale | currency: "MZN " : "symbol" : "1.2-2" }}</h2>
-    </div>
-  </div>
-
-  <div class="sales-details" [formGroup]="form">
-    <!-- Produto -->
-    <mat-form-field appearance="fill" class="full">
-      <mat-label>Produto</mat-label>
+<div class="pos" [formGroup]="form">
+  <!-- Produtos -->
+  <section class="pos-products" aria-label="Produtos">
+    <div class="product-search">
+      <i class="fa-solid fa-magnifying-glass"></i>
       <input
-        type="text"
-        matInput
-        formControlName="productId"
-        [readonly]="isSaving || isAdding || loadingOrder || orderLoadError"
-        [matAutocomplete]="autoProduct"
-        [matAutocompleteDisabled]="isSaving || isAdding || loadingOrder || orderLoadError"
-        placeholder="Digite o nome do produto"
-        aria-label="Produto"
+        type="search"
+        [formControl]="search"
+        placeholder="Pesquisar produto por nome ou código"
+        aria-label="Pesquisar produto"
       />
+    </div>
 
-      <mat-autocomplete
-        #autoProduct="matAutocomplete"
-        [displayWith]="displayProduct"
+    <div class="add-bar" *ngIf="selectedProduct as product">
+      <img [src]="getImage(product.image)" alt="" />
+      <div class="add-info">
+        <strong>{{ product.name }}</strong>
+        <span>{{ priceOf(product) | mtzCurrency }} / {{ product.unit?.symbol }}</span>
+      </div>
+      <div class="add-quantity">
+        <input
+          #quantityInput
+          type="number"
+          min="0"
+          step="0.001"
+          formControlName="quantity"
+          placeholder="Quantidade"
+          aria-label="Quantidade"
+          [readonly]="blocked"
+          (keydown.enter)="addItem()"
+        />
+        <span>{{ product.unit?.symbol }}</span>
+      </div>
+      <button mat-raised-button type="button" class="app-button btn-add" [disabled]="blocked" (click)="addItem()">
+        <i class="fa-solid fa-cart-plus"></i>
+        Adicionar
+      </button>
+      <button mat-icon-button type="button" class="close-add" aria-label="Cancelar seleção" (click)="clearSelection()">
+        <mat-icon>close</mat-icon>
+      </button>
+    </div>
+
+    <div class="product-grid">
+      <button
+        type="button"
+        class="product-card"
+        *ngFor="let product of filteredProducts"
+        [class.selected]="selectedProduct?.id === product.id"
+        [disabled]="blocked"
+        (click)="selectProduct(product)"
       >
-        <mat-option *ngFor="let prod of filteredProducts" [value]="prod">
-          {{ prod.name }} - {{prod.salePrice| currency: "MZN " : "symbol" : "1.2-2"}}
-        </mat-option>
-      </mat-autocomplete>
-    </mat-form-field>
+        <span class="in-cart" *ngIf="quantityInCart(product) as inCart">{{ inCart }} {{ product.unit?.symbol }}</span>
+        <img [src]="getImage(product.image)" alt="" />
+        <strong>{{ product.name }}</strong>
+        <span class="price">{{ priceOf(product) | mtzCurrency }}<small> / {{ product.unit?.symbol }}</small></span>
+      </button>
+      <p class="empty" *ngIf="filteredProducts.length === 0">
+        {{ products.length === 0 ? 'Não há produtos disponíveis.' : 'Nenhum produto corresponde à pesquisa.' }}
+      </p>
+    </div>
+  </section>
 
-    <!-- Unidade -->
-    <!-- <mat-form-field appearance="fill" class="full">
-      <mat-label>Unidade de Medida</mat-label>
-      <mat-select formControlName="unitId">
-        <mat-option
-          *ngFor="let productUnitConversion of productUnitConversions"
-          [value]="productUnitConversion.unit?.id"
-        >
-          {{ productUnitConversion.unit?.name }} ({{
-            productUnitConversion.unit?.symbol
-          }}) - Fator: {{ productUnitConversion.conversionFactor }}
-        </mat-option>
-      </mat-select>
-    </mat-form-field> -->
+  <!-- Pedido -->
+  <aside class="pos-cart" aria-label="Pedido">
+    <div class="cart-header">
+      <h2>
+        <i class="fa-solid fa-clipboard-list"></i>
+        {{ orderId ? 'Editar pedido #' + orderId : 'Novo pedido' }}
+      </h2>
+      <span class="item-count" *ngIf="saleItems.length">{{ saleItems.length }} {{ saleItems.length === 1 ? 'artigo' : 'artigos' }}</span>
+    </div>
 
-    <!-- Quantidade -->
-    <mat-form-field appearance="fill" class="full">
-      <mat-label>Quantidade</mat-label>
-      <input
-        id="quantity"
-        matInput
-        type="number"
-        formControlName="quantity"
-        [readonly]="isSaving || isAdding || loadingOrder || orderLoadError"
-        aria-label="Quantidade"
-      />
-    </mat-form-field>
-
-    <!-- Cliente -->
-    <mat-form-field appearance="fill" class="full">
+    <mat-form-field appearance="outline" class="client-field">
       <mat-label>Cliente</mat-label>
       <input
         type="text"
         matInput
         formControlName="clientId"
-        [readonly]="isSaving || isAdding || loadingOrder || orderLoadError"
+        [readonly]="blocked"
         [matAutocomplete]="autoClient"
-        [matAutocompleteDisabled]="isSaving || isAdding || loadingOrder || orderLoadError"
-        placeholder="Digite o nome do cliente"
+        [matAutocompleteDisabled]="blocked"
+        placeholder="Pesquisar cliente"
         aria-label="Cliente"
       />
-
-      <mat-autocomplete
-        #autoClient="matAutocomplete"
-        [displayWith]="displayClient"
-      >
+      <mat-icon matSuffix>person_search</mat-icon>
+      <mat-hint>Obrigatório. O pedido não reserva stock; é verificado ao concluir.</mat-hint>
+      <mat-autocomplete #autoClient="matAutocomplete" [displayWith]="displayClient">
         <mat-option disabled *ngIf="clientsLoading">A pesquisar clientes...</mat-option>
         <mat-option disabled *ngIf="clientsError">Não foi possível pesquisar. Volte a escrever para tentar novamente.</mat-option>
         <mat-option disabled *ngIf="!clientsLoading && !clientsError && filteredClients.length === 0">Nenhum cliente encontrado.</mat-option>
@@ -93,113 +99,64 @@
         </mat-option>
       </mat-autocomplete>
     </mat-form-field>
-  </div>
-  <div class="button-container app-action-row">
-    <button mat-raised-button class="app-button btn-add" [disabled]="isSaving || isAdding || loadingOrder || orderLoadError" (click)="addItem()">
-      <i class="fa-solid fa-cart-plus"></i>
-      Adicionar
-    </button>
-  </div>
 
-  <div class="app-table-panel">
-    <div class="app-table-scroll">
-  <mat-table class="app-data-table" style="--table-min-width: 1015px" [dataSource]="dataSource" matSort>
-      <ng-container matColumnDef="image">
-        <mat-header-cell *matHeaderCellDef mat-sort-header
-          >Imagem</mat-header-cell
-        >
-        <mat-cell mat-cell *matCellDef="let element">
-          <img
-            [src]="getImage(element.product?.image)"
-            alt="Produto"
-            width="50"
-            height="50"
-            class="imagem"
+    <div class="cart-lines">
+      <div class="cart-empty" *ngIf="saleItems.length === 0">
+        <i class="fa-solid fa-clipboard-list"></i>
+        <strong>O pedido está vazio</strong>
+        <span>Escolha o cliente e depois os produtos à esquerda.</span>
+      </div>
+
+      <div class="cart-line" *ngFor="let item of saleItems">
+        <img [src]="getImage(item.product.image)" alt="" />
+        <div class="line-info">
+          <strong>{{ item.product.name }}</strong>
+          <span>{{ (item.unitPrice ?? item.product.salePrice) | mtzCurrency }} / {{ item.product.unit?.symbol }}</span>
+        </div>
+        <div class="line-quantity">
+          <input
+            #lineQuantity
+            type="number"
+            min="0"
+            step="0.001"
+            [value]="item.quantity"
+            [readonly]="blocked"
+            [attr.aria-label]="'Quantidade de ' + item.product.name"
+            (change)="updateQuantity(item, lineQuantity)"
+            (keydown.enter)="lineQuantity.blur()"
           />
-        </mat-cell>
-      </ng-container>
-      <ng-container matColumnDef="productName">
-        <mat-header-cell *matHeaderCellDef mat-sort-header
-          >Produto</mat-header-cell
+          <span>{{ item.product.unit?.symbol }}</span>
+        </div>
+        <strong class="line-total">{{ item.quantity * (item.unitPrice ?? item.product.salePrice) | mtzCurrency }}</strong>
+        <button
+          mat-icon-button
+          type="button"
+          class="line-remove"
+          matTooltip="Remover"
+          [attr.aria-label]="'Remover ' + item.product.name"
+          [disabled]="blocked"
+          (click)="removeItem(item)"
         >
-        <mat-cell *matCellDef="let item">{{ item.product.name }}</mat-cell>
-      </ng-container>
+          <i class="fa-solid fa-trash"></i>
+        </button>
+      </div>
+    </div>
 
-      <ng-container matColumnDef="unitaryValue">
-        <mat-header-cell *matHeaderCellDef mat-sort-header
-          >Preço</mat-header-cell
-        >
-        <mat-cell *matCellDef="let item">{{
-          (item.unitPrice ?? item.product.salePrice) | currency: "MZN " : "symbol" : "1.2-2"
-        }}</mat-cell>
-      </ng-container>
-
-      <ng-container matColumnDef="quantity">
-        <mat-header-cell *matHeaderCellDef mat-sort-header
-          >Quantidade</mat-header-cell
-        >
-        <mat-cell *matCellDef="let item">{{ item.quantity }}</mat-cell>
-      </ng-container>
-
-      <ng-container matColumnDef="unit">
-        <mat-header-cell *matHeaderCellDef mat-sort-header
-          >Unidade de medida</mat-header-cell
-        >
-        <mat-cell *matCellDef="let item">{{ item.product.unit.symbol }}</mat-cell>
-      </ng-container>
-
-      <ng-container matColumnDef="totalValue">
-        <mat-header-cell *matHeaderCellDef mat-sort-header
-          >Valor Total</mat-header-cell
-        >
-        <mat-cell *matCellDef="let item">
-          {{
-            item.quantity * (item.unitPrice ?? item.product.salePrice)
-              | currency: "MZN " : "symbol" : "1.2-2"
-          }}
-        </mat-cell>
-      </ng-container>
-
-      <ng-container matColumnDef="action">
-        <mat-header-cell *matHeaderCellDef mat-sort-header
-          >Ação</mat-header-cell
-        >
-        <mat-cell *matCellDef="let item">
-          <!-- Botão Editar -->
-          <button
-            mat-icon-button
-            color="primary"
-            matTooltip="Editar item"
-            aria-label="Editar item"
-            [disabled]="isSaving || isAdding || loadingOrder || orderLoadError" (click)="editItem(item)"
-          >
-            <i class="fa-solid fa-pen-to-square"></i>
-          </button>
-
-          <!-- Botão Remover -->
-          <button
-            mat-icon-button
-            color="warn"
-            matTooltip="Remover item"
-            aria-label="Remover item"
-            [disabled]="isSaving || isAdding || loadingOrder || orderLoadError" (click)="removeItem(item)"
-          >
-            <i class="fa-solid fa-trash"></i>
-          </button>
-        </mat-cell>
-      </ng-container>
-
-      <!-- Aqui estão as linhas obrigatórias -->
-      <mat-header-row *matHeaderRowDef="displayedColumns"></mat-header-row>
-      <mat-row *matRowDef="let row; columns: displayedColumns"></mat-row>
-    </mat-table>
-  </div>
-  </div>
-
-  <div class="button-container app-action-row">
-    <button mat-raised-button class="app-button btn-add" [disabled]="isSaving || isAdding || loadingOrder || orderLoadError || saleItems.length === 0" (click)="processSale()">
-      <i class="fa-solid fa-check"></i>
-      {{ isSaving ? 'A guardar...' : orderId ? 'Guardar alterações' : 'Registar pedido' }}
-    </button>
-  </div>
+    <div class="cart-footer">
+      <div class="cart-total">
+        <span>Total</span>
+        <strong>{{ valueSale | mtzCurrency }}</strong>
+      </div>
+      <button
+        mat-raised-button
+        type="button"
+        class="app-button btn-add finish"
+        [disabled]="blocked || saleItems.length === 0"
+        (click)="processSale()"
+      >
+        <i class="fa-solid" [class.fa-check]="!isSaving" [class.fa-spinner]="isSaving"></i>
+        {{ isSaving ? 'A guardar...' : orderId ? 'Guardar alterações' : 'Registar pedido' }}
+      </button>
+    </div>
+  </aside>
 </div>

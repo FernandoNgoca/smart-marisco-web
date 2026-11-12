@@ -1,0 +1,136 @@
+.filters {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.filters-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+}
+
+.search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1 1 260px;
+  height: 44px;
+  padding: 0 12px;
+  border: 1px solid var(--app-border);
+  border-radius: 10px;
+  background: var(--app-surface);
+  color: var(--app-muted);
+
+  &:focus-within {
+    border-color: var(--app-primary);
+    box-shadow: 0 0 0 3px var(--app-primary-soft);
+  }
+
+  input {
+    flex: 1;
+    min-width: 0;
+    border: 0;
+    outline: 0;
+    background: transparent;
+    color: var(--app-text);
+    font: inherit;
+    font-size: 14px;
+  }
+}
+
+.segmented {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  padding: 4px;
+  border: 1px solid var(--app-border);
+  border-radius: 12px;
+  background: var(--app-background);
+
+  button {
+    min-height: 34px;
+    padding: 0 14px;
+    border: 0;
+    border-radius: 8px;
+    background: transparent;
+    color: var(--app-muted);
+    font: inherit;
+    font-size: 13px;
+    cursor: pointer;
+
+    &.active {
+      background: var(--app-surface);
+      color: var(--app-link);
+      font-weight: 600;
+      box-shadow: var(--app-shadow);
+    }
+  }
+}
+
+.dates {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+
+  label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    color: var(--app-muted);
+  }
+
+  input {
+    height: 38px;
+    padding: 0 10px;
+    border: 1px solid var(--app-border);
+    border-radius: 8px;
+    background: var(--app-surface);
+    color: var(--app-text);
+    font: inherit;
+    font-size: 13px;
+  }
+}
+
+.presets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+
+  button {
+    min-height: 34px;
+    padding: 0 12px;
+    border: 1px solid var(--app-border);
+    border-radius: 999px;
+    background: var(--app-surface);
+    color: var(--app-text);
+    font: inherit;
+    font-size: 13px;
+    cursor: pointer;
+
+    &:hover { border-color: var(--app-link); }
+
+    &.clear {
+      color: var(--app-danger);
+      border-color: transparent;
+      background: transparent;
+    }
+  }
+}
+
+.summary {
+  margin: 0;
+  font-size: 13px;
+  color: var(--app-muted);
+
+  strong { color: var(--app-text); }
+  .dot { margin: 0 6px; }
+}
+
+@media (max-width: 600px) {
+  .segmented { width: 100%; }
+  .segmented button { flex: 1; }
+}

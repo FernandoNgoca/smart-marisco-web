@@ -17,6 +17,26 @@ interface HateoasResponse {
   };
 }
 
+/** Filtros dos históricos; campos vazios são ignorados. Datas em yyyy-MM-dd, ambas inclusivas. */
+export interface HistoryFilter {
+  search?: string;
+  saleStatus?: string;
+  from?: string;
+  to?: string;
+}
+
+export interface HistorySummary {
+  count: number;
+  completedTotal: number;
+}
+
+function historyParams(params: HttpParams, filter: HistoryFilter): HttpParams {
+  for (const key of ['search', 'saleStatus', 'from', 'to'] as const) {
+    const value = filter[key]?.trim();
+    if (value) params = params.set(key, value);
+  }
+  return params;
+}
 
 @Injectable({
   providedIn: 'root'
@@ -30,19 +50,20 @@ export class SaleService {
     size: number,
     sortField: string,
     direction: 'asc' | 'desc',
-    filter: string = ''
+    filter: HistoryFilter = {}
   ): Observable<any> {
-    let params = new HttpParams()
+    const params = new HttpParams()
       .set('page', page)
       .set('size', size)
       .set('sortField', sortField)
       .set('direction', direction);
 
-    if (filter) {
-      params = params.set('search', filter);
-    }
+    return this.http.get<any>(this.baseURL, { params: historyParams(params, filter) });
+  }
 
-    return this.http.get<any>(this.baseURL, { params });
+  historySummary(orders: boolean, filter: HistoryFilter = {}): Observable<HistorySummary> {
+    const params = historyParams(new HttpParams().set('orders', orders), filter);
+    return this.http.get<HistorySummary>(`${this.baseURL}/history/summary`, { params });
   }
 
   create(payload: SaleRequest, operationKey: string): Observable<any> {
@@ -110,19 +131,15 @@ export class SaleService {
     size: number,
     sortField: string,
     direction: 'asc' | 'desc',
-    filter: string = ''
+    filter: HistoryFilter = {}
   ): Observable<any> {
-    let params = new HttpParams()
+    const params = new HttpParams()
       .set('page', page)
       .set('size', size)
       .set('sortField', sortField)
       .set('direction', direction);
 
-    if (filter) {
-      params = params.set('search', filter);
-    }
-
-    return this.http.get<any>(`${this.baseURL}/findAllOrders`, { params });
+    return this.http.get<any>(`${this.baseURL}/findAllOrders`, { params: historyParams(params, filter) });
   }
 
   countByStatusAndSaleStatus(): Observable<number> {

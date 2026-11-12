@@ -1,5 +1,5 @@
 <div class="content mat-elevation-z4">
-  <app-toolbar-title title="Usuário" icon="list">
+  <app-toolbar-title title="Conta e utilizadores" icon="fa-user-gear">
     <button mat-icon-button>
       <mat-icon>share</mat-icon>
     </button>
@@ -11,11 +11,11 @@
       routerLinkActive="active-link"
     >
       <mat-icon>person</mat-icon>
-      Profile
+      Perfil
     </a>
     <a *ngIf="auth.hasRole('ROLE_ADMIN')" mat-tab-link routerLink="/users/addUser" routerLinkActive="active-link">
       <mat-icon>person_add</mat-icon>
-      Adicionar Usuário
+      Adicionar utilizador
     </a>
     <a
       mat-tab-link
@@ -24,7 +24,7 @@
       routerLinkActive="active-link"
     >
       <mat-icon>people</mat-icon>
-      Usuários
+      Utilizadores
     </a>
   </nav>
   <div class="container">

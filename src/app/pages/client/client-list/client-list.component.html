@@ -85,8 +85,10 @@
           mat-icon-button
           color="warn"
           *ngIf="canManage()"
+          [class.action-blocked]="client.pendingOrders"
           (click)="desativarCliente(client)"
-          matTooltip="Desativar cliente"
+          [matTooltip]="client.pendingOrders ? pendingMessage(client) : 'Desativar cliente'"
+          [attr.aria-label]="client.pendingOrders ? 'Desativar cliente (bloqueado: tem pedidos pendentes)' : 'Desativar cliente'"
         >
           <i class="fa-solid fa-trash-can"></i>
         </button>

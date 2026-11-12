@@ -56,8 +56,8 @@ export interface ConfirmDialogData {
         padding: 24px;
         font-size: 20px;
         font-weight: 600;
-        color: #1f2937;
-        border-bottom: 1px solid #e5e7eb;
+        color: var(--app-text);
+        border-bottom: 1px solid var(--app-border);
       }
 
       .delete {

@@ -52,7 +52,7 @@ export class AddUnitComponent implements OnInit, OnDestroy {
       id: [],
       name: ['', [Validators.required, Validators.pattern(/\S/)]],
       symbol: ['', [Validators.required, Validators.pattern(/\S/)]],
-      description: ['', [Validators.required, Validators.pattern(/\S/)]],
+      description: ['', Validators.maxLength(255)],
     });
   }
 
@@ -83,7 +83,7 @@ export class AddUnitComponent implements OnInit, OnDestroy {
         id: formValue.id,
         name: formValue.name.trim(),
         symbol: formValue.symbol.trim(),
-        description: formValue.description.trim()
+        description: (formValue.description ?? '').trim()
       }
 
       const operation = this.isEditMode

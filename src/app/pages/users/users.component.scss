@@ -1,30 +1,27 @@
 .tabs {
-  margin-top: 1em;
+  margin-top: 4px;
 }
 
 .tabs a {
-  font-size: 16px;
+  font-size: 15px;
 }
 
 .mat-focus-indicator {
-  color: black;
+  color: var(--app-muted);
 }
 
 .active-link {
-  background-color: #e6e6e6;
-  color: black;
-  border-top-right-radius: 5px;
-  border-top-left-radius: 5px;
-  border: 1px solid #0000001f;
-  border-bottom: 0px;
+  background-color: var(--app-primary-soft);
+  color: var(--app-link);
+  font-weight: 600;
+  border-top-right-radius: 10px;
+  border-top-left-radius: 10px;
 }
 
 mat-icon {
-  margin-right: 5px;
+  margin-right: 6px;
 }
 
 .container {
-  padding: 15px;
-  border: 1px solid #0000001f;
-  border-top: 0;
+  padding: 20px 0 0;
 }

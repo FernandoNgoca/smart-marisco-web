@@ -33,11 +33,20 @@ export class AddUserComponent implements OnInit, OnDestroy {
   imageBase64: string | null = null;
   defaultAvatar = 'assets/perfil.png';
 
-  // Permissões disponíveis
-  availableRoles: string[] = [
-    'ROLE_MANAGER',
-    'ROLE_USER'
+  // Permissões disponíveis, com o que cada uma permite (ver app-routing.module.ts).
+  readonly roleOptions = [
+    { role: 'ROLE_MANAGER', label: 'Gerente', description: 'Tudo o que o Utilizador faz, mais Dashboard, Produtos, Relatórios e Configurações.' },
+    { role: 'ROLE_USER', label: 'Utilizador', description: 'Vendas, pedidos, estoque e clientes.' }
   ];
+
+  get hasMinLength(): boolean {
+    return (this.form.get('password')?.value ?? '').length >= 12;
+  }
+
+  get passwordsMatch(): boolean {
+    const password = this.form.get('password')?.value;
+    return !!password && password === this.form.get('confirmPassword')?.value;
+  }
 
   constructor(
     private fb: FormBuilder,

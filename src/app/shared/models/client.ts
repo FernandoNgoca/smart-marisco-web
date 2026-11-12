@@ -7,6 +7,7 @@ export interface Client extends Auditable{
   address: string;
   email: string;
   type: ClientType;
+  pendingOrders?: number;
 }
 
 export enum ClientType {

@@ -1,94 +1,85 @@
-<div *ngIf="loadError" role="alert">Não foi possível carregar os dados.
-  <button class="app-button" mat-button (click)="loadOrders()">Tentar novamente</button>
-</div>
-<p *ngIf="isLoading" role="status">A carregar...</p>
-<div class="toolbar app-list-toolbar">
-  <mat-form-field appearance="outline" class="filter-field">
-    <mat-label>Pesquisar</mat-label>
-    <input
-      matInput
-      (keyup)="applyFilter($event)"
-      placeholder="Nome ou apelido do cliente"
-    />
-    <button mat-icon-button matSuffix>
-      <i class="fa-solid fa-magnifying-glass"></i>
-    </button>
-  </mat-form-field>
-
-  <button mat-raised-button class="app-button btn-add" routerLink="/sales/orders">
+<app-history-filters
+  [statusOptions]="statusOptions"
+  [summary]="summary"
+  searchPlaceholder="Cliente ou nº do pedido"
+  (filterChange)="onFilterChange($event)"
+>
+  <button mat-raised-button type="button" class="app-button btn-add new-order" routerLink="/sales/orders">
     <i class="fa-solid fa-plus"></i>
-    Adicionar
+    Novo pedido
   </button>
+</app-history-filters>
+
+<div class="load-error" *ngIf="loadError" role="alert">
+  Não foi possível carregar os pedidos.
+  <button class="app-button" mat-button (click)="loadOrders()">Tentar novamente</button>
 </div>
 
 <div class="app-table-panel">
   <div class="app-table-scroll">
-  <mat-table class="app-data-table" style="--table-min-width: 1015px" mat-table [dataSource]="dataSource" matSort>
-    <!-- firstName -->
-    <ng-container matColumnDef="firstName">
-      <mat-header-cell *matHeaderCellDef mat-sort-header>Nome</mat-header-cell>
-      <mat-cell *matCellDef="let sales">{{ sales.client?.firstName }}</mat-cell>
-    </ng-container>
+    <mat-table class="app-data-table" style="--table-min-width: 860px" [dataSource]="dataSource" matSort matSortActive="createdDate" matSortDirection="desc" matSortDisableClear>
+      <ng-container matColumnDef="id">
+        <mat-header-cell *matHeaderCellDef mat-sort-header>Nº</mat-header-cell>
+        <mat-cell *matCellDef="let sale"><span class="sale-number">#{{ sale.id }}</span></mat-cell>
+      </ng-container>
 
-    <!-- lastName -->
-    <ng-container matColumnDef="lastName">
-      <mat-header-cell *matHeaderCellDef mat-sort-header>Apelido</mat-header-cell>
-      <mat-cell *matCellDef="let sales">{{ sales.client?.lastName }}</mat-cell>
-    </ng-container>
+      <ng-container matColumnDef="createdDate">
+        <mat-header-cell *matHeaderCellDef mat-sort-header>Data</mat-header-cell>
+        <mat-cell *matCellDef="let sale">
+          <span class="date-cell">{{ sale.createdDate | date: 'dd/MM/yyyy' }}<small>{{ sale.createdDate | date: 'HH:mm' }}</small></span>
+        </mat-cell>
+      </ng-container>
 
-    <!-- phoneNumber -->
-    <ng-container matColumnDef="phoneNumber">
-      <mat-header-cell *matHeaderCellDef mat-sort-header>Telefone</mat-header-cell>
-      <mat-cell *matCellDef="let sales">{{ sales.client?.phoneNumber }}</mat-cell>
-    </ng-container>
+      <ng-container matColumnDef="client">
+        <mat-header-cell *matHeaderCellDef mat-sort-header="client.firstName">Cliente</mat-header-cell>
+        <mat-cell *matCellDef="let sale">
+          <span class="client-cell">
+            {{ sale.client?.firstName }} {{ sale.client?.lastName }}
+            <small *ngIf="sale.client?.phoneNumber">{{ sale.client.phoneNumber }}</small>
+          </span>
+        </mat-cell>
+      </ng-container>
 
-    <!-- totalValue -->
-    <ng-container matColumnDef="totalValue">
-      <mat-header-cell *matHeaderCellDef mat-sort-header>Valor Total</mat-header-cell>
-      <mat-cell *matCellDef="let sales">{{ sales.totalValue | currency: "MZN " : "symbol" : "1.2-2"}}</mat-cell>
-    </ng-container>
+      <ng-container matColumnDef="saleStatus">
+        <mat-header-cell *matHeaderCellDef mat-sort-header>Estado</mat-header-cell>
+        <mat-cell *matCellDef="let sale"><span class="status-badge" [ngClass]="sale.saleStatus">{{ statusLabel(sale.saleStatus) }}</span></mat-cell>
+      </ng-container>
 
-    <!-- totalValue -->
-    <ng-container matColumnDef="date">
-      <mat-header-cell *matHeaderCellDef mat-sort-header>Data de registo</mat-header-cell>
-      <mat-cell *matCellDef="let sales">{{ sales.createdDate | date: "dd/MM/yyyy HH:mm"}}</mat-cell>
-    </ng-container>
+      <ng-container matColumnDef="totalValue">
+        <mat-header-cell *matHeaderCellDef mat-sort-header>Total</mat-header-cell>
+        <mat-cell *matCellDef="let sale"><strong>{{ sale.totalValue | mtzCurrency }}</strong></mat-cell>
+      </ng-container>
 
-    <ng-container matColumnDef="state">
-      <mat-header-cell *matHeaderCellDef>Estado</mat-header-cell>
-      <mat-cell *matCellDef="let sale">{{ sale.saleStatus === 'ORDERS' ? 'Pendente' : sale.saleStatus === 'COMPLETED' ? 'Concluído' : 'Cancelado' }}</mat-cell>
-    </ng-container>
-    <ng-container matColumnDef="action">
-      <mat-header-cell *matHeaderCellDef>Ações</mat-header-cell>
-      <mat-cell *matCellDef="let sale">
-        <button mat-icon-button matTooltip="Ver pedido" aria-label="Ver pedido" (click)="visualizarProduto(sale)"><i class="fa-solid fa-eye"></i></button>
-        <ng-container *ngIf="sale.saleStatus === 'ORDERS'">
-          <a mat-icon-button matTooltip="Editar pedido" aria-label="Editar pedido" routerLink="/sales/orders" [queryParams]="{ orderId: sale.id }"><i class="fa-solid fa-pen"></i></a>
-          <button mat-icon-button color="primary" matTooltip="Concluir pedido" aria-label="Concluir pedido" [disabled]="busyId !== null" (click)="changeState(sale, true)"><i class="fa-solid fa-check"></i></button>
-          <button mat-icon-button color="warn" matTooltip="Cancelar pedido" aria-label="Cancelar pedido" [disabled]="busyId !== null" (click)="changeState(sale, false)"><i class="fa-solid fa-xmark"></i></button>
-        </ng-container>
-      </mat-cell>
-    </ng-container>
+      <ng-container matColumnDef="action">
+        <mat-header-cell *matHeaderCellDef>Ações</mat-header-cell>
+        <mat-cell *matCellDef="let sale">
+          <span class="actions">
+            <button mat-icon-button matTooltip="Ver pedido" aria-label="Ver pedido" (click)="visualizarProduto(sale)"><i class="fa-solid fa-eye"></i></button>
+            <ng-container *ngIf="sale.saleStatus === 'ORDERS'">
+              <a mat-icon-button matTooltip="Editar pedido" aria-label="Editar pedido" routerLink="/sales/orders" [queryParams]="{ orderId: sale.id }"><i class="fa-solid fa-pen"></i></a>
+              <button mat-icon-button color="primary" matTooltip="Concluir pedido" aria-label="Concluir pedido" [disabled]="busyId !== null" (click)="changeState(sale, true)"><i class="fa-solid fa-check"></i></button>
+              <button mat-icon-button color="warn" matTooltip="Cancelar pedido" aria-label="Cancelar pedido" [disabled]="busyId !== null" (click)="changeState(sale, false)"><i class="fa-solid fa-xmark"></i></button>
+            </ng-container>
+          </span>
+        </mat-cell>
+      </ng-container>
 
-    <!-- Header / Rows -->
-    <mat-header-row *matHeaderRowDef="displayedColumns"></mat-header-row>
-    <mat-row *matRowDef="let client; columns: displayedColumns"></mat-row>
+      <mat-header-row *matHeaderRowDef="displayedColumns"></mat-header-row>
+      <mat-row *matRowDef="let row; columns: displayedColumns"></mat-row>
 
-    <!-- Sem dados -->
-    <tr class="mat-row" *matNoDataRow>
-      <td class="mat-cell" [attr.colspan]="displayedColumns.length">
-        {{ loadError ? 'Dados indisponíveis. Tente novamente.' : isLoading ? 'A carregar...' : 'Nenhum resultado encontrado.' }}
-      </td>
-    </tr>
-  </mat-table>
+      <tr class="mat-row" *matNoDataRow>
+        <td class="mat-cell" [attr.colspan]="displayedColumns.length">
+          {{ loadError ? 'Dados indisponíveis. Tente novamente.' : isLoading ? 'A carregar...' : 'Nenhum pedido encontrado com estes filtros.' }}
+        </td>
+      </tr>
+    </mat-table>
   </div>
 
   <mat-paginator class="app-table-paginator"
     [length]="totalElements"
     [pageSize]="pageSize"
     [pageIndex]="pageIndex"
-    [pageSizeOptions]="[5, 10, 20]"
+    [pageSizeOptions]="[10, 20, 50]"
     showFirstLastButtons
-  >
-  </mat-paginator>
+  ></mat-paginator>
 </div>

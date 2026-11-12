@@ -1,0 +1,40 @@
+<div class="filters" [formGroup]="form">
+  <div class="filters-row">
+    <label class="search">
+      <i class="fa-solid fa-magnifying-glass"></i>
+      <input type="search" formControlName="search" [placeholder]="searchPlaceholder" [attr.aria-label]="searchPlaceholder" />
+    </label>
+
+    <div class="segmented" role="group" aria-label="Estado">
+      <button type="button" [class.active]="!form.value.saleStatus" (click)="setStatus('')">Todos</button>
+      <button
+        type="button"
+        *ngFor="let option of statusOptions"
+        [class.active]="form.value.saleStatus === option.value"
+        (click)="setStatus(option.value)"
+      >{{ option.label }}</button>
+    </div>
+  </div>
+
+  <div class="filters-row">
+    <div class="dates">
+      <label>De <input type="date" formControlName="from" /></label>
+      <label>Até <input type="date" formControlName="to" [min]="form.value.from || null" /></label>
+    </div>
+    <div class="presets">
+      <button type="button" (click)="setPeriod('today')">Hoje</button>
+      <button type="button" (click)="setPeriod('week')">7 dias</button>
+      <button type="button" (click)="setPeriod('month')">Este mês</button>
+      <button type="button" class="clear" *ngIf="hasFilters" (click)="clear()">
+        <i class="fa-solid fa-xmark"></i> Limpar
+      </button>
+    </div>
+    <ng-content></ng-content>
+  </div>
+
+  <p class="summary" *ngIf="summary" aria-live="polite">
+    <strong>{{ summary.count }}</strong> {{ summary.count === 1 ? 'registo' : 'registos' }}
+    <span class="dot">·</span>
+    Faturado <strong>{{ summary.completedTotal | mtzCurrency }}</strong>
+  </p>
+</div>

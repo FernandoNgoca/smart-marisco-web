@@ -11,7 +11,9 @@ export interface Product extends Auditable {
   unitId: number;
   species?: Species,
   code?: string,
-  image?:string
+  image?:string,
+  hasStock?: boolean,
+  stockQuantity?: number
 }
 
 export interface PagedProducts {

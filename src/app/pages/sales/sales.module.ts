@@ -1,4 +1,5 @@
 import { ReceiptComponent } from './receipt/receipt.component';
+import { HistoryFiltersComponent } from './history-filters/history-filters.component';
 import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
 
@@ -14,6 +15,7 @@ import { OrderHistoryComponent } from './order-history/order-history.component';
 
 @NgModule({
   declarations: [
+    HistoryFiltersComponent,
     ReceiptComponent,
     SalesComponent,
     SaleComponent,

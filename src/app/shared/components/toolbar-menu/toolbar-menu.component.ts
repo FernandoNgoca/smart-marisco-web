@@ -1,5 +1,6 @@
-import { Component, Input, OnInit } from '@angular/core';
+import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
 import { AuthService } from '@app/services/auth.service';
+import { ThemeService } from '@app/services/theme.service';
 import { MenuItem } from '@app/shared/models/menuItem';
 
 @Component({
@@ -12,12 +13,14 @@ export class ToolbarMenuComponent implements OnInit {
   @Input() popText = false;
   @Input() menuTitle = '';
   @Input() items_menu: MenuItem[] = []
+  @Input() menuOpened = false;
+  @Output() toggleMenu = new EventEmitter<void>();
 
   userName: string = '';
 
 
 
-  constructor(private authService: AuthService) { // Ajuste para seu serviço
+  constructor(private authService: AuthService, public themeService: ThemeService) {
   }
 
   ngOnInit(): void {

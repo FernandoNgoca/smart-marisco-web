@@ -32,8 +32,12 @@
       margin-bottom: 40px;
 
       .logo {
-        width: 120px;
-        height: auto;
+        display: block;
+        width: 144px;
+        height: 144px;
+        max-width: 100%;
+        object-fit: contain;
+        margin: 0 auto 8px;
         border: none;
         box-shadow: none;
         background: transparent;
@@ -201,4 +205,9 @@
   .login-container .login-card .submit-button,
   .login-container .login-card .input-group input { transition: none; }
   .login-container .login-card .submit-button:hover { transform: none; }
+}
+
+
+@media (max-width: 480px), (max-height: 600px) {
+  .login-container .login-card .header .logo { width: 112px; height: 112px; }
 }

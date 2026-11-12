@@ -61,7 +61,7 @@ export class AddSpeciesComponent implements OnInit, OnDestroy {
     this.form = this.fb.group({
       id: [],
       name: ['', [Validators.required, Validators.pattern(/\S/)]],
-      description: ['', [Validators.required, Validators.pattern(/\S/)]],
+      description: ['', Validators.maxLength(255)],
       categoryId: ['', Validators.required],
       category: []
     });
@@ -97,7 +97,7 @@ export class AddSpeciesComponent implements OnInit, OnDestroy {
       const payload = {
         id: formValue.id,
         name: formValue.name.trim(),
-        description: formValue.description.trim(),
+        description: (formValue.description ?? '').trim(),
         categoryId: formValue.categoryId
       }
 

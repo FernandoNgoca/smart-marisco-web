@@ -10,13 +10,39 @@ export class DashboardListComponent implements OnInit, OnDestroy {
   loadError = false;
   data: DashboardOverview | null = null;
   chartMode = 'sales';
+  get dailyAverage(): number {
+    return this.data?.dailySales.length ? this.data.totals.revenue / this.data.dailySales.length : 0;
+  }
+  get activeDays(): number { return this.data?.dailySales.filter(day => day.value > 0).length ?? 0; }
+  get bestDay(): DashboardOverview['dailySales'][number] | null {
+    return this.data?.dailySales.reduce<DashboardOverview['dailySales'][number] | null>(
+      (best, day) => day.value > 0 && (!best || day.revenue > best.revenue) ? day : best, null) ?? null;
+  }
+  get previousAverageSale(): number {
+    return this.data?.previous.sales ? this.data.previous.revenue / this.data.previous.sales : 0;
+  }
+
   revenueSeries: { name: string; series: { name: string; value: number }[] }[] = [];
   preset = 'month';
+  readonly periods = [
+    { value: 'today', label: 'Hoje' },
+    { value: 'week', label: '7 dias' },
+    { value: 'month', label: 'Mês atual' },
+    { value: 'custom', label: 'Personalizado' }
+  ];
+  readonly todayLabel = new Date().toLocaleDateString('pt-PT', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+  get greeting(): string {
+    const hour = new Date().getHours();
+    return hour < 12 ? 'Bom dia' : hour < 18 ? 'Boa tarde' : 'Boa noite';
+  }
+  get firstName(): string {
+    return (this.auth.getUser()?.fullName ?? '').trim().split(/\s+/)[0] ?? '';
+  }
   from = '';
   to = '';
   maxDate = this.localDate(new Date());
   yAxisTicks = [0,1];
-  readonly chartColors = {name:'marisco',selectable:true,group:ScaleType.Ordinal,domain:['#0f5265']};
+  readonly chartColors = {name:'marisco',selectable:true,group:ScaleType.Ordinal,domain:['#0077b6']};
   private cancel = new Subject<void>();
   private destroyed = new Subject<void>();
   constructor(private dashboardService: DashboardService, private auth: AuthService) {}
@@ -41,7 +67,7 @@ export class DashboardListComponent implements OnInit, OnDestroy {
     this.dashboardService.overview(this.from,this.to).pipe(timeout(15000),takeUntil(this.cancel),takeUntil(this.destroyed)).subscribe({
       next:data=>{
         this.data=data; this.isLoading=false;
-        this.revenueSeries=[{name:'Faturação (MZN)',series:data.dailySales.map(day=>({name:day.name,value:day.revenue}))}];
+        this.revenueSeries=[{name:'Faturação (MT)',series:data.dailySales.map(day=>({name:day.name,value:day.revenue}))}];
         const max=Math.max(...data.dailySales.map(d=>d.value),1), step=Math.max(1,Math.ceil(max/5));
         this.yAxisTicks=Array.from({length:Math.ceil(max/step)+1},(_,i)=>i*step);
       },
