@@ -172,7 +172,8 @@ export class ClientListComponent implements OnInit, AfterViewInit {
             this.snackbar.success('Cliente desativado com sucesso!');
           },
           error: (error) => {
-            this.snackbar.error('Erro ao desativar cliente.')
+            // A API recusa (409) clientes com pedidos pendentes e explica porquê.
+            this.snackbar.error(error.error?.detail || error.error?.message || 'Erro ao desativar cliente.');
           }
         });
       }
