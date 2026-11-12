@@ -148,7 +148,17 @@ export class ClientListComponent implements OnInit, AfterViewInit {
     });
   }
 
+  pendingMessage(client: Client): string {
+    const count = client.pendingOrders ?? 0;
+    return `Não pode desativar: tem ${count} ${count === 1 ? 'pedido pendente' : 'pedidos pendentes'}`;
+  }
+
   desativarCliente(client: Client): void {
+    if (client.pendingOrders) {
+      this.snackbar.warning(`${this.pendingMessage(client)}. Conclua ou cancele primeiro em Vendas › Pedidos.`);
+      return;
+    }
+
     if (!this.canManage()) return;
     // Confirmar ação com o usuário
     const confirmDialog = this.dialog.open(ConfirmDialogComponent, {
